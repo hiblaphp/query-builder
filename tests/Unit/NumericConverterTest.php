@@ -136,7 +136,8 @@ describe('NumericConverter', function () {
 
             expect($converted[0]['id'])->toBe(1)
                 ->and($converted[0]['code'])->toBe('ABC123')
-                ->and($converted[0]['status'])->toBe('active');
+                ->and($converted[0]['status'])->toBe('active')
+            ;
         });
     });
 });

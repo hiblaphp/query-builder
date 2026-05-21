@@ -402,7 +402,6 @@ class MigrateFreshCommand extends Command
             'pgsql' => "DROP TABLE IF EXISTS \"{$table}\" CASCADE",
             'mysql' => "DROP TABLE IF EXISTS `{$table}`",
             'sqlite' => "DROP TABLE IF EXISTS `{$table}`",
-            'sqlsrv' => "IF OBJECT_ID('{$table}', 'U') IS NOT NULL DROP TABLE [{$table}]",
             default => "DROP TABLE IF EXISTS `{$table}`",
         };
     }
@@ -488,7 +487,6 @@ class MigrateFreshCommand extends Command
             'mysql' => 'SET FOREIGN_KEY_CHECKS=0',
             'pgsql' => 'SET CONSTRAINTS ALL DEFERRED',
             'sqlite' => 'PRAGMA foreign_keys = OFF',
-            'sqlsrv' => 'EXEC sp_MSforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT all"',
             default => null,
         };
     }
@@ -499,7 +497,6 @@ class MigrateFreshCommand extends Command
             'mysql' => 'SET FOREIGN_KEY_CHECKS=1',
             'pgsql' => 'SET CONSTRAINTS ALL IMMEDIATE',
             'sqlite' => 'PRAGMA foreign_keys = ON',
-            'sqlsrv' => 'EXEC sp_MSforeachtable "ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all"',
             default => null,
         };
     }

@@ -365,7 +365,6 @@ class SchemaBuilder
             'mysql', 'mysqli' => new Compilers\MySQLSchemaCompiler(),
             'pgsql', 'pgsql_native' => new Compilers\PostgreSQLSchemaCompiler(),
             'sqlite' => new Compilers\SQLiteSchemaCompiler(),
-            'sqlsrv' => new Compilers\SQLServerSchemaCompiler(),
             default => new Compilers\MySQLSchemaCompiler(),
         };
     }

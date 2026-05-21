@@ -76,7 +76,6 @@ class DatabaseManager
                 'mysql', 'mysqli' => $this->createMySQLDatabase($database),
                 'pgsql', 'pgsql_native' => $this->createPostgreSQLDatabase($database),
                 'sqlite' => $this->createSQLiteDatabase($database),
-                'sqlsrv' => $this->createSQLServerDatabase($database),
                 default => throw new SchemaMigrationException("Unsupported driver: {$this->driver}"),
             };
         } catch (\Throwable $e) {
@@ -187,7 +186,6 @@ class DatabaseManager
                 'mysql', 'mysqli' => $this->checkMySQLDatabase($database),
                 'pgsql', 'pgsql_native' => $this->checkPostgreSQLDatabase($database),
                 'sqlite' => $this->checkSQLiteDatabase($database),
-                'sqlsrv' => $this->checkSQLServerDatabase($database),
                 default => false,
             };
         } catch (\Throwable) {
@@ -262,7 +260,7 @@ class DatabaseManager
     /**
      * Get the connection name.
      */
-    public function getConnectionName(): string 
+    public function getConnectionName(): string
     {
         return $this->connectionName;
     }

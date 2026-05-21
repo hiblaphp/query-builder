@@ -94,13 +94,6 @@ class MigrationRepository
                 batch INTEGER NOT NULL,
                 executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )",
-            'sqlsrv' => "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = '{$this->table}')
-            CREATE TABLE {$table} (
-                id INT IDENTITY(1,1) PRIMARY KEY,
-                migration VARCHAR(255) NOT NULL,
-                batch INT NOT NULL,
-                executed_at DATETIME2 DEFAULT CURRENT_TIMESTAMP
-            )",
             'sqlite' => "CREATE TABLE IF NOT EXISTS {$table} (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 migration TEXT NOT NULL,
@@ -144,7 +137,6 @@ class MigrationRepository
         $table = $this->quoteIdentifier($this->table);
 
         $sql = match ($this->driver) {
-            'sqlsrv' => "SELECT TOP (?) migration FROM {$table} ORDER BY batch DESC, migration DESC",
             default => "SELECT migration FROM {$table} ORDER BY batch DESC, migration DESC LIMIT ?",
         };
 
@@ -224,8 +216,6 @@ class MigrationRepository
         $sql = match ($this->driver) {
             'pgsql', 'pgsql_native' => "SELECT COUNT(*) FROM information_schema.tables 
                        WHERE table_schema = 'public' AND table_name = ?",
-            'sqlsrv' => 'SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES 
-                        WHERE TABLE_NAME = ?',
             'sqlite' => "SELECT COUNT(*) FROM sqlite_master 
                         WHERE type='table' AND name=?",
             default => 'SELECT COUNT(*) FROM information_schema.tables 

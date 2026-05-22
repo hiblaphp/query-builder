@@ -12,7 +12,7 @@ use Rcalicdan\QueryBuilderPrimitives\Interfaces\QueryBuilderPrimitiveInterface;
 /**
  * The primary contract for asynchronous query building and execution.
  */
-interface QueryBuilderInterface extends QueryBuilderPrimitiveInterface
+interface QueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQueryInterface
 {
     /**
      * Set the query to return results as objects instead of arrays.

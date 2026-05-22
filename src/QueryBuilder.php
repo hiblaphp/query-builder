@@ -51,7 +51,6 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
             $this->ensureResolverIsSet();
             $this->client = self::$resolver->resolveClientFromConfig($connection);
             $this->driver = $driver ?? $connection['driver'] ?? 'mysql';
-
         } else {
             $this->ensureResolverIsSet();
             $conn = self::$resolver->connection($connection);
@@ -65,7 +64,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         if (self::$resolver === null) {
             throw new \RuntimeException(
                 'A ConnectionResolver has not been set. Either initialize the DatabaseManager first (e.g., DB::getManager()), ' .
-                'or pass a valid QueryInterface directly into the QueryBuilder constructor.'
+                    'or pass a valid QueryInterface directly into the QueryBuilder constructor.'
             );
         }
     }
@@ -99,6 +98,52 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         $clone->returnAsObject = false;
 
         return $clone;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function raw(string $sql, array $bindings = []): PromiseInterface
+    {
+        return $this->client->query($sql, $bindings)
+            ->then(function (Result $result) {
+                $rows = $result->fetchAll();
+
+                return $this->returnAsObject ? $this->convertToObjects($rows) : $rows;
+            })
+        ;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function rawFirst(string $sql, array $bindings = []): PromiseInterface
+    {
+        return $this->client->fetchOne($sql, $bindings)
+            ->then(function (?array $result) {
+                if ($result === null) {
+                    return null;
+                }
+
+                return $this->returnAsObject ? (object) $result : $result;
+            })
+        ;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function rawValue(string $sql, array $bindings = []): PromiseInterface
+    {
+        return $this->client->fetchValue($sql, null, $bindings);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function rawExecute(string $sql, array $bindings = []): PromiseInterface
+    {
+        return $this->client->execute($sql, $bindings);
     }
 
     /**
@@ -282,7 +327,6 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         $page = RequestHelper::getCurrentPage();
         $path = $path ?? RequestHelper::getCurrentPath();
 
-        // Promise Chaining: We first await the count(), then we fire the get() query
         return $this->count()->then(function (int $total) use ($perPage, $page, $path) {
             return $this->forPage($page, $perPage)->get()
                 ->then(function (array $items) use ($total, $perPage, $page, $path) {

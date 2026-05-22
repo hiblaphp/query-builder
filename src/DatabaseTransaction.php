@@ -7,7 +7,6 @@ namespace Hibla\QueryBuilder;
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\Interfaces\DatabaseTransactionInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
-use Hibla\Sql\Result;
 use Hibla\Sql\Transaction;
 
 /**
@@ -34,9 +33,23 @@ class DatabaseTransaction implements DatabaseTransactionInterface
      */
     public function raw(string $sql, array $bindings = []): PromiseInterface
     {
-        return $this->transaction->query($sql, $bindings)
-            ->then(fn (Result $result) => $result->fetchAll())
-        ;
+        return new QueryBuilder($this->transaction, $this->driverName)->raw($sql, $bindings);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function rawFirst(string $sql, array $bindings = []): PromiseInterface
+    {
+        return new QueryBuilder($this->transaction, $this->driverName)->rawFirst($sql, $bindings);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function rawValue(string $sql, array $bindings = []): PromiseInterface
+    {
+        return new QueryBuilder($this->transaction, $this->driverName)->rawValue($sql, $bindings);
     }
 
     /**
@@ -44,7 +57,7 @@ class DatabaseTransaction implements DatabaseTransactionInterface
      */
     public function rawExecute(string $sql, array $bindings = []): PromiseInterface
     {
-        return $this->transaction->execute($sql, $bindings);
+        return new QueryBuilder($this->transaction, $this->driverName)->rawExecute($sql, $bindings);
     }
 
     /**

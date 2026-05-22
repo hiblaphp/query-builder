@@ -16,9 +16,7 @@ class DB
 {
     private static ?DatabaseManager $manager = null;
 
-    private function __construct()
-    {
-    }
+    private function __construct() {}
 
     /**
      * Get the singleton DatabaseManager instance.
@@ -48,12 +46,24 @@ class DB
         return self::getManager()->table($table);
     }
 
-    /**
-     * Execute a raw query on the default connection.
-     */
     public static function raw(string $sql, array $bindings = []): PromiseInterface
     {
         return self::getManager()->raw($sql, $bindings);
+    }
+
+    public static function rawFirst(string $sql, array $bindings = []): PromiseInterface
+    {
+        return self::getManager()->rawFirst($sql, $bindings);
+    }
+
+    public static function rawValue(string $sql, array $bindings = []): PromiseInterface
+    {
+        return self::getManager()->rawValue($sql, $bindings);
+    }
+
+    public static function rawExecute(string $sql, array $bindings = []): PromiseInterface
+    {
+        return self::getManager()->rawExecute($sql, $bindings);
     }
 
     /**

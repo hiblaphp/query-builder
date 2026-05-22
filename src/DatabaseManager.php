@@ -50,7 +50,7 @@ class DatabaseManager implements ConnectionResolverInterface
      */
     public function connection(?string $name = null): DatabaseConnectionInterface
     {
-        $name = $name ?? $this->getDefaultConnectionName();
+        $name ??= $this->getDefaultConnectionName();
 
         if (isset($this->connections[$name])) {
             return $this->connections[$name];
@@ -130,6 +130,21 @@ class DatabaseManager implements ConnectionResolverInterface
     public function raw(string $sql, array $bindings = []): PromiseInterface
     {
         return $this->connection()->raw($sql, $bindings);
+    }
+
+    public function rawFirst(string $sql, array $bindings = []): PromiseInterface
+    {
+        return $this->connection()->rawFirst($sql, $bindings);
+    }
+
+    public function rawValue(string $sql, array $bindings = []): PromiseInterface
+    {
+        return $this->connection()->rawValue($sql, $bindings);
+    }
+
+    public function rawExecute(string $sql, array $bindings = []): PromiseInterface
+    {
+        return $this->connection()->rawExecute($sql, $bindings);
     }
 
     public function transaction(callable $callback): PromiseInterface

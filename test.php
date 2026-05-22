@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Hibla\Mysql\MysqlClient;
 use Hibla\Promise\Promise;
 use Hibla\QueryBuilder\QueryBuilder;
@@ -8,13 +10,13 @@ use function Hibla\await;
 
 require __DIR__ . '/vendor/autoload.php';
 
-$client =  new MysqlClient(
+$client = new MysqlClient(
     config: [
         'host' => '127.0.0.1',
-        'port' => 3309,
-        'username' => 'root',
-        'password' => 'Reymart1234',
-        'database' => 'guitar_lyrics',
+        'port' => 3310,
+        'database' => 'test',
+        'username' => 'test_user',
+        'password' => 'test_password',
     ],
     maxConnections: 10
 );
@@ -25,14 +27,13 @@ $start = microtime(true);
 
 $results = await(
     Promise::all([
-        $queryBuilder->raw(),
-        $queryBuilder->raw(),
-        $queryBuilder->raw(),
-        $queryBuilder->raw(),
-        $queryBuilder->raw(),
+        $queryBuilder->raw('SELECT SLEEP(1)'),
+        $queryBuilder->raw('SELECT SLEEP(1)'),
+        $queryBuilder->raw('SELECT SLEEP(1)'),
+        $queryBuilder->raw('SELECT SLEEP(1)'),
+        $queryBuilder->raw('SELECT SLEEP(1)'),
     ])
 );
 
-$end = microtime(true);
+$end = microtime(true) - $start;
 echo $end;
-print_r($results);

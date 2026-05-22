@@ -31,17 +31,13 @@ abstract class Migration
 
     /**
      * Run the migration.
-     *
-     * @return PromiseInterface<mixed>
      */
-    abstract public function up(): PromiseInterface;
+    abstract public function up(): mixed;
 
     /**
      * Reverse the migration.
-     *
-     * @return PromiseInterface<mixed>
      */
-    abstract public function down(): PromiseInterface;
+    abstract public function down(): mixed;
 
     /**
      * Get the database connection for this migration.

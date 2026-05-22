@@ -609,10 +609,11 @@ class MigrateCommand extends Command
 
     private function executeMigration(object $migration): void
     {
-        /** @var callable(): PromiseInterface<mixed> $upMethod */
-        $upMethod = [$migration, 'up'];
-        $promise = $upMethod();
-        await($promise);
+        $result = $migration->up();
+
+        if ($result instanceof PromiseInterface) {
+            await($result);
+        }
     }
 
     private function logMigration(string $relativePath, int $batchNumber, ?string $migrationConnection): void

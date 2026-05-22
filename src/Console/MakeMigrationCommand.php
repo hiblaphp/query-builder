@@ -278,38 +278,28 @@ class MakeMigrationCommand extends Command
 
 use Hibla\QueryBuilder\Schema\Blueprint;
 use Hibla\QueryBuilder\Schema\Migration;
-use Hibla\Promise\Interfaces\PromiseInterface;
 
-use function Hibla\async;
 use function Hibla\await;
 
 return new class extends Migration
 {
 {$connectionLine}    /**
      * Run the migration.
-     *
-     * @return PromiseInterface<int|null>
      */
-    public function up(): PromiseInterface
+    public function up(): void
     {
-        return async(function () {
-            await(\$this->create('{$this->table}', function (Blueprint \$table) {
-                \$table->id();
-                \$table->timestamps();
-            }));
-        });
+        await(\$this->create('{$this->table}', function (Blueprint \$table) {
+            \$table->id();
+            \$table->timestamps();
+        }));
     }
     
     /**
      * Reverse the migration.
-     *
-     * @return PromiseInterface<int>
      */
-    public function down(): PromiseInterface
+    public function down(): void
     {
-        return async(function () {
-            await(\$this->dropIfExists('{$this->table}'));
-        });
+        await(\$this->dropIfExists('{$this->table}'));
     }
 };
 ";
@@ -325,39 +315,29 @@ return new class extends Migration
 
 use Hibla\QueryBuilder\Schema\Blueprint;
 use Hibla\QueryBuilder\Schema\Migration;
-use Hibla\Promise\Interfaces\PromiseInterface;
 
-use function Hibla\async;
 use function Hibla\await;
 
 return new class extends Migration
 {
 {$connectionLine}    /**
      * Run the migration.
-     *
-     * @return PromiseInterface<int|null>
      */
-    public function up(): PromiseInterface
+    public function up(): void
     {
-        return async(function () {
-            await(\$this->table('{$this->alter}', function (Blueprint \$table) {
-                // Add columns, indexes, etc.
-            }));
-        });
+        await(\$this->table('{$this->alter}', function (Blueprint \$table) {
+            // Add columns, indexes, etc.
+        }));
     }
 
     /**
      * Reverse the migration.
-     *
-     * @return PromiseInterface<int|null>
      */
-    public function down(): PromiseInterface
+    public function down(): void
     {
-        return async(function () {
-            await(\$this->table('{$this->alter}', function (Blueprint \$table) {
-                // Reverse the changes
-            }));
-        });
+        await(\$this->table('{$this->alter}', function (Blueprint \$table) {
+            // Reverse the changes
+        }));
     }
 };
 ";
@@ -371,39 +351,28 @@ return new class extends Migration
 
         return "<?php
 
-use Hibla\QueryBuilder\Schema\Blueprint;
 use Hibla\QueryBuilder\Schema\Migration;
-use Hibla\Promise\Interfaces\PromiseInterface;
 
-use function Hibla\async;
 use function Hibla\await;
 
 return new class extends Migration
 {
 {$connectionLine}    /**
      * Run the migration.
-     *
-     * @return PromiseInterface<mixed>
      */
-    public function up(): PromiseInterface
+    public function up(): void
     {
-        return async(function () {
-            // Write your migration here
-            await(\$this->raw('-- Add your SQL here'));
-        });
+        // Write your migration here
+        await(\$this->raw('-- Add your SQL here'));
     }
 
     /**
      * Reverse the migration.
-     *
-     * @return PromiseInterface<mixed>
      */
-    public function down(): PromiseInterface
+    public function down(): void
     {
-        return async(function () {
-            // Reverse your migration here
-            await(\$this->raw('-- Add your rollback SQL here'));
-        });
+        // Reverse your migration here
+        await(\$this->raw('-- Add your rollback SQL here'));
     }
 };
 ";

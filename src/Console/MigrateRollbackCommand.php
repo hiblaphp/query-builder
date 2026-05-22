@@ -317,10 +317,11 @@ class MigrateRollbackCommand extends Command
 
     private function executeDownMethod(object $migration): void
     {
-        /** @var callable(): PromiseInterface<mixed> $downMethod */
-        $downMethod = [$migration, 'down'];
-        $promise = $downMethod();
-        await($promise);
+        $result = $migration->down();
+
+        if ($result instanceof PromiseInterface) {
+            await($result);
+        }
     }
 
     private function handleMigrationError(\Throwable $e, string $relativePath): void

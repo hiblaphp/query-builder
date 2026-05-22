@@ -10,7 +10,6 @@ use Hibla\QueryBuilder\Console\Traits\InitializeDatabase;
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
 use Hibla\QueryBuilder\Schema\MigrationRepository;
-use Hibla\QueryBuilder\Schema\SchemaBuilder;
 use InvalidArgumentException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -434,10 +433,11 @@ class MigrateResetCommand extends Command
 
     private function runDownMethod(object $migration): void
     {
-        /** @var callable(): PromiseInterface<mixed> $downMethod */
-        $downMethod = [$migration, 'down'];
-        $promise = $downMethod();
-        await($promise);
+        $result = $migration->down();
+
+        if ($result instanceof PromiseInterface) {
+            await($result);
+        }
     }
 
     private function displayRollbackSuccess(): void

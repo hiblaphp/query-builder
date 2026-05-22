@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Console;
 
-use Hibla\QueryBuilder\Console\Traits\FindProjectRoot;
+use Rcalicdan\ConfigLoader\Config;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -13,20 +13,16 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class InitCommand extends Command
 {
-    use FindProjectRoot;
-
     private SymfonyStyle $io;
-
     private ?string $projectRoot = null;
-
     private bool $force;
 
     protected function configure(): void
     {
         $this
             ->setName('init')
-            ->setDescription('Initialize PDO Query Builder configuration')
-            ->setHelp('Copies the default configuration files to your project\'s config directory.')
+            ->setDescription('Initialize Hibla Database configuration')
+            ->setHelp('Copies the default configuration files directly to your project\'s root directory.')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Overwrite existing configuration')
         ;
     }
@@ -36,44 +32,28 @@ class InitCommand extends Command
         $this->io = new SymfonyStyle($input, $output);
         $this->force = (bool) $input->getOption('force');
 
-        $this->io->title('PDO Query Builder - Initialize');
+        $this->io->title('Hibla Database - Initialize');
 
-        $this->projectRoot = $this->findProjectRoot();
+        $this->projectRoot = Config::getRootPath();
+        
         if ($this->projectRoot === null) {
-            $this->io->error('Could not find project root');
+            $this->io->error('Could not find project root. Ensure a vendor directory exists.');
 
             return Command::FAILURE;
         }
 
-        $configDir = $this->ensureConfigDirectoryExists();
-        if ($configDir === null) {
+        if ($this->copyConfigFiles($this->projectRoot) === Command::FAILURE) {
             return Command::FAILURE;
         }
 
-        if ($this->copyConfigFiles($configDir) === Command::FAILURE) {
-            return Command::FAILURE;
-        }
-
-        $this->createAsyncPdoExecutable();
+        $this->createHiblaDbExecutable();
 
         $this->promptEnvFileCreation();
 
         return Command::SUCCESS;
     }
 
-    private function ensureConfigDirectoryExists(): ?string
-    {
-        $configDir = $this->projectRoot . '/config';
-        if (! is_dir($configDir) && ! mkdir($configDir, 0755, true)) {
-            $this->io->error('Failed to create config directory');
-
-            return null;
-        }
-
-        return $configDir;
-    }
-
-    private function copyConfigFiles(string $configDir): int
+    private function copyConfigFiles(string $targetDir): int
     {
         $files = [
             'hibla-database.php' => $this->getSourceConfigPath('hibla-database.php'),
@@ -85,7 +65,7 @@ class InitCommand extends Command
         $failedFiles = [];
 
         foreach ($files as $filename => $sourceConfig) {
-            $result = $this->copyFile($filename, $sourceConfig, $configDir);
+            $result = $this->copyFile($filename, $sourceConfig, $targetDir);
 
             if ($result === 'copied') {
                 $copiedFiles[] = $filename;
@@ -97,24 +77,24 @@ class InitCommand extends Command
         }
 
         foreach ($copiedFiles as $filename) {
-            $this->io->success("✓ Configuration created: config/{$filename}");
+            $this->io->success("✓ Configuration created in project root: {$filename}");
         }
 
-        return \count($failedFiles) === 0 ? Command::SUCCESS : Command::FAILURE;
+        return count($failedFiles) === 0 ? Command::SUCCESS : Command::FAILURE;
     }
 
-    private function copyFile(string $filename, string $sourceConfig, string $configDir): string
+    private function copyFile(string $filename, string $sourceConfig, string $targetDir): string
     {
         if (! file_exists($sourceConfig)) {
-            $this->io->error("Source config not found: {$sourceConfig}");
+            $this->io->error("Source config template not found: {$sourceConfig}");
 
             return 'failed';
         }
 
-        $destConfig = $configDir . '/' . $filename;
+        $destConfig = $targetDir . '/' . $filename;
 
         if (file_exists($destConfig) && ! $this->force) {
-            if (! $this->io->confirm("File '{$filename}' already exists. Overwrite?", false)) {
+            if (! $this->io->confirm("File '{$filename}' already exists in your root folder. Overwrite?", false)) {
                 $this->io->warning("Skipped: {$filename}");
 
                 return 'skipped';
@@ -122,7 +102,7 @@ class InitCommand extends Command
         }
 
         if (! copy($sourceConfig, $destConfig)) {
-            $this->io->error("Failed to copy {$filename}");
+            $this->io->error("Failed to copy {$filename} to root");
 
             return 'failed';
         }
@@ -130,41 +110,40 @@ class InitCommand extends Command
         return 'copied';
     }
 
-    private function createAsyncPdoExecutable(): void
+    private function createHiblaDbExecutable(): void
     {
-        $asyncPdoPath = $this->projectRoot . '/db';
+        $executablePath = $this->projectRoot . '/hibla-db';
 
-        if (file_exists($asyncPdoPath) && ! $this->force) {
-            $this->io->warning('db file already exists. Use --force to overwrite.');
+        if (file_exists($executablePath) && ! $this->force) {
+            $this->io->warning('hibla-db file already exists. Use --force to overwrite.');
 
             return;
         }
 
-        $stub = $this->getAsyncPdoStub();
+        $stub = $this->getHiblaDbStub();
 
-        if (file_put_contents($asyncPdoPath, $stub) === false) {
-            $this->io->error('Failed to create db file');
+        if (file_put_contents($executablePath, $stub) === false) {
+            $this->io->error('Failed to create hibla-db file');
 
             return;
         }
 
         if (DIRECTORY_SEPARATOR === '/') {
-            chmod($asyncPdoPath, 0755);
+            chmod($executablePath, 0755);
         }
 
-        $this->io->success('✓ Created db executable');
+        $this->io->success('✓ Created hibla-db executable in project root');
         $this->io->section('Usage:');
         $this->io->listing([
-            'php db init',
-            'php db publish:templates',
-            'php db migrate',
-            'php db make:migration create_users_table',
-            'php db migrate:rollback',
-            'php db migrate:status',
+            'php hibla-db init',
+            'php hibla-db migrate',
+            'php hibla-db make:migration create_users_table',
+            'php hibla-db migrate:rollback',
+            'php hibla-db migrate:status',
         ]);
     }
 
-    private function getAsyncPdoStub(): string
+    private function getHiblaDbStub(): string
     {
         return <<<'PHP'
 #!/usr/bin/env php
@@ -184,7 +163,7 @@ use Hibla\QueryBuilder\Console\MigrateFreshCommand;
 use Hibla\QueryBuilder\Console\MigrateStatusCommand;
 use Hibla\QueryBuilder\Console\StatusCommand;
 
-$application = new Application('Hibla Query Builder', '1.0.0');
+$application = new Application('Hibla Database CLI', '1.0.0');
 
 $application->add(new InitCommand());
 $application->add(new PublishTemplatesCommand());
@@ -205,31 +184,23 @@ PHP;
     private function promptEnvFileCreation(): void
     {
         if ($this->projectRoot !== null && ! file_exists($this->projectRoot . '/.env')) {
-            $this->io->section('Create .env file with:');
+            $this->io->section('Create .env file in project root with:');
             $this->io->listing([
                 'DB_CONNECTION=mysql',
                 'DB_HOST=127.0.0.1',
                 'DB_PORT=3306',
-                'DB_DATABASE=your_database',
+                'DB_DATABASE=test',
                 'DB_USERNAME=root',
                 'DB_PASSWORD=',
             ]);
         }
     }
 
+   /**
+     * Get the absolute path to the configuration templates inside this package.
+     */
     private function getSourceConfigPath(string $filename): string
     {
-        $paths = [
-            __DIR__ . "/../../config/{$filename}",
-            __DIR__ . "/../../../config/{$filename}",
-        ];
-
-        foreach ($paths as $path) {
-            if (file_exists($path)) {
-                return $path;
-            }
-        }
-
-        return __DIR__ . "/../../config/{$filename}";
+        return dirname(__DIR__, 2) . '/' . $filename;
     }
 }

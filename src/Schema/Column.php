@@ -38,29 +38,55 @@ use Rcalicdan\ConfigLoader\Config;
 class Column
 {
     private string $name;
+
     private string $type;
+
     private ?int $length;
+
     private ?int $precision;
+
     private ?int $scale;
+
     private bool $nullable = false;
+
     private mixed $default = null;
+
     private bool $hasDefault = false;
+
     private bool $unsigned = false;
+
     private bool $autoIncrement = false;
+
     private bool $primary = false;
+
     private bool $unique = false;
+
     private ?string $comment = null;
+
     private ?string $after = null;
+
     private bool $useCurrent = false;
+
     private bool $useCurrentOnUpdate = false;
+
     private ?string $onUpdate = null;
-    /** @var list<string> */
+
+    /**
+     * @var list<string>
+     */
     private array $enumValues = [];
+
     private ?ForeignKey $foreignKey = null;
+
     private ?Blueprint $blueprint = null;
+
     private static ?DoctrineInflector $inflector = null;
-    /** @var list<TColumnIndex> */
+
+    /**
+     * @var list<TColumnIndex>
+     */
     private array $columnIndexes = [];
+
     private ?string $timezone = null;
 
     public function __construct(
@@ -76,7 +102,7 @@ class Column
         $this->precision = $precision;
         $this->scale = $scale;
 
-        if (in_array($type, ['TIMESTAMP', 'DATETIME', 'DATE'], true)) {
+        if (\in_array($type, ['TIMESTAMP', 'DATETIME', 'DATE'], true)) {
             /** @var string $tz */
             $tz = Config::get('pdo-schema.timezone', 'UTC');
             $this->timezone = $tz;
@@ -295,6 +321,7 @@ class Column
 
     /**
      * Get the enum values for the column.
+     *
      * @return list<string>
      */
     public function getEnumValues(): array
@@ -320,6 +347,7 @@ class Column
 
     /**
      * Get the indexes for the column.
+     *
      * @return list<TColumnIndex>
      */
     public function getColumnIndexes(): array
@@ -473,6 +501,7 @@ class Column
 
     /**
      * Set the enum values for the column.
+     *
      * @param list<string> $values
      */
     public function setEnumValues(array $values): self
@@ -681,6 +710,7 @@ class Column
 
     /**
      * Create a new column instance with modified attributes.
+     *
      * @param array<string, mixed> $modifications
      */
     public function copyWithModifications(array $modifications): self
@@ -689,16 +719,16 @@ class Column
 
         foreach ($modifications as $attribute => $value) {
             match ($attribute) {
-                'type' => is_string($value) ? $column->setType($value) : null,
-                'length' => (is_int($value) || $value === null) ? $column->setLength($value) : null,
-                'precision' => (is_int($value) || $value === null) ? $column->setPrecision($value) : null,
-                'scale' => (is_int($value) || $value === null) ? $column->setScale($value) : null,
-                'nullable' => is_bool($value) ? $column->nullable($value) : null,
+                'type' => \is_string($value) ? $column->setType($value) : null,
+                'length' => (\is_int($value) || $value === null) ? $column->setLength($value) : null,
+                'precision' => (\is_int($value) || $value === null) ? $column->setPrecision($value) : null,
+                'scale' => (\is_int($value) || $value === null) ? $column->setScale($value) : null,
+                'nullable' => \is_bool($value) ? $column->nullable($value) : null,
                 'default' => $column->default($value),
-                'unsigned' => is_bool($value) ? $column->unsigned($value) : null,
-                'unique' => is_bool($value) ? $column->unique($value) : null,
-                'comment' => is_string($value) ? $column->comment($value) : null,
-                'timezone' => is_string($value) ? $column->timezone($value) : null,
+                'unsigned' => \is_bool($value) ? $column->unsigned($value) : null,
+                'unique' => \is_bool($value) ? $column->unique($value) : null,
+                'comment' => \is_string($value) ? $column->comment($value) : null,
+                'timezone' => \is_string($value) ? $column->timezone($value) : null,
                 default => null,
             };
         }
@@ -708,6 +738,7 @@ class Column
 
     /**
      * Convert the column to an array representation.
+     *
      * @return TColumnArray
      */
     public function toArray(): array
@@ -739,6 +770,7 @@ class Column
 
     /**
      * Create a column from an array representation.
+     *
      * @param TColumnArray $data
      */
     public static function fromArray(array $data): self

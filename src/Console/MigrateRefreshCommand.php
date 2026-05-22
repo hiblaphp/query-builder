@@ -19,9 +19,13 @@ class MigrateRefreshCommand extends Command
     use ValidateConnection;
 
     private SymfonyStyle $io;
+
     private OutputInterface $output;
+
     private ?string $connection = null;
+
     private ?string $path = null;
+
     private ?int $step = null;
 
     protected function configure(): void
@@ -78,7 +82,7 @@ class MigrateRefreshCommand extends Command
     {
         $option = $input->getOption($optionName);
 
-        return (is_string($option) && $option !== '') ? $option : null;
+        return (\is_string($option) && $option !== '') ? $option : null;
     }
 
     private function extractStepOption(InputInterface $input): ?int
@@ -270,6 +274,7 @@ class MigrateRefreshCommand extends Command
      * Display filtered output based on keywords
      *
      * @param list<string> $keywords
+     *
      * @return int Number of lines displayed
      */
     private function displayFilteredOutput(string $content, array $keywords): int

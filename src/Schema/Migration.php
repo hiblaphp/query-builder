@@ -155,6 +155,7 @@ abstract class Migration
      * Drop a column from a table.
      *
      * @param string|list<string> $columns
+     *
      * @return PromiseInterface<int|list<int>|null>
      */
     protected function dropColumn(string $table, string|array $columns): PromiseInterface
@@ -176,6 +177,7 @@ abstract class Migration
      * Drop an index from a table.
      *
      * @param string|list<string> $index
+     *
      * @return PromiseInterface<int|list<int>|null>
      */
     protected function dropIndex(string $table, string|array $index): PromiseInterface
@@ -187,6 +189,7 @@ abstract class Migration
      * Drop a foreign key from a table.
      *
      * @param string|list<string> $foreignKey
+     *
      * @return PromiseInterface<int|list<int>|null>
      */
     protected function dropForeign(string $table, string|array $foreignKey): PromiseInterface
@@ -198,6 +201,7 @@ abstract class Migration
      * Execute raw SQL.
      *
      * @param array<int|string, mixed> $bindings
+     *
      * @return PromiseInterface<array<int, array<string, mixed>>>
      */
     protected function raw(string $sql, array $bindings = []): PromiseInterface
@@ -209,6 +213,7 @@ abstract class Migration
      * Execute a raw statement.
      *
      * @param array<int|string, mixed> $bindings
+     *
      * @return PromiseInterface<int>
      */
     protected function rawExecute(string $sql, array $bindings = []): PromiseInterface

@@ -28,7 +28,7 @@ trait ValidateConnection
             );
         }
 
-        if (! in_array($connection, $availableConnections, true)) {
+        if (! \in_array($connection, $availableConnections, true)) {
             $availableList = implode(', ', $availableConnections);
 
             throw new InvalidArgumentException(
@@ -48,13 +48,13 @@ trait ValidateConnection
         try {
             $dbConfig = Config::get('async-database');
 
-            if (! is_array($dbConfig)) {
+            if (! \is_array($dbConfig)) {
                 return [];
             }
 
             $connections = $dbConfig['connections'] ?? [];
 
-            if (! is_array($connections)) {
+            if (! \is_array($connections)) {
                 return [];
             }
 

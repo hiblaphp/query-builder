@@ -24,14 +24,16 @@ use Rcalicdan\QueryBuilderPrimitives\QueryBuilderBase;
 class Builder extends QueryBuilderBase
 {
     private bool $returnAsObject = false;
+
     private ?AsyncPDOConnection $connection = null;
+
     private ?ConnectionInterface $connectionAdapter = null;
 
     /**
      * Create a new AsyncQueryBuilder instance.
      *
-     * @param  string  $table  The table name to query.
-     * @param  AsyncPDOConnection|null  $connection  Optional connection instance
+     * @param string $table The table name to query.
+     * @param AsyncPDOConnection|null $connection Optional connection instance
      */
     final public function __construct(string $table = '', ?AsyncPDOConnection $connection = null)
     {
@@ -135,7 +137,8 @@ class Builder extends QueryBuilderBase
     /**
      * Convert array results to objects.
      *
-     * @param  array<int, array<string, mixed>>  $results
+     * @param array<int, array<string, mixed>> $results
+     *
      * @return array<int, object>
      */
     private function convertToObjects(array $results): array
@@ -194,6 +197,7 @@ class Builder extends QueryBuilderBase
      * Find a record by ID or throw an exception if not found.
      *
      * @return PromiseInterface<array<string, mixed>|\stdClass>
+     *
      * @throws \RuntimeException When no record is found.
      */
     public function findOrFail(mixed $id, string $column = 'id'): PromiseInterface
@@ -201,7 +205,7 @@ class Builder extends QueryBuilderBase
         return async(function () use ($id, $column): array|\stdClass {
             $result = await($this->find($id, $column));
             if ($result === null || $result === false) {
-                $idString = is_scalar($id) ? (string) $id : 'complex_type';
+                $idString = \is_scalar($id) ? (string) $id : 'complex_type';
 
                 throw new \RuntimeException("Record not found with {$column} = {$idString}");
             }
@@ -224,7 +228,7 @@ class Builder extends QueryBuilderBase
                 return null;
             }
 
-            if (is_array($result)) {
+            if (\is_array($result)) {
                 return $result[$column] ?? null;
             }
 
@@ -235,7 +239,8 @@ class Builder extends QueryBuilderBase
     /**
      * Map the query results using a callback function.
      *
-     * @param  callable(array<string, mixed>|object): mixed  $callback
+     * @param callable(array<string, mixed>|object): mixed $callback
+     *
      * @return PromiseInterface<array<int, mixed>>
      */
     public function map(callable $callback): PromiseInterface
@@ -250,7 +255,8 @@ class Builder extends QueryBuilderBase
     /**
      * Get the first result and map it using a callback function.
      *
-     * @param  callable(array<string, mixed>|object): mixed  $callback
+     * @param callable(array<string, mixed>|object): mixed $callback
+     *
      * @return PromiseInterface<mixed|false>
      */
     public function firstMap(callable $callback): PromiseInterface
@@ -278,7 +284,8 @@ class Builder extends QueryBuilderBase
     /**
      * Get the maximum value of a column.
      *
-     * @param  string  $column  The column to get max value from
+     * @param string $column The column to get max value from
+     *
      * @return PromiseInterface<mixed> A promise that resolves to the maximum value
      */
     public function max(string $column): PromiseInterface
@@ -291,7 +298,8 @@ class Builder extends QueryBuilderBase
     /**
      * Get the minimum value of a column.
      *
-     * @param  string  $column  The column to get min value from
+     * @param string $column The column to get min value from
+     *
      * @return PromiseInterface<mixed> A promise that resolves to the minimum value
      */
     public function min(string $column): PromiseInterface
@@ -304,7 +312,8 @@ class Builder extends QueryBuilderBase
     /**
      * Get the average value of a column.
      *
-     * @param  string  $column  The column to get average from
+     * @param string $column The column to get average from
+     *
      * @return PromiseInterface<mixed> A promise that resolves to the average value
      */
     public function avg(string $column): PromiseInterface
@@ -317,7 +326,8 @@ class Builder extends QueryBuilderBase
     /**
      * Get the sum of a column.
      *
-     * @param  string  $column  The column to sum
+     * @param string $column The column to sum
+     *
      * @return PromiseInterface<mixed> A promise that resolves to the sum value
      */
     public function sum(string $column): PromiseInterface
@@ -344,7 +354,8 @@ class Builder extends QueryBuilderBase
     /**
      * Insert a single record.
      *
-     * @param  array<string, mixed>  $data
+     * @param array<string, mixed> $data
+     *
      * @return PromiseInterface<int>
      */
     public function insert(array $data): PromiseInterface
@@ -360,9 +371,10 @@ class Builder extends QueryBuilderBase
     /**
      * Insert or update a record based on unique columns.
      *
-     * @param  array<string, mixed>|array<array<string, mixed>>  $data
-     * @param  array<string>  $uniqueColumns
-     * @param  array<string>  $updateColumns
+     * @param array<string, mixed>|array<array<string, mixed>> $data
+     * @param array<string> $uniqueColumns
+     * @param array<string> $updateColumns
+     *
      * @return PromiseInterface<int>
      */
     public function upsert(array $data, array $uniqueColumns, array $updateColumns): PromiseInterface
@@ -380,13 +392,14 @@ class Builder extends QueryBuilderBase
     /**
      * Flatten batch parameters from nested arrays to a single flat array.
      *
-     * @param  array<string, mixed>|array<int, array<string, mixed>>  $data
+     * @param array<string, mixed>|array<int, array<string, mixed>> $data
+     *
      * @return array<int, mixed>
      */
     protected function flattenBatchParameters(array $data): array
     {
         $firstItem = reset($data);
-        $isBatch = is_array($firstItem) && ! isset($firstItem[0]);
+        $isBatch = \is_array($firstItem) && ! isset($firstItem[0]);
 
         if (! $isBatch) {
             return array_values($data);
@@ -404,7 +417,8 @@ class Builder extends QueryBuilderBase
     /**
      * Insert multiple records in a batch operation.
      *
-     * @param  array<array<string, mixed>>  $data
+     * @param array<array<string, mixed>> $data
+     *
      * @return PromiseInterface<int>
      */
     public function insertBatch(array $data): PromiseInterface
@@ -416,7 +430,7 @@ class Builder extends QueryBuilderBase
         $sql = $this->buildInsertBatchQuery($data);
         $bindings = [];
         foreach ($data as $row) {
-            if (is_array($row)) {
+            if (\is_array($row)) {
                 $bindings = array_merge($bindings, array_values($row));
             }
         }
@@ -427,7 +441,8 @@ class Builder extends QueryBuilderBase
     /**
      * Create a new record (alias for insert).
      *
-     * @param  array<string, mixed>  $data
+     * @param array<string, mixed> $data
+     *
      * @return PromiseInterface<int>
      */
     public function create(array $data): PromiseInterface
@@ -438,7 +453,8 @@ class Builder extends QueryBuilderBase
     /**
      * Update records matching the query conditions.
      *
-     * @param  array<string, mixed>  $data
+     * @param array<string, mixed> $data
+     *
      * @return PromiseInterface<int>
      */
     public function update(array $data): PromiseInterface
@@ -512,7 +528,7 @@ class Builder extends QueryBuilderBase
             $query = CursorPaginationHelper::applyCursor($this, $cursor, $cursorColumn);
             $results = await($query->limit($perPage + 1)->get());
 
-            $hasMore = count($results) > $perPage;
+            $hasMore = \count($results) > $perPage;
             if ($hasMore) {
                 array_pop($results);
             }

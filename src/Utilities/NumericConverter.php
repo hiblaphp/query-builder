@@ -13,6 +13,7 @@ class NumericConverter
      * Convert numeric string values to int or float in a result set.
      *
      * @param array<int, array<string, mixed>> $results
+     *
      * @return array<int, array<string, mixed>>
      */
     public static function convertResultSet(array $results): array
@@ -22,7 +23,7 @@ class NumericConverter
         }
 
         $firstRow = reset($results);
-        if ($firstRow === false || ! is_array($firstRow)) {
+        if ($firstRow === false || ! \is_array($firstRow)) {
             return $results;
         }
 
@@ -41,6 +42,7 @@ class NumericConverter
      *
      * @param array<string, mixed> $row
      * @param array<int, string>|null $columnKeys Optional pre-computed column keys for performance
+     *
      * @return array<string, mixed>
      */
     public static function convertRowArray(array $row, ?array $columnKeys = null): array
@@ -56,11 +58,12 @@ class NumericConverter
      * Time Complexity: O(1)
      *
      * @param mixed $value
+     *
      * @return mixed
      */
     public static function convertValue(mixed $value): mixed
     {
-        if (is_string($value) && is_numeric($value)) {
+        if (\is_string($value) && is_numeric($value)) {
             return $value + 0;
         }
 
@@ -73,12 +76,13 @@ class NumericConverter
      *
      * @param array<string, mixed> &$row
      * @param array<int, string> $columnKeys
+     *
      * @return void
      */
     private static function convertRow(array &$row, array $columnKeys): void
     {
         foreach ($columnKeys as $key) {
-            if (isset($row[$key]) && is_string($row[$key]) && is_numeric($row[$key])) {
+            if (isset($row[$key]) && \is_string($row[$key]) && is_numeric($row[$key])) {
                 $row[$key] += 0;
             }
         }

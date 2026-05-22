@@ -17,9 +17,13 @@ use Hibla\QueryBuilder\Schema\SchemaCompiler;
 class PostgreSQLSchemaCompiler implements SchemaCompiler
 {
     private bool $useNotValidConstraints = false;
+
     private PostgreSQLTypeMapper $typeMapper;
+
     private PostgreSQLDefaultValueCompiler $defaultCompiler;
+
     private PostgreSQLIndexCompiler $indexCompiler;
+
     private PostgreSQLForeignKeyCompiler $foreignKeyCompiler;
 
     public function __construct()
@@ -45,7 +49,7 @@ class PostgreSQLSchemaCompiler implements SchemaCompiler
         }
 
         foreach ($indexDefinitions as $indexDef) {
-            if (in_array($indexDef->getType(), ['PRIMARY', 'UNIQUE'], true)) {
+            if (\in_array($indexDef->getType(), ['PRIMARY', 'UNIQUE'], true)) {
                 $columnDefinitions[] = '  '.$this->indexCompiler->compileIndexDefinition($indexDef);
             }
         }
@@ -101,11 +105,12 @@ class PostgreSQLSchemaCompiler implements SchemaCompiler
         $statements = array_merge($statements, $this->compileAddForeignKeys($table, $blueprint->getForeignKeys()));
         $statements = array_merge($statements, $this->compileRenameTable($table, $blueprint->getCommands()));
 
-        return count($statements) === 1 ? $statements[0] : $statements;
+        return \count($statements) === 1 ? $statements[0] : $statements;
     }
 
     /**
      * @param array<int, string> $columns
+     *
      * @return list<string>
      */
     private function compileDropColumns(string $table, array $columns): array
@@ -120,6 +125,7 @@ class PostgreSQLSchemaCompiler implements SchemaCompiler
 
     /**
      * @param array<int, string> $foreignKeys
+     *
      * @return list<string>
      */
     private function compileDropForeignKeys(string $table, array $foreignKeys): array
@@ -134,6 +140,7 @@ class PostgreSQLSchemaCompiler implements SchemaCompiler
 
     /**
      * @param list<list<string>> $indexes
+     *
      * @return list<string>
      */
     private function compileDropIndexes(string $table, array $indexes): array
@@ -154,6 +161,7 @@ class PostgreSQLSchemaCompiler implements SchemaCompiler
 
     /**
      * @param array<int, array{from: string, to: string}> $renames
+     *
      * @return list<string>
      */
     private function compileRenameColumns(string $table, array $renames): array
@@ -168,6 +176,7 @@ class PostgreSQLSchemaCompiler implements SchemaCompiler
 
     /**
      * @param array<int, Column> $columns
+     *
      * @return list<string>
      */
     private function compileModifyColumns(string $table, array $columns): array
@@ -182,6 +191,7 @@ class PostgreSQLSchemaCompiler implements SchemaCompiler
 
     /**
      * @param array<int, Column> $columns
+     *
      * @return list<string>
      */
     private function compileAddColumns(string $table, array $columns): array
@@ -196,6 +206,7 @@ class PostgreSQLSchemaCompiler implements SchemaCompiler
 
     /**
      * @param array<int, IndexDefinition> $indexes
+     *
      * @return list<string>
      */
     private function compileAddIndexes(string $table, array $indexes): array
@@ -210,6 +221,7 @@ class PostgreSQLSchemaCompiler implements SchemaCompiler
 
     /**
      * @param array<int, ForeignKey> $foreignKeys
+     *
      * @return list<string>
      */
     private function compileAddForeignKeys(string $table, array $foreignKeys): array
@@ -228,13 +240,14 @@ class PostgreSQLSchemaCompiler implements SchemaCompiler
 
     /**
      * @param array<int, array{type: string, to?: string}> $commands
+     *
      * @return list<string>
      */
     private function compileRenameTable(string $table, array $commands): array
     {
         $statements = [];
         foreach ($commands as $command) {
-            if ($command['type'] === 'rename' && isset($command['to']) && is_string($command['to'])) {
+            if ($command['type'] === 'rename' && isset($command['to']) && \is_string($command['to'])) {
                 $statements[] = $this->compileRename($table, $command['to']);
             }
         }

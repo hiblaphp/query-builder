@@ -14,7 +14,7 @@ class CursorPaginationHelper
      */
     public static function decodeCursor(?string $cursor): string|false
     {
-        if (! is_string($cursor) || $cursor === '') {
+        if (! \is_string($cursor) || $cursor === '') {
             return false;
         }
 
@@ -30,7 +30,7 @@ class CursorPaginationHelper
             return null;
         }
 
-        if (! is_scalar($value) && ! (is_object($value) && method_exists($value, '__toString'))) {
+        if (! \is_scalar($value) && ! (\is_object($value) && method_exists($value, '__toString'))) {
             return null;
         }
 
@@ -44,7 +44,7 @@ class CursorPaginationHelper
      */
     public static function extractColumnValue(array|object $item, string $column): mixed
     {
-        if (is_array($item)) {
+        if (\is_array($item)) {
             return $item[$column] ?? null;
         }
 
@@ -63,7 +63,7 @@ class CursorPaginationHelper
         string $cursorColumn,
         bool $hasMore
     ): ?string {
-        if (! $hasMore || count($results) === 0) {
+        if (! $hasMore || \count($results) === 0) {
             return null;
         }
 
@@ -80,6 +80,7 @@ class CursorPaginationHelper
      * @param Builder $builder
      * @param string|null $cursor
      * @param string $cursorColumn
+     *
      * @return Builder
      */
     public static function applyCursor(

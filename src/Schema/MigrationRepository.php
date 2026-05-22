@@ -12,7 +12,9 @@ use Rcalicdan\ConfigLoader\Config;
 class MigrationRepository
 {
     private string $table;
+
     private string $driver;
+
     private ?string $connection = null;
 
     /**
@@ -33,28 +35,28 @@ class MigrationRepository
         try {
             $dbConfig = Config::get('async-database');
 
-            if (! is_array($dbConfig)) {
+            if (! \is_array($dbConfig)) {
                 return 'mysql';
             }
 
             $connectionName = $this->connection ?? ($dbConfig['default'] ?? 'mysql');
-            if (! is_string($connectionName)) {
+            if (! \is_string($connectionName)) {
                 return 'mysql';
             }
 
             $connections = $dbConfig['connections'] ?? [];
-            if (! is_array($connections)) {
+            if (! \is_array($connections)) {
                 return 'mysql';
             }
 
             $connectionConfig = $connections[$connectionName] ?? [];
-            if (! is_array($connectionConfig)) {
+            if (! \is_array($connectionConfig)) {
                 return 'mysql';
             }
 
             $driver = $connectionConfig['driver'] ?? 'mysql';
 
-            return is_string($driver) ? strtolower($driver) : 'mysql';
+            return \is_string($driver) ? strtolower($driver) : 'mysql';
         } catch (\Throwable $e) {
             return 'mysql';
         }
@@ -130,6 +132,7 @@ class MigrationRepository
      * Get the list of migrations that were part of the last batch.
      *
      * @param int $steps The number of batches to roll back.
+     *
      * @return PromiseInterface<array<int, array<string, mixed>>> Resolves with a list of migration records.
      */
     public function getMigrations(int $steps): PromiseInterface
@@ -163,6 +166,7 @@ class MigrationRepository
      *
      * @param string $file The migration file name.
      * @param int $batch The batch number.
+     *
      * @return PromiseInterface<int> Resolves with the number of affected rows.
      */
     public function log(string $file, int $batch): PromiseInterface
@@ -179,6 +183,7 @@ class MigrationRepository
      * Remove a migration from the log.
      *
      * @param string $migration The migration file name.
+     *
      * @return PromiseInterface<int> Resolves with the number of affected rows.
      */
     public function delete(string $migration): PromiseInterface

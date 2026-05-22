@@ -26,9 +26,13 @@ class MigrateResetCommand extends Command
     use ValidateConnection;
 
     private SymfonyStyle $io;
+
     private OutputInterface $output;
+
     private ?string $projectRoot = null;
+
     private MigrationRepository $repository;
+
     private ?string $connection = null;
 
     protected function configure(): void
@@ -95,7 +99,7 @@ class MigrateResetCommand extends Command
 
     private function parseConnectionOption(mixed $connectionOption): ?string
     {
-        return (is_string($connectionOption) && $connectionOption !== '') ? $connectionOption : null;
+        return (\is_string($connectionOption) && $connectionOption !== '') ? $connectionOption : null;
     }
 
     private function displayConnectionInfo(): void
@@ -107,7 +111,7 @@ class MigrateResetCommand extends Command
 
     private function parsePathOption(mixed $pathOption): ?string
     {
-        return is_string($pathOption) && $pathOption !== '' ? $pathOption : null;
+        return \is_string($pathOption) && $pathOption !== '' ? $pathOption : null;
     }
 
     private function displayPathInfo(?string $path): void
@@ -167,7 +171,7 @@ class MigrateResetCommand extends Command
         /** @var list<array<string, mixed>> $allMigrations */
         $allMigrations = await($this->repository->getRan());
 
-        if (count($allMigrations) === 0) {
+        if (\count($allMigrations) === 0) {
             return 0;
         }
 
@@ -189,6 +193,7 @@ class MigrateResetCommand extends Command
      * Filter migrations by path and connection.
      *
      * @param list<array<string, mixed>> $migrations
+     *
      * @return list<array<string, mixed>>|null
      */
     private function filterMigrations(array $migrations, ?string $path): ?array
@@ -214,6 +219,7 @@ class MigrateResetCommand extends Command
      * Filter migrations by path.
      *
      * @param list<array<string, mixed>> $migrations
+     *
      * @return list<array<string, mixed>>|null
      */
     private function filterByPath(array $migrations, string $path): ?array
@@ -222,10 +228,10 @@ class MigrateResetCommand extends Command
         $filtered = array_filter($migrations, function ($migration) use ($normalizedPath) {
             $migrationPath = $migration['migration'] ?? '';
 
-            return is_string($migrationPath) && str_starts_with($migrationPath, $normalizedPath);
+            return \is_string($migrationPath) && str_starts_with($migrationPath, $normalizedPath);
         });
 
-        if (count($filtered) === 0) {
+        if (\count($filtered) === 0) {
             $this->io->warning("No migrations found in path: {$path}");
 
             return null;
@@ -238,6 +244,7 @@ class MigrateResetCommand extends Command
      * Filter migrations by connection.
      *
      * @param list<array<string, mixed>> $migrations
+     *
      * @return list<array<string, mixed>>|null
      */
     private function filterByConnection(array $migrations): ?array
@@ -246,7 +253,7 @@ class MigrateResetCommand extends Command
             return $this->migrationBelongsToConnection($migration, $this->connection);
         });
 
-        if (count($filtered) === 0) {
+        if (\count($filtered) === 0) {
             $this->io->warning("No migrations found for connection: {$this->connection}");
 
             return null;
@@ -281,7 +288,7 @@ class MigrateResetCommand extends Command
     private function migrationBelongsToConnection(array $migrationData, ?string $connection): bool
     {
         $relativePath = $migrationData['migration'] ?? null;
-        if (! is_string($relativePath)) {
+        if (! \is_string($relativePath)) {
             return false;
         }
 
@@ -309,7 +316,7 @@ class MigrateResetCommand extends Command
     {
         $migration = require $file;
 
-        return is_object($migration) ? $migration : null;
+        return \is_object($migration) ? $migration : null;
     }
 
     private function extractMigrationConnection(object $migration): ?string
@@ -320,7 +327,7 @@ class MigrateResetCommand extends Command
 
         $connection = $migration->getConnection();
 
-        return is_string($connection) ? $connection : null;
+        return \is_string($connection) ? $connection : null;
     }
 
     private function compareConnections(?string $migrationConnection, ?string $targetConnection): bool
@@ -338,7 +345,7 @@ class MigrateResetCommand extends Command
     private function resetMigration(array $migrationData): bool
     {
         $relativePath = $migrationData['migration'] ?? null;
-        if (! is_string($relativePath)) {
+        if (! \is_string($relativePath)) {
             $this->io->warning('Skipping invalid migration record');
 
             return false;
@@ -394,7 +401,7 @@ class MigrateResetCommand extends Command
 
         $declaredConnection = $migration->getConnection();
 
-        if (is_string($declaredConnection)) {
+        if (\is_string($declaredConnection)) {
             return $declaredConnection;
         }
 

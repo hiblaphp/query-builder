@@ -16,7 +16,9 @@ class InitCommand extends Command
     use FindProjectRoot;
 
     private SymfonyStyle $io;
+
     private ?string $projectRoot = null;
+
     private bool $force;
 
     protected function configure(): void
@@ -98,7 +100,7 @@ class InitCommand extends Command
             $this->io->success("✓ Configuration created: config/{$filename}");
         }
 
-        return count($failedFiles) === 0 ? Command::SUCCESS : Command::FAILURE;
+        return \count($failedFiles) === 0 ? Command::SUCCESS : Command::FAILURE;
     }
 
     private function copyFile(string $filename, string $sourceConfig, string $configDir): string

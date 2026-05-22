@@ -17,7 +17,9 @@ class PublishTemplatesCommand extends Command
     use FindProjectRoot;
 
     private SymfonyStyle $io;
+
     private ?string $projectRoot = null;
+
     private bool $force;
 
     protected function configure(): void
@@ -83,7 +85,7 @@ class PublishTemplatesCommand extends Command
     {
         $customPath = $input->getOption('path');
 
-        if (is_string($customPath) && $customPath !== '') {
+        if (\is_string($customPath) && $customPath !== '') {
             return $this->resolveCustomPath($customPath);
         }
 
@@ -101,7 +103,7 @@ class PublishTemplatesCommand extends Command
         try {
             $dbConfig = Config::get('async-database');
 
-            if (! is_array($dbConfig)) {
+            if (! \is_array($dbConfig)) {
                 return null;
             }
 
@@ -125,7 +127,7 @@ class PublishTemplatesCommand extends Command
     {
         $paginationConfig = $dbConfig['pagination'] ?? [];
 
-        if (! is_array($paginationConfig)) {
+        if (! \is_array($paginationConfig)) {
             return null;
         }
 
@@ -134,7 +136,7 @@ class PublishTemplatesCommand extends Command
 
     private function validateTemplatesPath(mixed $templatesPath): ?string
     {
-        if (! is_string($templatesPath)) {
+        if (! \is_string($templatesPath)) {
             return null;
         }
 
@@ -359,8 +361,8 @@ class PublishTemplatesCommand extends Command
     {
         return [
             $this->buildVendorPath(),
-            $this->buildRelativePath(dirname(__DIR__)),
-            $this->buildRelativePath(dirname(__DIR__, 2)),
+            $this->buildRelativePath(\dirname(__DIR__)),
+            $this->buildRelativePath(\dirname(__DIR__, 2)),
             $this->buildRelativePath(__DIR__ . DIRECTORY_SEPARATOR . '..'),
         ];
     }
@@ -401,8 +403,8 @@ class PublishTemplatesCommand extends Command
     {
         return [
             'Project vendor' => $this->buildVendorPath(),
-            'Package development' => $this->buildRelativePath(dirname(__DIR__)),
-            'Alternative location' => $this->buildRelativePath(dirname(__DIR__, 2)),
+            'Package development' => $this->buildRelativePath(\dirname(__DIR__)),
+            'Alternative location' => $this->buildRelativePath(\dirname(__DIR__, 2)),
             'Relative path' => $this->buildRelativePath(__DIR__ . DIRECTORY_SEPARATOR . '..'),
         ];
     }

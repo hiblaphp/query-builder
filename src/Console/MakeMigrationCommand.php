@@ -20,12 +20,19 @@ class MakeMigrationCommand extends Command
     use FindProjectRoot;
 
     private SymfonyStyle $io;
+
     private ?string $projectRoot = null;
+
     private string $migrationsPath;
+
     private string $migrationName;
+
     private ?string $table;
+
     private ?string $alter;
+
     private ?string $connection = null;
+
     private ?string $subdirectory = null;
 
     protected function configure(): void
@@ -48,14 +55,14 @@ class MakeMigrationCommand extends Command
         $this->io->title('Create Migration');
 
         $connectionOption = $input->getOption('connection');
-        $this->connection = (is_string($connectionOption) && $connectionOption !== '') ? $connectionOption : null;
+        $this->connection = (\is_string($connectionOption) && $connectionOption !== '') ? $connectionOption : null;
 
         if ($this->connection !== null) {
             $this->io->note("Using database connection: {$this->connection}");
         }
 
         $migrationNameValue = $input->getArgument('name');
-        if (! is_string($migrationNameValue) || trim($migrationNameValue) === '') {
+        if (! \is_string($migrationNameValue) || trim($migrationNameValue) === '') {
             $this->io->error('The migration name must be a non-empty string.');
 
             return Command::FAILURE;
@@ -65,17 +72,17 @@ class MakeMigrationCommand extends Command
 
         $tableOption = $input->getOption('table');
         $createOption = $input->getOption('create');
-        $this->table = is_string($tableOption) ? $tableOption : (is_string($createOption) ? $createOption : null);
+        $this->table = \is_string($tableOption) ? $tableOption : (\is_string($createOption) ? $createOption : null);
 
         $alterOption = $input->getOption('alter');
-        $this->alter = is_string($alterOption) ? $alterOption : null;
+        $this->alter = \is_string($alterOption) ? $alterOption : null;
 
         if ($this->table === null && $this->alter === null) {
             $this->autoDetectTableOperation($migrationNameValue);
         }
 
         $pathOption = $input->getOption('path');
-        if (is_string($pathOption) && $pathOption !== '') {
+        if (\is_string($pathOption) && $pathOption !== '') {
             $this->subdirectory = trim($pathOption, '/\\');
         }
 
@@ -242,7 +249,7 @@ class MakeMigrationCommand extends Command
         if ($files === false) {
             $files = [];
         }
-        $nextNumber = count($files) + 1;
+        $nextNumber = \count($files) + 1;
         $paddedNumber = str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
 
         return "{$paddedNumber}_{$this->migrationName}.php";

@@ -14,7 +14,9 @@ use Rcalicdan\ConfigLoader\Config;
 class BuilderConfiguration
 {
     private static ?string $cachedDriver = null;
+
     private static bool $driverDetected = false;
+
     private static bool $templatesConfigured = false;
 
     /**
@@ -54,18 +56,18 @@ class BuilderConfiguration
         try {
             $dbConfig = Config::get('async-database');
 
-            if (! is_array($dbConfig)) {
+            if (! \is_array($dbConfig)) {
                 return;
             }
 
             $paginationConfig = $dbConfig['pagination'] ?? [];
-            if (! is_array($paginationConfig)) {
+            if (! \is_array($paginationConfig)) {
                 return;
             }
 
             $templatesPath = $paginationConfig['templates_path'] ?? null;
 
-            if (is_string($templatesPath) && trim($templatesPath) !== '' && is_dir($templatesPath)) {
+            if (\is_string($templatesPath) && trim($templatesPath) !== '' && is_dir($templatesPath)) {
                 Paginator::setTemplatesPath($templatesPath);
                 CursorPaginator::setTemplatesPath($templatesPath);
             }
@@ -93,27 +95,27 @@ class BuilderConfiguration
     {
         $dbConfig = Config::get('async-database');
 
-        if (! is_array($dbConfig)) {
+        if (! \is_array($dbConfig)) {
             return null;
         }
 
         $defaultConnection = $dbConfig['default'] ?? null;
-        if (! is_string($defaultConnection)) {
+        if (! \is_string($defaultConnection)) {
             return null;
         }
 
         $connections = $dbConfig['connections'] ?? [];
-        if (! is_array($connections)) {
+        if (! \is_array($connections)) {
             return null;
         }
 
         $connectionConfig = $connections[$defaultConnection] ?? null;
-        if (! is_array($connectionConfig)) {
+        if (! \is_array($connectionConfig)) {
             return null;
         }
 
         $driver = $connectionConfig['driver'] ?? null;
 
-        return is_string($driver) ? $driver : null;
+        return \is_string($driver) ? $driver : null;
     }
 }

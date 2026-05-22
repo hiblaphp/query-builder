@@ -9,28 +9,61 @@ use Rcalicdan\ConfigLoader\Config;
 class Blueprint
 {
     private string $table;
-    /** @var array<int, Column> */
+
+    /**
+     * @var array<int, Column>
+     */
     private array $columns = [];
-    /** @var list<array{type: string, name: string, columns: list<string>}> */
+
+    /**
+     * @var list<array{type: string, name: string, columns: list<string>}>
+     */
     private array $indexes = [];
-    /** @var array<int, IndexDefinition> */
+
+    /**
+     * @var array<int, IndexDefinition>
+     */
     private array $indexDefinitions = [];
-    /** @var array<int, ForeignKey> */
+
+    /**
+     * @var array<int, ForeignKey>
+     */
     private array $foreignKeys = [];
+
     private string $engine = 'InnoDB';
+
     private string $charset = 'utf8mb4';
+
     private string $collation = 'utf8mb4_unicode_ci';
-    /** @var list<array{type: 'rename', to: string}> */
+
+    /**
+     * @var list<array{type: 'rename', to: string}>
+     */
     private array $commands = [];
-    /** @var list<string> */
+
+    /**
+     * @var list<string>
+     */
     private array $dropColumns = [];
-    /** @var list<array{from: string, to: string}> */
+
+    /**
+     * @var list<array{from: string, to: string}>
+     */
     private array $renameColumns = [];
-    /** @var array<int, Column> */
+
+    /**
+     * @var array<int, Column>
+     */
     private array $modifyColumns = [];
-    /** @var list<list<string>> */
+
+    /**
+     * @var list<list<string>>
+     */
     private array $dropIndexes = [];
-    /** @var list<string> */
+
+    /**
+     * @var list<string>
+     */
     private array $dropForeignKeys = [];
 
     public function __construct(string $table)
@@ -72,6 +105,7 @@ class Blueprint
 
     /**
      * Get the columns for the blueprint.
+     *
      * @return array<int, Column>
      */
     public function getColumns(): array
@@ -81,6 +115,7 @@ class Blueprint
 
     /**
      * Get the indexes for the blueprint.
+     *
      * @return list<array{type: string, name: string, columns: list<string>}>
      */
     public function getIndexes(): array
@@ -90,6 +125,7 @@ class Blueprint
 
     /**
      * Get the index definitions for the blueprint.
+     *
      * @return array<int, IndexDefinition>
      */
     public function getIndexDefinitions(): array
@@ -99,6 +135,7 @@ class Blueprint
 
     /**
      * Get the foreign keys for the blueprint.
+     *
      * @return array<int, ForeignKey>
      */
     public function getForeignKeys(): array
@@ -132,6 +169,7 @@ class Blueprint
 
     /**
      * Get the commands for the blueprint.
+     *
      * @return list<array{type: 'rename', to: string}>
      */
     public function getCommands(): array
@@ -141,6 +179,7 @@ class Blueprint
 
     /**
      * Get the columns to be dropped.
+     *
      * @return list<string>
      */
     public function getDropColumns(): array
@@ -150,6 +189,7 @@ class Blueprint
 
     /**
      * Get the columns to be renamed.
+     *
      * @return list<array{from: string, to: string}>
      */
     public function getRenameColumns(): array
@@ -159,6 +199,7 @@ class Blueprint
 
     /**
      * Get the columns to be modified.
+     *
      * @return array<int, Column>
      */
     public function getModifyColumns(): array
@@ -168,6 +209,7 @@ class Blueprint
 
     /**
      * Get the indexes to be dropped.
+     *
      * @return list<list<string>>
      */
     public function getDropIndexes(): array
@@ -177,6 +219,7 @@ class Blueprint
 
     /**
      * Get the foreign keys to be dropped.
+     *
      * @return list<string>
      */
     public function getDropForeignKeys(): array
@@ -574,6 +617,7 @@ class Blueprint
 
     /**
      * Create a new enum column.
+     *
      * @param list<string> $values
      */
     public function enum(string $name, array $values): Column
@@ -596,11 +640,12 @@ class Blueprint
 
     /**
      * Specify a primary key for the table.
+     *
      * @param string|list<string> $columns
      */
     public function primary(string|array $columns, ?string $name = null, ?string $algorithm = null): IndexDefinition
     {
-        $columns = is_array($columns) ? $columns : [$columns];
+        $columns = \is_array($columns) ? $columns : [$columns];
         $name ??= $this->table . '_' . implode('_', $columns) . '_primary';
 
         $indexDef = new IndexDefinition('PRIMARY', $columns, $name);
@@ -616,11 +661,12 @@ class Blueprint
 
     /**
      * Specify a unique index for the table.
+     *
      * @param string|list<string> $columns
      */
     public function unique(string|array $columns, ?string $name = null, ?string $algorithm = null): IndexDefinition
     {
-        $columns = is_array($columns) ? $columns : [$columns];
+        $columns = \is_array($columns) ? $columns : [$columns];
         $name ??= $this->table . '_' . implode('_', $columns) . '_unique';
 
         $indexDef = new IndexDefinition('UNIQUE', $columns, $name);
@@ -636,11 +682,12 @@ class Blueprint
 
     /**
      * Specify an index for the table.
+     *
      * @param string|list<string> $columns
      */
     public function index(string|array $columns, ?string $name = null, ?string $algorithm = null): IndexDefinition
     {
-        $columns = is_array($columns) ? $columns : [$columns];
+        $columns = \is_array($columns) ? $columns : [$columns];
         $name ??= $this->table . '_' . implode('_', $columns) . '_index';
 
         $indexDef = new IndexDefinition('INDEX', $columns, $name);
@@ -656,11 +703,12 @@ class Blueprint
 
     /**
      * Specify a fulltext index for the table.
+     *
      * @param string|list<string> $columns
      */
     public function fullText(string|array $columns, ?string $name = null, ?string $algorithm = null): IndexDefinition
     {
-        $columns = is_array($columns) ? $columns : [$columns];
+        $columns = \is_array($columns) ? $columns : [$columns];
         $name ??= $this->table . '_' . implode('_', $columns) . '_fulltext';
 
         $indexDef = new IndexDefinition('FULLTEXT', $columns, $name);
@@ -676,11 +724,12 @@ class Blueprint
 
     /**
      * Specify a spatial index for the table.
+     *
      * @param string|list<string> $columns
      */
     public function spatialIndex(string|array $columns, ?string $name = null, ?string $operatorClass = null): IndexDefinition
     {
-        $columns = is_array($columns) ? $columns : [$columns];
+        $columns = \is_array($columns) ? $columns : [$columns];
         $name ??= $this->table . '_' . implode('_', $columns) . '_spatial';
 
         $indexDef = new IndexDefinition('SPATIAL', $columns, $name);
@@ -707,11 +756,12 @@ class Blueprint
 
     /**
      * Define a foreign key constraint.
+     *
      * @param string|list<string> $columns
      */
     public function foreign(string|array $columns, ?string $name = null): ForeignKey
     {
-        $columns = is_array($columns) ? $columns : [$columns];
+        $columns = \is_array($columns) ? $columns : [$columns];
         $name ??= $this->table . '_' . implode('_', $columns) . '_foreign';
         $foreignKey = new ForeignKey($name, $columns, $this->table);
         $this->foreignKeys[] = $foreignKey;
@@ -721,11 +771,12 @@ class Blueprint
 
     /**
      * Specify a column to be dropped.
+     *
      * @param string|list<string> $columns
      */
     public function dropColumn(string|array $columns): self
     {
-        $columns = is_array($columns) ? $columns : [$columns];
+        $columns = \is_array($columns) ? $columns : [$columns];
         $this->dropColumns = array_merge($this->dropColumns, $columns);
 
         return $this;
@@ -854,11 +905,12 @@ class Blueprint
 
     /**
      * Specify columns to be dropped if they exist.
+     *
      * @param string|list<string> $columns
      */
     public function dropIfExists(string|array $columns): self
     {
-        $columns = is_array($columns) ? $columns : [$columns];
+        $columns = \is_array($columns) ? $columns : [$columns];
         $this->dropColumns = array_merge($this->dropColumns, $columns);
 
         return $this;
@@ -866,17 +918,19 @@ class Blueprint
 
     /**
      * Specify an index to be dropped.
+     *
      * @param string|list<string> $index
      */
     public function dropIndex(string|array $index): self
     {
-        $this->dropIndexes[] = is_array($index) ? $index : [$index];
+        $this->dropIndexes[] = \is_array($index) ? $index : [$index];
 
         return $this;
     }
 
     /**
      * Specify a unique index to be dropped.
+     *
      * @param string|list<string> $index
      */
     public function dropUnique(string|array $index): self
@@ -896,11 +950,12 @@ class Blueprint
 
     /**
      * Specify a foreign key to be dropped.
+     *
      * @param string|list<string> $index
      */
     public function dropForeign(string|array $index): self
     {
-        $keys = is_array($index) ? $index : [$index];
+        $keys = \is_array($index) ? $index : [$index];
         $this->dropForeignKeys = array_merge($this->dropForeignKeys, $keys);
 
         return $this;
@@ -1056,11 +1111,12 @@ class Blueprint
 
     /**
      * Specify a vector index for the table (PostgreSQL only).
+     *
      * @param string|list<string> $columns
      */
     public function vectorIndex(string|array $columns, ?string $name = null, ?string $distanceMetric = 'COSINE'): IndexDefinition
     {
-        $columns = is_array($columns) ? $columns : [$columns];
+        $columns = \is_array($columns) ? $columns : [$columns];
         $name ??= $this->table . '_' . implode('_', $columns) . '_vector';
 
         $indexDef = new IndexDefinition('VECTOR', $columns, $name);

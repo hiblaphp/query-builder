@@ -15,7 +15,9 @@ class StatusCommand extends Command
     use FindProjectRoot;
 
     private SymfonyStyle $io;
+
     private ?string $projectRoot = null;
+
     /**
      * @var array<string, string>
      */

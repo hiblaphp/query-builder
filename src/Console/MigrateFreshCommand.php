@@ -24,9 +24,13 @@ class MigrateFreshCommand extends Command
     use ValidateConnection;
 
     private SymfonyStyle $io;
+
     private OutputInterface $output;
+
     private ?string $projectRoot = null;
+
     private string $driver;
+
     private ?string $connection = null;
 
     protected function configure(): void
@@ -83,7 +87,7 @@ class MigrateFreshCommand extends Command
     private function setConnectionFromInput(InputInterface $input): void
     {
         $connectionOption = $input->getOption('connection');
-        $this->connection = (is_string($connectionOption) && $connectionOption !== '') ? $connectionOption : null;
+        $this->connection = (\is_string($connectionOption) && $connectionOption !== '') ? $connectionOption : null;
 
         if ($this->connection !== null) {
             $this->io->note("Using database connection: {$this->connection}");
@@ -125,7 +129,7 @@ class MigrateFreshCommand extends Command
     {
         $pathOption = $input->getOption('path');
 
-        return is_string($pathOption) && $pathOption !== '' ? $pathOption : null;
+        return \is_string($pathOption) && $pathOption !== '' ? $pathOption : null;
     }
 
     private function dropAllTablesWithFeedback(): bool
@@ -202,7 +206,7 @@ class MigrateFreshCommand extends Command
      */
     private function noTablesToDrop(array $tables): bool
     {
-        if (count($tables) === 0) {
+        if (\count($tables) === 0) {
             $connectionName = $this->getConnectionDisplayName();
             $this->io->note("No migrated tables found for connection '{$connectionName}'");
 
@@ -218,9 +222,9 @@ class MigrateFreshCommand extends Command
     private function displayTablesCount(array $tables): void
     {
         $connectionName = $this->getConnectionDisplayName();
-        $this->io->writeln(sprintf(
+        $this->io->writeln(\sprintf(
             'Found %d migrated table(s) to drop for connection: %s',
-            count($tables),
+            \count($tables),
             $connectionName
         ));
     }
@@ -283,6 +287,7 @@ class MigrateFreshCommand extends Command
 
     /**
      * @param list<string> $migrationFiles
+     *
      * @return list<string>
      */
     private function extractTablesFromMigrations(array $migrationFiles, string $targetConnection): array
@@ -383,7 +388,7 @@ class MigrateFreshCommand extends Command
 
             $default = $dbConfig['default'] ?? 'mysql';
 
-            return is_string($default) ? $default : 'mysql';
+            return \is_string($default) ? $default : 'mysql';
         } catch (\Throwable $e) {
             return 'mysql';
         }
@@ -413,7 +418,7 @@ class MigrateFreshCommand extends Command
     {
         $dbConfig = Config::get('async-database');
 
-        if (! is_array($dbConfig)) {
+        if (! \is_array($dbConfig)) {
             return null;
         }
 
@@ -428,18 +433,19 @@ class MigrateFreshCommand extends Command
     {
         $connectionName = $this->connection ?? ($dbConfig['default'] ?? 'mysql');
 
-        return is_string($connectionName) ? $connectionName : 'mysql';
+        return \is_string($connectionName) ? $connectionName : 'mysql';
     }
 
     /**
      * @param array<string, mixed> $dbConfig
+     *
      * @return array<string, mixed>
      */
     private function getConnections(array $dbConfig): array
     {
         $connections = $dbConfig['connections'] ?? [];
 
-        if (! is_array($connections)) {
+        if (! \is_array($connections)) {
             return [];
         }
 
@@ -449,13 +455,14 @@ class MigrateFreshCommand extends Command
 
     /**
      * @param array<string, mixed> $connections
+     *
      * @return array<string, mixed>|null
      */
     private function getConnectionConfig(array $connections, string $connectionName): ?array
     {
         $connectionConfig = $connections[$connectionName] ?? [];
 
-        if (! is_array($connectionConfig)) {
+        if (! \is_array($connectionConfig)) {
             return null;
         }
 
@@ -572,7 +579,7 @@ class MigrateFreshCommand extends Command
 
             $driver = $connectionConfig['driver'] ?? 'mysql';
 
-            return is_string($driver) ? strtolower($driver) : 'mysql';
+            return \is_string($driver) ? strtolower($driver) : 'mysql';
         } catch (\Throwable $e) {
             return 'mysql';
         }

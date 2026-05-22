@@ -26,8 +26,9 @@ class TemplateEngine
     /**
      * Render a template with variables
      *
-     * @param  string  $template  Template name (supports dot notation: 'folder.template' or 'bootstrap')
-     * @param  array<string, mixed>  $data  Variables to pass to template
+     * @param string $template Template name (supports dot notation: 'folder.template' or 'bootstrap')
+     * @param array<string, mixed> $data Variables to pass to template
+     *
      * @return string Rendered HTML
      */
     public function render(string $template, array $data = []): string

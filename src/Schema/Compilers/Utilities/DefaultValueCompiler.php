@@ -13,6 +13,7 @@ class DefaultValueCompiler
 {
     /**
      * A list of database expressions that should not be quoted.
+     *
      * @var list<string>
      */
     protected array $expressionList = [];
@@ -23,7 +24,7 @@ class DefaultValueCompiler
             return $this->formatNull();
         }
 
-        if (is_bool($default)) {
+        if (\is_bool($default)) {
             return $this->formatBoolean($default);
         }
 
@@ -31,7 +32,7 @@ class DefaultValueCompiler
             return $this->formatNumeric(+$default);
         }
 
-        if (is_string($default)) {
+        if (\is_string($default)) {
             if ($this->isExpression($default)) {
                 return $this->formatExpression($default);
             }
@@ -39,16 +40,16 @@ class DefaultValueCompiler
             return $this->formatString($default);
         }
 
-        if (is_object($default) && method_exists($default, '__toString')) {
+        if (\is_object($default) && method_exists($default, '__toString')) {
             return $this->formatString((string) $default);
         }
 
-        throw new InvalidArgumentException('Unsupported type for default value: ' . gettype($default));
+        throw new InvalidArgumentException('Unsupported type for default value: ' . \gettype($default));
     }
 
     protected function isExpression(string $value): bool
     {
-        return in_array(strtoupper($value), $this->expressionList, true);
+        return \in_array(strtoupper($value), $this->expressionList, true);
     }
 
     protected function formatNull(): string

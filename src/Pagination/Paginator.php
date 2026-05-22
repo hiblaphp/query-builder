@@ -194,7 +194,8 @@ class Paginator
     /**
      * Render pagination using a template
      *
-     * @param  string  $template  Template name (bootstrap, tailwind, simple)
+     * @param string $template Template name (bootstrap, tailwind, simple)
+     *
      * @return string Rendered HTML
      */
     public function render(?string $template = null): string
@@ -216,7 +217,7 @@ class Paginator
     /**
      * Render pagination links (alias for render, Laravel-style convenience method)
      *
-     * @param  string|null  $view  Template name (bootstrap, tailwind, simple). If null, uses 'bootstrap'
+     * @param string|null $view Template name (bootstrap, tailwind, simple). If null, uses 'bootstrap'
      */
     public function links(?string $view = null): string
     {
@@ -225,7 +226,8 @@ class Paginator
 
     /**
      * Return pagination metadata as JSON
-     * @param  bool  $includeItems  Include items in JSON response
+     *
+     * @param bool $includeItems Include items in JSON response
      */
     public function toJson(bool $includeItems = true): string
     {
@@ -258,7 +260,9 @@ class Paginator
 
     /**
      * Return pagination metadata as array
-     * @param  bool  $includeItems  Include items in array response
+     *
+     * @param bool $includeItems Include items in array response
+     *
      * @return array<string, mixed>
      */
     public function toArray(bool $includeItems = true): array
@@ -286,8 +290,9 @@ class Paginator
      * Return pagination as JSON response
      * Useful for API responses
      *
-     * @param  int  $statusCode  HTTP status code
-     * @param  bool  $includeItems  Include items in response
+     * @param int $statusCode HTTP status code
+     * @param bool $includeItems Include items in response
+     *
      * @return void
      */
     public function respondJson(int $statusCode = 200, bool $includeItems = true): void

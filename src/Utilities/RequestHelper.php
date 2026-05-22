@@ -26,7 +26,7 @@ class RequestHelper
     {
         $cursor = $_GET['cursor'] ?? null;
 
-        return is_string($cursor) ? $cursor : null;
+        return \is_string($cursor) ? $cursor : null;
     }
 
     /**
@@ -39,11 +39,11 @@ class RequestHelper
         }
 
         $scheme = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http';
-        $host = is_string($_SERVER['HTTP_HOST'] ?? null) ? $_SERVER['HTTP_HOST'] : 'localhost';
-        $requestUri = is_string($_SERVER['REQUEST_URI'] ?? null) ? $_SERVER['REQUEST_URI'] : '/';
+        $host = \is_string($_SERVER['HTTP_HOST'] ?? null) ? $_SERVER['HTTP_HOST'] : 'localhost';
+        $requestUri = \is_string($_SERVER['REQUEST_URI'] ?? null) ? $_SERVER['REQUEST_URI'] : '/';
 
         $parsedPath = parse_url($requestUri, PHP_URL_PATH);
-        $path = is_string($parsedPath) ? $parsedPath : '/';
+        $path = \is_string($parsedPath) ? $parsedPath : '/';
 
         return $scheme . '://' . $host . $path;
     }

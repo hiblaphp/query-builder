@@ -12,7 +12,9 @@ use Hibla\QueryBuilder\Schema\ForeignKey;
 class ForeignKeyCompiler
 {
     protected string $columnDelimiter = '`, `';
+
     protected string $openQuote = '`';
+
     protected string $closeQuote = '`';
 
     public function compile(ForeignKey $foreignKey): string

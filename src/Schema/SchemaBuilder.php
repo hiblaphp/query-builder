@@ -4,18 +4,20 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Schema;
 
-use function Hibla\async;
-use function Hibla\await;
-
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\ConnectionProxy;
 use Hibla\QueryBuilder\DB;
 use Rcalicdan\ConfigLoader\Config;
 
+use function Hibla\async;
+use function Hibla\await;
+
 class SchemaBuilder
 {
     private string $driver;
+
     private ?SQLiteSchemaBuilder $sqliteBuilder = null;
+
     private ?string $connection = null;
 
     public function __construct(?string $driver = null, ?string $connection = null)
@@ -28,27 +30,27 @@ class SchemaBuilder
     {
         $dbConfig = Config::get('async-database');
 
-        if (! is_array($dbConfig)) {
+        if (! \is_array($dbConfig)) {
             return 'mysql';
         }
 
         $connectionName = $this->connection ?? ($dbConfig['default'] ?? 'mysql');
-        if (! is_string($connectionName)) {
+        if (! \is_string($connectionName)) {
             return 'mysql';
         }
 
         $connections = $dbConfig['connections'] ?? [];
-        if (! is_array($connections)) {
+        if (! \is_array($connections)) {
             return 'mysql';
         }
 
         $connectionConfig = $connections[$connectionName] ?? [];
-        if (! is_array($connectionConfig)) {
+        if (! \is_array($connectionConfig)) {
             return 'mysql';
         }
         $driver = $connectionConfig['driver'] ?? 'mysql';
 
-        return is_string($driver) ? strtolower($driver) : 'mysql';
+        return \is_string($driver) ? strtolower($driver) : 'mysql';
     }
 
     private function getSQLiteBuilder(): SQLiteSchemaBuilder
@@ -151,7 +153,7 @@ class SchemaBuilder
 
         $sql = $compiler->compileAlter($blueprint);
 
-        if (is_array($sql)) {
+        if (\is_array($sql)) {
             $statements = $this->toList($sql);
 
             return $this->executeMultipleOrNull($statements);
@@ -178,6 +180,7 @@ class SchemaBuilder
      * Drop a column from a table.
      *
      * @param string|list<string> $columns
+     *
      * @return PromiseInterface<int|list<int>|null>
      */
     public function dropColumn(string $table, string|array $columns): PromiseInterface
@@ -194,8 +197,8 @@ class SchemaBuilder
 
         $sql = $compiler->compileAlter($blueprint);
 
-        if (is_array($sql)) {
-            if (count($sql) === 0) {
+        if (\is_array($sql)) {
+            if (\count($sql) === 0) {
                 return $this->nullPromise();
             }
             $statements = $this->toList($sql);
@@ -220,7 +223,7 @@ class SchemaBuilder
         $compiler = $this->getCompiler();
         $sql = $compiler->compileAlter($blueprint);
 
-        if (is_array($sql)) {
+        if (\is_array($sql)) {
             $statements = $this->toList($sql);
 
             return $this->executeMultipleNoNull($statements);
@@ -234,6 +237,7 @@ class SchemaBuilder
      * Drop an index from a table.
      *
      * @param string|list<string> $index
+     *
      * @return PromiseInterface<int|list<int>|null>
      */
     public function dropIndex(string $table, string|array $index): PromiseInterface
@@ -250,8 +254,8 @@ class SchemaBuilder
 
         $sql = $compiler->compileAlter($blueprint);
 
-        if (is_array($sql)) {
-            if (count($sql) === 0) {
+        if (\is_array($sql)) {
+            if (\count($sql) === 0) {
                 return $this->nullPromise();
             }
             $statements = $this->toList($sql);
@@ -267,6 +271,7 @@ class SchemaBuilder
      * Drop a foreign key from a table.
      *
      * @param string|list<string> $foreignKey
+     *
      * @return PromiseInterface<int|list<int>|null>
      */
     public function dropForeign(string $table, string|array $foreignKey): PromiseInterface
@@ -283,8 +288,8 @@ class SchemaBuilder
 
         $sql = $compiler->compileAlter($blueprint);
 
-        if (is_array($sql)) {
-            if (count($sql) === 0) {
+        if (\is_array($sql)) {
+            if (\count($sql) === 0) {
                 return $this->nullPromise();
             }
             $statements = $this->toList($sql);
@@ -300,6 +305,7 @@ class SchemaBuilder
      * Convert array to a list type for PHPStan.
      *
      * @param array<mixed> $items
+     *
      * @return list<string>
      */
     private function toList(array $items): array
@@ -323,6 +329,7 @@ class SchemaBuilder
      * Execute multiple SQL statements, returning list of results or null if empty.
      *
      * @param list<string> $statements
+     *
      * @return PromiseInterface<int|list<int>|null>
      */
     private function executeMultipleOrNull(array $statements): PromiseInterface
@@ -335,7 +342,7 @@ class SchemaBuilder
                 $results[] = $result;
             }
 
-            return count($results) === 0 ? null : $results;
+            return \count($results) === 0 ? null : $results;
         });
     }
 
@@ -343,6 +350,7 @@ class SchemaBuilder
      * Execute multiple SQL statements, returning list of results.
      *
      * @param list<string> $statements
+     *
      * @return PromiseInterface<int|list<int>>
      */
     private function executeMultipleNoNull(array $statements): PromiseInterface

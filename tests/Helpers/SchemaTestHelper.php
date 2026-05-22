@@ -39,8 +39,8 @@ class SchemaTestHelper
     /**
      * Initialize database with specific driver configuration from environment variables
      *
-     * @param  string  $driver  The database driver (mysql, pgsql, sqlite, sqlsrv)
-     * @param  int  $poolSize  Connection pool size (default: 10)
+     * @param string $driver The database driver (mysql, pgsql, sqlite, sqlsrv)
+     * @param int $poolSize Connection pool size (default: 10)
      */
     public static function initializeDatabaseForDriver(string $driver, int $poolSize = 10): void
     {
@@ -54,7 +54,8 @@ class SchemaTestHelper
     /**
      * Get configuration array for specific driver from environment variables
      *
-     * @param  string  $driver  The database driver
+     * @param string $driver The database driver
+     *
      * @return array<string, mixed>
      */
     private static function getDriverConfig(string $driver): array

@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Schema;
 
-use function Hibla\await;
-
 use Hibla\QueryBuilder\DB;
 use Hibla\QueryBuilder\Exceptions\SchemaMigrationException;
 use Rcalicdan\ConfigLoader\Config;
+
+use function Hibla\await;
 
 /**
  * @phpstan-type TConnectionConfig array{
@@ -25,30 +25,34 @@ use Rcalicdan\ConfigLoader\Config;
 class DatabaseManager
 {
     private string $driver;
-    /** @var TConnectionConfig */
+
+    /**
+     * @var TConnectionConfig
+     */
     private array $config;
+
     private string $connectionName; // Changed: Removed nullable type
 
     public function __construct(?string $connection = null)
     {
         $dbConfig = Config::get('async-database');
 
-        if (! is_array($dbConfig)) {
+        if (! \is_array($dbConfig)) {
             throw new SchemaMigrationException('Invalid database configuration format');
         }
 
         $connectionName = $connection ?? ($dbConfig['default'] ?? 'mysql');
-        if (! is_string($connectionName)) {
+        if (! \is_string($connectionName)) {
             throw new SchemaMigrationException('Connection name must be a string');
         }
 
         $connections = $dbConfig['connections'] ?? [];
-        if (! is_array($connections)) {
+        if (! \is_array($connections)) {
             throw new SchemaMigrationException('Connections configuration must be an array');
         }
 
         $config = $connections[$connectionName] ?? [];
-        if (! is_array($config)) {
+        if (! \is_array($config)) {
             throw new SchemaMigrationException("Configuration for '{$connectionName}' connection is invalid");
         }
 
@@ -67,7 +71,7 @@ class DatabaseManager
     {
         $database = $this->config['database'] ?? null;
 
-        if (! is_string($database) || $database === '') {
+        if (! \is_string($database) || $database === '') {
             throw new SchemaMigrationException('Database name not specified or invalid in configuration');
         }
 
@@ -135,7 +139,7 @@ class DatabaseManager
             return true;
         }
 
-        $directory = dirname($database);
+        $directory = \dirname($database);
 
         if (! is_dir($directory) && mkdir($directory, 0755, true) === false) {
             throw new SchemaMigrationException("Failed to create directory: {$directory}");
@@ -177,7 +181,7 @@ class DatabaseManager
     {
         $database = $this->config['database'] ?? null;
 
-        if (! is_string($database) || $database === '') {
+        if (! \is_string($database) || $database === '') {
             return false;
         }
 

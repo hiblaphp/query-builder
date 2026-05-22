@@ -25,9 +25,13 @@ class MigrateRollbackCommand extends Command
     use ValidateConnection;
 
     private SymfonyStyle $io;
+
     private OutputInterface $output;
+
     private ?string $projectRoot = null;
+
     private MigrationRepository $repository;
+
     private ?string $connection = null;
 
     protected function configure(): void
@@ -85,7 +89,7 @@ class MigrateRollbackCommand extends Command
     private function setConnectionFromInput(InputInterface $input): void
     {
         $connectionOption = $input->getOption('connection');
-        $this->connection = (is_string($connectionOption) && $connectionOption !== '') ? $connectionOption : null;
+        $this->connection = (\is_string($connectionOption) && $connectionOption !== '') ? $connectionOption : null;
 
         if ($this->connection !== null) {
             $this->io->note("Using database connection: {$this->connection}");
@@ -103,7 +107,7 @@ class MigrateRollbackCommand extends Command
     {
         $pathOption = $input->getOption('path');
 
-        return is_string($pathOption) && $pathOption !== '' ? $pathOption : null;
+        return \is_string($pathOption) && $pathOption !== '' ? $pathOption : null;
     }
 
     private function initializeProjectRoot(): bool
@@ -123,7 +127,7 @@ class MigrateRollbackCommand extends Command
         /** @var list<array<string, mixed>> $ranMigrations */
         $ranMigrations = await($this->repository->getRan());
 
-        if (count($ranMigrations) === 0) {
+        if (\count($ranMigrations) === 0) {
             $this->io->info('Nothing to rollback.');
 
             return true;
@@ -142,6 +146,7 @@ class MigrateRollbackCommand extends Command
 
     /**
      * @param list<array<string, mixed>> $ranMigrations
+     *
      * @return list<array<string, mixed>>|null
      */
     private function filterMigrationsByPath(array $ranMigrations, ?string $path): ?array
@@ -154,10 +159,10 @@ class MigrateRollbackCommand extends Command
         $filtered = array_filter($ranMigrations, function ($migration) use ($normalizedPath) {
             $migrationPath = $migration['migration'] ?? '';
 
-            return is_string($migrationPath) && str_starts_with($migrationPath, $normalizedPath);
+            return \is_string($migrationPath) && str_starts_with($migrationPath, $normalizedPath);
         });
 
-        if (count($filtered) === 0) {
+        if (\count($filtered) === 0) {
             $this->io->info("No migrations to rollback in path: {$path}");
 
             return null;
@@ -170,12 +175,13 @@ class MigrateRollbackCommand extends Command
 
     /**
      * @param list<array<string, mixed>> $ranMigrations
+     *
      * @return list<array<string, mixed>>
      */
     private function limitMigrationsByStep(array $ranMigrations, int $step): array
     {
         if ($step > 0) {
-            return array_slice($ranMigrations, 0, $step);
+            return \array_slice($ranMigrations, 0, $step);
         }
 
         return $ranMigrations;
@@ -229,7 +235,7 @@ class MigrateRollbackCommand extends Command
     {
         $relativePath = $migrationData['migration'] ?? null;
 
-        if (! is_string($relativePath)) {
+        if (! \is_string($relativePath)) {
             $this->io->warning('Skipping invalid migration record.');
 
             return null;
@@ -273,7 +279,7 @@ class MigrateRollbackCommand extends Command
     {
         $migration = require $file;
 
-        if (! is_object($migration)) {
+        if (! \is_object($migration)) {
             $this->io->error("Migration file {$relativePath} did not return an object.");
 
             return null;
@@ -288,7 +294,7 @@ class MigrateRollbackCommand extends Command
 
         if (method_exists($migration, 'getConnection')) {
             $declaredConnection = $migration->getConnection();
-            if (is_string($declaredConnection)) {
+            if (\is_string($declaredConnection)) {
                 $migrationConnection = $declaredConnection;
             }
         }

@@ -24,7 +24,9 @@ class MigrateStatusCommand extends Command
     use ValidateConnection;
 
     private SymfonyStyle $io;
+
     private ?string $projectRoot = null;
+
     private ?string $connection = null;
 
     protected function configure(): void
@@ -78,7 +80,7 @@ class MigrateStatusCommand extends Command
     private function setConnectionFromInput(InputInterface $input): void
     {
         $connectionOption = $input->getOption('connection');
-        $this->connection = (is_string($connectionOption) && $connectionOption !== '') ? $connectionOption : null;
+        $this->connection = (\is_string($connectionOption) && $connectionOption !== '') ? $connectionOption : null;
 
         if ($this->connection !== null) {
             $this->io->note("Using database connection: {$this->connection}");
@@ -89,7 +91,7 @@ class MigrateStatusCommand extends Command
     {
         $pathOption = $input->getOption('path');
 
-        return is_string($pathOption) && $pathOption !== '' ? $pathOption : null;
+        return \is_string($pathOption) && $pathOption !== '' ? $pathOption : null;
     }
 
     private function displayMigrationStatus(?string $path, bool $pendingOnly, bool $ranOnly): void
@@ -127,7 +129,7 @@ class MigrateStatusCommand extends Command
             $pattern = rtrim($path, '/') . '/*.php';
             $migrationFiles = $this->getFilteredMigrationFiles($pattern, $this->connection);
 
-            if (count($migrationFiles) === 0) {
+            if (\count($migrationFiles) === 0) {
                 $this->io->warning("No migration files found in path: {$path}");
 
                 return null;
@@ -140,7 +142,7 @@ class MigrateStatusCommand extends Command
 
         $migrationFiles = $this->getAllMigrationFiles($this->connection);
 
-        if (count($migrationFiles) === 0) {
+        if (\count($migrationFiles) === 0) {
             $this->io->warning('No migration files found');
 
             return null;
@@ -151,6 +153,7 @@ class MigrateStatusCommand extends Command
 
     /**
      * @param list<string> $migrationFiles
+     *
      * @return list<string>|null
      */
     private function applyConnectionFilter(array $migrationFiles): ?array
@@ -161,7 +164,7 @@ class MigrateStatusCommand extends Command
 
         $filtered = $this->filterMigrationsByConnection($migrationFiles, $this->connection);
 
-        if (count($filtered) === 0) {
+        if (\count($filtered) === 0) {
             $this->io->warning("No migrations found for connection: {$this->connection}");
 
             return null;
@@ -175,7 +178,7 @@ class MigrateStatusCommand extends Command
      */
     private function displayRowsOrEmptyMessage(array $rows, bool $pendingOnly, bool $ranOnly): bool
     {
-        if (count($rows) > 0) {
+        if (\count($rows) > 0) {
             return true;
         }
 
@@ -205,6 +208,7 @@ class MigrateStatusCommand extends Command
 
     /**
      * @param list<string> $migrationFiles
+     *
      * @return list<string>
      */
     private function filterMigrationsByConnection(array $migrationFiles, string $connection): array
@@ -237,6 +241,7 @@ class MigrateStatusCommand extends Command
 
     /**
      * @param list<string> $migrationFiles
+     *
      * @return array<string, array<string, int>>
      */
     private function getRanMigrationsForAllConnections(array $migrationFiles): array
@@ -253,6 +258,7 @@ class MigrateStatusCommand extends Command
 
     /**
      * @param list<string> $migrationFiles
+     *
      * @return array<string, string|null>
      */
     private function extractUniqueConnections(array $migrationFiles): array
@@ -291,6 +297,7 @@ class MigrateStatusCommand extends Command
 
     /**
      * @param list<array<string, mixed>> $ranMigrations
+     *
      * @return array<string, int>
      */
     private function buildRanMigrationMap(array $ranMigrations): array
@@ -301,9 +308,9 @@ class MigrateStatusCommand extends Command
             $path = $migration['migration'] ?? null;
             $batch = $migration['batch'] ?? null;
 
-            if (is_string($path)) {
+            if (\is_string($path)) {
                 $normalizedPath = $this->normalizePath($path);
-                $ranMap[$normalizedPath] = is_int($batch) ? $batch : 0;
+                $ranMap[$normalizedPath] = \is_int($batch) ? $batch : 0;
             }
         }
 
@@ -318,6 +325,7 @@ class MigrateStatusCommand extends Command
     /**
      * @param list<string> $migrationFiles
      * @param array<string, array<string, int>> $ranMigrationsByConnection
+     *
      * @return list<array{0: string, 1: string, 2: string, 3: string}>
      */
     private function buildStatusRowsWithMultipleConnections(
@@ -341,6 +349,7 @@ class MigrateStatusCommand extends Command
 
     /**
      * @param array<string, array<string, int>> $ranMigrationsByConnection
+     *
      * @return array{0: string, 1: string, 2: string, 3: string}|null
      */
     private function buildStatusRow(
@@ -357,7 +366,7 @@ class MigrateStatusCommand extends Command
         $connectionDisplay = $migrationConnection ?? '<comment>default</comment>';
 
         $ranMap = $ranMigrationsByConnection[$connectionKey] ?? [];
-        $isRan = array_key_exists($normalizedRelativePath, $ranMap);
+        $isRan = \array_key_exists($normalizedRelativePath, $ranMap);
 
         if (! $this->shouldIncludeInResults($isRan, $pendingOnly, $ranOnly)) {
             return null;
@@ -381,6 +390,7 @@ class MigrateStatusCommand extends Command
 
     /**
      * @param array<string, int> $ranMap
+     *
      * @return array{0: string, 1: string, 2: string, 3: string}
      */
     private function formatStatusRow(
@@ -431,6 +441,7 @@ class MigrateStatusCommand extends Command
 
     /**
      * @param list<array{0: string, 1: string, 2: string, 3: string}> $rows
+     *
      * @return array<string, list<array{0: string, 1: string, 2: string, 3: string}>>
      */
     private function groupRowsByDirectory(array $rows): array
@@ -458,7 +469,7 @@ class MigrateStatusCommand extends Command
 
     private function getDirectoryLabel(string $path): string
     {
-        $directory = dirname($path);
+        $directory = \dirname($path);
 
         return $directory === '.' ? '(root)' : $directory;
     }
@@ -472,7 +483,7 @@ class MigrateStatusCommand extends Command
 
             $migration = require $file;
 
-            if (! is_object($migration)) {
+            if (! \is_object($migration)) {
                 return null;
             }
 
@@ -482,7 +493,7 @@ class MigrateStatusCommand extends Command
 
             $connection = $migration->getConnection();
 
-            return is_string($connection) ? $connection : null;
+            return \is_string($connection) ? $connection : null;
         } catch (\Throwable $e) {
             return null;
         }
@@ -502,18 +513,19 @@ class MigrateStatusCommand extends Command
             "Pending: <comment>{$stats['pending']}</comment>",
         ]);
 
-        if (count($stats['connectionCounts']) > 1) {
+        if (\count($stats['connectionCounts']) > 1) {
             $this->displayConnectionBreakdown($stats['connectionCounts']);
         }
     }
 
     /**
      * @param list<array{0: string, 1: string, 2: string, 3: string}> $rows
+     *
      * @return array{total: int, ran: int, pending: int, connectionCounts: array<string, int>}
      */
     private function calculateSummaryStats(array $rows): array
     {
-        $total = count($rows);
+        $total = \count($rows);
         $ran = 0;
         $pending = 0;
         $connectionCounts = [];

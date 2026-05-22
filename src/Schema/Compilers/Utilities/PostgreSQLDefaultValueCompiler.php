@@ -19,7 +19,7 @@ class PostgreSQLDefaultValueCompiler extends DefaultValueCompiler
             return 'NULL';
         }
 
-        if (is_bool($default)) {
+        if (\is_bool($default)) {
             if ($column !== null && $column->getType() === 'TINYINT' && $column->getLength() === 1) {
                 return $default ? 'true' : 'false';
             }
@@ -35,7 +35,7 @@ class PostgreSQLDefaultValueCompiler extends DefaultValueCompiler
             return (string) $default;
         }
 
-        if (is_string($default)) {
+        if (\is_string($default)) {
             return "'".addslashes($default)."'";
         }
 

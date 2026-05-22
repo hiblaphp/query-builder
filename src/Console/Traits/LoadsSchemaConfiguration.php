@@ -12,6 +12,7 @@ trait LoadsSchemaConfiguration
      * Get the schema configuration for the specified connection.
      *
      * @param string|null $connection The connection name, or null for default configuration
+     *
      * @return array{
      *     migrations_path: string,
      *     migrations_table: string,
@@ -28,10 +29,10 @@ trait LoadsSchemaConfiguration
         $finalConfig = array_merge($defaults, $loadedConfig);
 
         return [
-            'migrations_path' => is_string($finalConfig['migrations_path'] ?? null) ? $finalConfig['migrations_path'] : $defaults['migrations_path'],
-            'migrations_table' => is_string($finalConfig['migrations_table'] ?? null) ? $finalConfig['migrations_table'] : $defaults['migrations_table'],
-            'naming_convention' => is_string($finalConfig['naming_convention'] ?? null) ? $finalConfig['naming_convention'] : $defaults['naming_convention'],
-            'timezone' => is_string($finalConfig['timezone'] ?? null) ? $finalConfig['timezone'] : $defaults['timezone'],
+            'migrations_path' => \is_string($finalConfig['migrations_path'] ?? null) ? $finalConfig['migrations_path'] : $defaults['migrations_path'],
+            'migrations_table' => \is_string($finalConfig['migrations_table'] ?? null) ? $finalConfig['migrations_table'] : $defaults['migrations_table'],
+            'naming_convention' => \is_string($finalConfig['naming_convention'] ?? null) ? $finalConfig['naming_convention'] : $defaults['naming_convention'],
+            'timezone' => \is_string($finalConfig['timezone'] ?? null) ? $finalConfig['timezone'] : $defaults['timezone'],
             'recursive' => isset($finalConfig['recursive']) ? (bool) $finalConfig['recursive'] : $defaults['recursive'],
             'connection_paths' => $this->normalizeConnectionPaths($finalConfig['connection_paths'] ?? null, $defaults['connection_paths']),
         ];
@@ -41,6 +42,7 @@ trait LoadsSchemaConfiguration
      * Load configuration safely, catching any exceptions.
      *
      * @param string|null $connection The connection name to load configuration for
+     *
      * @return array<string, mixed> The loaded configuration array, or empty array on failure
      */
     private function loadConfigSafely(?string $connection): array
@@ -48,7 +50,7 @@ trait LoadsSchemaConfiguration
         try {
             $config = Config::get('async-migrations');
 
-            if (! is_array($config)) {
+            if (! \is_array($config)) {
                 return [];
             }
 
@@ -74,13 +76,14 @@ trait LoadsSchemaConfiguration
      *
      * @param array<string, mixed> $config The full configuration array
      * @param string $connection The connection name
+     *
      * @return array<string, mixed> The connection-specific configuration, or empty array if not found
      */
     private function getConnectionConfig(array $config, string $connection): array
     {
         $connections = $config['connections'] ?? null;
 
-        if (! is_array($connections)) {
+        if (! \is_array($connections)) {
             return [];
         }
 
@@ -88,7 +91,7 @@ trait LoadsSchemaConfiguration
         $connectionsTyped = $connections;
         $connectionConfig = $connectionsTyped[$connection] ?? null;
 
-        if (! is_array($connectionConfig)) {
+        if (! \is_array($connectionConfig)) {
             return [];
         }
 
@@ -101,17 +104,18 @@ trait LoadsSchemaConfiguration
      *
      * @param mixed $connectionPaths
      * @param array<string, string> $defaults
+     *
      * @return array<string, string>
      */
     private function normalizeConnectionPaths($connectionPaths, array $defaults): array
     {
-        if (! is_array($connectionPaths)) {
+        if (! \is_array($connectionPaths)) {
             return $defaults;
         }
 
         $normalized = [];
         foreach ($connectionPaths as $key => $value) {
-            if (is_string($key) && is_string($value)) {
+            if (\is_string($key) && \is_string($value)) {
                 $normalized[$key] = $value;
             }
         }
@@ -172,7 +176,7 @@ trait LoadsSchemaConfiguration
 
         if (isset($connectionPaths[$connection])) {
             $subPath = $connectionPaths[$connection];
-            if (is_string($subPath) && $subPath !== '') {
+            if (\is_string($subPath) && $subPath !== '') {
                 return rtrim($basePath, '/\\') . DIRECTORY_SEPARATOR . trim($subPath, '/\\');
             }
         }
@@ -291,7 +295,7 @@ trait LoadsSchemaConfiguration
         $normalizedFilePath = $this->normalizePath($filePath);
 
         if (str_starts_with($normalizedFilePath, $normalizedBasePath)) {
-            $relativePath = substr($normalizedFilePath, strlen($normalizedBasePath));
+            $relativePath = substr($normalizedFilePath, \strlen($normalizedBasePath));
             $relativePath = ltrim($relativePath, '/\\');
         } else {
             $relativePath = basename($filePath);
@@ -364,7 +368,7 @@ trait LoadsSchemaConfiguration
                 $this->io->error('Error: ' . $error['message']);
             }
 
-            $parentDir = dirname($path);
+            $parentDir = \dirname($path);
             $this->io->note("Parent directory: {$parentDir}");
             $this->io->note('Parent directory exists: ' . (is_dir($parentDir) ? 'Yes' : 'No'));
             $this->io->note('Parent directory writable: ' . (is_writable($parentDir) ? 'Yes' : 'No'));
@@ -404,7 +408,7 @@ trait LoadsSchemaConfiguration
 
         foreach ($allFiles as $file) {
             $relativePath = $this->getRelativeMigrationPath($file, $connection);
-            $directory = dirname($relativePath);
+            $directory = \dirname($relativePath);
 
             // Normalize '.' to represent root directory
             if ($directory === '.') {
@@ -445,7 +449,7 @@ trait LoadsSchemaConfiguration
 
         if (isset($connectionPaths[$connection])) {
             $subPath = $connectionPaths[$connection];
-            if (is_string($subPath) && $subPath !== '') {
+            if (\is_string($subPath) && $subPath !== '') {
                 return $subPath;
             }
         }

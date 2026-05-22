@@ -14,7 +14,7 @@ trait FindProjectRoot
             if (file_exists($dir . '/composer.json')) {
                 return $dir;
             }
-            $parent = dirname($dir);
+            $parent = \dirname($dir);
             if ($parent === $dir) {
                 break;
             }

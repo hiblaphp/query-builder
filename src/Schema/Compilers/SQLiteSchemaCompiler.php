@@ -14,9 +14,13 @@ use Hibla\QueryBuilder\Schema\SchemaCompiler;
 
 class SQLiteSchemaCompiler implements SchemaCompiler
 {
-    /** @var array<int, array<string, mixed>> */
+    /**
+     * @var array<int, array<string, mixed>>
+     */
     private array $existingTableColumns = [];
+
     private SQLiteTypeMapper $typeMapper;
+
     private SQLiteIndexCompiler $indexCompiler;
 
     public function __construct()
@@ -82,7 +86,7 @@ class SQLiteSchemaCompiler implements SchemaCompiler
 
         if ($column->hasDefault()) {
             $sql .= $this->compileDefaultValue($column->getDefault());
-        } elseif ($column->shouldUseCurrent() && in_array($column->getType(), ['DATETIME', 'TIMESTAMP'], true)) {
+        } elseif ($column->shouldUseCurrent() && \in_array($column->getType(), ['DATETIME', 'TIMESTAMP'], true)) {
             $sql .= ' DEFAULT CURRENT_TIMESTAMP';
         }
 
@@ -99,7 +103,7 @@ class SQLiteSchemaCompiler implements SchemaCompiler
             return ' DEFAULT NULL';
         }
 
-        if (is_bool($default)) {
+        if (\is_bool($default)) {
             return ' DEFAULT ' . ($default ? '1' : '0');
         }
 
@@ -108,7 +112,7 @@ class SQLiteSchemaCompiler implements SchemaCompiler
         }
 
         // @phpstan-ignore-next-line
-        $stringDefault = strval($default);
+        $stringDefault = \strval($default);
         $escaped = str_replace("'", "''", $stringDefault);
 
         return " DEFAULT '{$escaped}'";
@@ -140,10 +144,10 @@ class SQLiteSchemaCompiler implements SchemaCompiler
         $table = $blueprint->getTable();
         $statements = [];
 
-        $needsRecreation = count($blueprint->getDropColumns()) > 0 ||
-            count($blueprint->getModifyColumns()) > 0 ||
-            count($blueprint->getDropForeignKeys()) > 0 ||
-            count($blueprint->getDropIndexes()) > 0;
+        $needsRecreation = \count($blueprint->getDropColumns()) > 0 ||
+            \count($blueprint->getModifyColumns()) > 0 ||
+            \count($blueprint->getDropForeignKeys()) > 0 ||
+            \count($blueprint->getDropIndexes()) > 0;
 
         if ($needsRecreation) {
             $result = $this->indexCompiler->compileTableRecreation($blueprint, $this->existingTableColumns, $this);
@@ -163,6 +167,7 @@ class SQLiteSchemaCompiler implements SchemaCompiler
 
     /**
      * @param array<int, Column> $columns
+     *
      * @return list<string>
      */
     private function compileAddColumns(string $table, array $columns): array
@@ -177,6 +182,7 @@ class SQLiteSchemaCompiler implements SchemaCompiler
 
     /**
      * @param array<int, array{from: string, to: string}> $renames
+     *
      * @return list<string>
      */
     private function compileRenameColumns(string $table, array $renames): array
@@ -191,6 +197,7 @@ class SQLiteSchemaCompiler implements SchemaCompiler
 
     /**
      * @param array<int, array{type: string, to: string}> $commands
+     *
      * @return list<string>
      */
     private function compileRenameTable(string $table, array $commands): array
@@ -207,6 +214,7 @@ class SQLiteSchemaCompiler implements SchemaCompiler
 
     /**
      * @param array<int, IndexDefinition> $indexes
+     *
      * @return list<string>
      */
     private function compileAddIndexes(string $table, array $indexes): array

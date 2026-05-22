@@ -55,7 +55,7 @@ class PostgreSQLIndexCompiler extends IndexCompiler
             $algorithm = $indexDef->getAlgorithm();
             if ($algorithm !== null) {
                 $algo = strtoupper($algorithm);
-                if (in_array($algo, ['BTREE', 'HASH', 'GIST', 'GIN', 'BRIN'], true)) {
+                if (\in_array($algo, ['BTREE', 'HASH', 'GIST', 'GIN', 'BRIN'], true)) {
                     $sql .= " USING {$algo}";
                 }
             }
@@ -154,6 +154,7 @@ class PostgreSQLIndexCompiler extends IndexCompiler
 
     /**
      * Add vector index support
+     *
      * @return list<string>
      */
     protected function compileVectorIndexStatements(string $table, IndexDefinition $indexDef): array

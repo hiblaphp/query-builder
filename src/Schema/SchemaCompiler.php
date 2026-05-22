@@ -10,6 +10,7 @@ interface SchemaCompiler
      * Compile a CREATE TABLE statement.
      *
      * @param Blueprint $blueprint
+     *
      * @return string
      */
     public function compileCreate(Blueprint $blueprint): string;
@@ -18,6 +19,7 @@ interface SchemaCompiler
      * Compile an ALTER TABLE statement.
      *
      * @param Blueprint $blueprint
+     *
      * @return string|list<string>
      */
     public function compileAlter(Blueprint $blueprint): string|array;
@@ -26,6 +28,7 @@ interface SchemaCompiler
      * Compile a DROP TABLE statement.
      *
      * @param string $table
+     *
      * @return string
      */
     public function compileDrop(string $table): string;
@@ -34,6 +37,7 @@ interface SchemaCompiler
      * Compile a DROP TABLE IF EXISTS statement.
      *
      * @param string $table
+     *
      * @return string
      */
     public function compileDropIfExists(string $table): string;
@@ -42,6 +46,7 @@ interface SchemaCompiler
      * Compile a table existence check query.
      *
      * @param string $table
+     *
      * @return string
      */
     public function compileTableExists(string $table): string;
@@ -51,6 +56,7 @@ interface SchemaCompiler
      *
      * @param string $from
      * @param string $to
+     *
      * @return string
      */
     public function compileRename(string $from, string $to): string;
@@ -60,6 +66,7 @@ interface SchemaCompiler
      *
      * @param Blueprint $blueprint
      * @param list<string> $columns
+     *
      * @return string
      */
     public function compileDropColumn(Blueprint $blueprint, array $columns): string;
@@ -70,6 +77,7 @@ interface SchemaCompiler
      * @param Blueprint $blueprint
      * @param string $from
      * @param string $to
+     *
      * @return string
      */
     public function compileRenameColumn(Blueprint $blueprint, string $from, string $to): string;

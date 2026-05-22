@@ -27,10 +27,16 @@ class MigrateCommand extends Command
     use ValidateConnection;
 
     private SymfonyStyle $io;
+
     private OutputInterface $output;
+
     private ?string $projectRoot = null;
+
     private ?string $connection = null;
-    /** @var array<string, MigrationRepository> */
+
+    /**
+     * @var array<string, MigrationRepository>
+     */
     private array $repositories = [];
 
     protected function configure(): void
@@ -82,7 +88,7 @@ class MigrateCommand extends Command
     private function setConnectionFromInput(InputInterface $input): void
     {
         $connectionOption = $input->getOption('connection');
-        $this->connection = (is_string($connectionOption) && $connectionOption !== '') ? $connectionOption : null;
+        $this->connection = (\is_string($connectionOption) && $connectionOption !== '') ? $connectionOption : null;
 
         if ($this->connection !== null) {
             $this->io->note("Using database connection: {$this->connection}");
@@ -140,7 +146,7 @@ class MigrateCommand extends Command
     {
         $pathOption = $input->getOption('path');
 
-        return is_string($pathOption) && $pathOption !== '' ? $pathOption : null;
+        return \is_string($pathOption) && $pathOption !== '' ? $pathOption : null;
     }
 
     /**
@@ -247,7 +253,7 @@ class MigrateCommand extends Command
         try {
             $dbConfig = Config::get('async-database');
 
-            if (! is_array($dbConfig)) {
+            if (! \is_array($dbConfig)) {
                 return 'unknown';
             }
 
@@ -258,13 +264,13 @@ class MigrateCommand extends Command
             $connections = $this->getConnections($typedConfig);
             $config = $connections[$connectionName] ?? [];
 
-            if (! is_array($config)) {
+            if (! \is_array($config)) {
                 return 'unknown';
             }
 
             $database = $config['database'] ?? 'unknown';
 
-            return is_string($database) ? $database : 'unknown';
+            return \is_string($database) ? $database : 'unknown';
         } catch (\Throwable $e) {
             return 'unknown';
         }
@@ -277,18 +283,19 @@ class MigrateCommand extends Command
     {
         $connectionName = $this->connection ?? ($dbConfig['default'] ?? 'mysql');
 
-        return is_string($connectionName) ? $connectionName : 'mysql';
+        return \is_string($connectionName) ? $connectionName : 'mysql';
     }
 
     /**
      * @param array<string, mixed> $dbConfig
+     *
      * @return array<string, mixed>
      */
     private function getConnections(array $dbConfig): array
     {
         $connections = $dbConfig['connections'] ?? [];
 
-        if (! is_array($connections)) {
+        if (! \is_array($connections)) {
             return [];
         }
 
@@ -310,7 +317,7 @@ class MigrateCommand extends Command
     {
         $pendingMigrations = $this->getPendingMigrations($path);
 
-        if (count($pendingMigrations) === 0) {
+        if (\count($pendingMigrations) === 0) {
             $this->io->success('Nothing to migrate');
 
             return null;
@@ -325,12 +332,13 @@ class MigrateCommand extends Command
 
     /**
      * @param list<string> $migrations
+     *
      * @return list<string>
      */
     private function limitMigrationsByStep(array $migrations, int $step): array
     {
         if ($step > 0) {
-            return array_slice($migrations, 0, $step);
+            return \array_slice($migrations, 0, $step);
         }
 
         return $migrations;
@@ -386,7 +394,7 @@ class MigrateCommand extends Command
     {
         $batchNumber = await($repository->getNextBatchNumber());
 
-        return (is_int($batchNumber) ? $batchNumber : 0) + 1;
+        return (\is_int($batchNumber) ? $batchNumber : 0) + 1;
     }
 
     /**
@@ -396,7 +404,7 @@ class MigrateCommand extends Command
     {
         $files = $this->getMigrationFiles($path);
 
-        if (count($files) === 0) {
+        if (\count($files) === 0) {
             return [];
         }
 
@@ -419,6 +427,7 @@ class MigrateCommand extends Command
 
     /**
      * @param list<string> $files
+     *
      * @return list<string>
      */
     private function filterPendingMigrations(array $files): array
@@ -464,7 +473,7 @@ class MigrateCommand extends Command
         $ranMigrations = await($repository->getRan());
         $ranMigrationPaths = array_column($ranMigrations, 'migration');
 
-        return in_array($relativePath, $ranMigrationPaths, true);
+        return \in_array($relativePath, $ranMigrationPaths, true);
     }
 
     private function getMigrationConnectionFromFile(string $file): ?string
@@ -476,7 +485,7 @@ class MigrateCommand extends Command
 
             $migration = require $file;
 
-            if (! is_object($migration)) {
+            if (! \is_object($migration)) {
                 return null;
             }
 
@@ -494,7 +503,7 @@ class MigrateCommand extends Command
 
         $connection = $migration->getConnection();
 
-        return is_string($connection) ? $connection : null;
+        return \is_string($connection) ? $connection : null;
     }
 
     private function extractConnectionFromProperty(object $migration): ?string
@@ -511,7 +520,7 @@ class MigrateCommand extends Command
 
             $value = $property->getValue($migration);
 
-            return is_string($value) ? $value : null;
+            return \is_string($value) ? $value : null;
         } catch (\Throwable $e) {
             return null;
         }
@@ -519,6 +528,7 @@ class MigrateCommand extends Command
 
     /**
      * @param list<string> $files
+     *
      * @return array<string, list<string>>
      */
     private function groupMigrationsByConnection(array $files): array
@@ -577,7 +587,7 @@ class MigrateCommand extends Command
     {
         $migration = require $file;
 
-        if (! is_object($migration) || ! $this->validateMigrationClass($migration, $displayName)) {
+        if (! \is_object($migration) || ! $this->validateMigrationClass($migration, $displayName)) {
             return null;
         }
 

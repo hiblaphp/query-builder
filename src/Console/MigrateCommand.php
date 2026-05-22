@@ -66,7 +66,11 @@ class MigrateCommand extends Command
             return Command::FAILURE;
         }
 
-        if (! $this->initializeProjectRoot()) {
+        $this->projectRoot = Config::getRootPath();
+
+        if ($this->projectRoot === null) {
+            $this->io->error('Could not find project root. Ensure a vendor directory exists.');
+
             return Command::FAILURE;
         }
 
@@ -77,19 +81,6 @@ class MigrateCommand extends Command
 
             return Command::FAILURE;
         }
-    }
-
-    private function initializeProjectRoot(): bool
-    {
-        $this->projectRoot = Config::getRootPath();
-
-        if ($this->projectRoot === null) {
-            $this->io->error('Could not find project root. Ensure a vendor directory exists.');
-
-            return false;
-        }
-
-        return true;
     }
 
     private function initializeIo(InputInterface $input, OutputInterface $output): void
@@ -186,7 +177,10 @@ class MigrateCommand extends Command
         try {
             $dbManager = new DatabaseManager($this->connection);
 
-            if (! $dbManager->databaseExists()) {
+            // FIXED: We must await the Promise returned by databaseExists()
+            $exists = await($dbManager->databaseExists());
+
+            if (! $exists) {
                 return $this->handleMissingDatabase($force);
             }
 
@@ -221,7 +215,9 @@ class MigrateCommand extends Command
         try {
             $this->io->writeln('<comment>Creating database...</comment>');
             $dbManager = new DatabaseManager($this->connection);
-            $dbManager->createDatabaseIfNotExists();
+
+            await($dbManager->createDatabaseIfNotExists());
+
             $this->io->writeln('<info>✓ Database created successfully!</info>');
             $this->io->newLine();
 
@@ -321,7 +317,7 @@ class MigrateCommand extends Command
 
         return str_contains($message, 'does not exist') ||
             str_contains($message, 'unknown database') ||
-            str_contains($message, 'database') && str_contains($message, 'not found') ||
+            (str_contains($message, 'database') && str_contains($message, 'not found')) ||
             str_contains($message, 'cannot connect to database');
     }
 

@@ -103,9 +103,10 @@ class Column
         $this->scale = $scale;
 
         if (\in_array($type, ['TIMESTAMP', 'DATETIME', 'DATE'], true)) {
-            /** @var string $tz */
-            $tz = Config::loadFromRoot('pdo-schema.timezone', 'UTC');
-            $this->timezone = $tz;
+            $config = Config::loadFromRoot('hibla-migrations');
+            $this->timezone = (\is_array($config) && isset($config['timezone']) && \is_string($config['timezone']))
+                ? $config['timezone']
+                : 'UTC';
         }
     }
 

@@ -588,8 +588,12 @@ class Blueprint
      */
     public function timestamps(?string $timezone = null): void
     {
-        /** @var string $timezone */
-        $timezone = Config::loadFromRoot('pdo-schema.timezone', 'UTC');
+        if ($timezone === null) {
+            $config = Config::loadFromRoot('hibla-migrations');
+            $timezone = (\is_array($config) && isset($config['timezone']) && \is_string($config['timezone']))
+                ? $config['timezone']
+                : 'UTC';
+        }
 
         $this->timestamp('created_at')->nullable()->useCurrent()->timezone($timezone);
         $this->timestamp('updated_at')->nullable()->useCurrent()->useCurrentOnUpdate()->timezone($timezone);

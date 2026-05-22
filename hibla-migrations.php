@@ -16,7 +16,7 @@ return [
     | You can use nested directories to organize migrations.
     |
     */
-    'migrations_path' => __DIR__ . '/../database/migrations',
+    'migrations_path' => __DIR__ . '/database/migrations',
 
     /*
     |--------------------------------------------------------------------------

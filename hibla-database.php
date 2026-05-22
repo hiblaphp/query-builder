@@ -69,7 +69,7 @@ return [
     | - 'default_template': The default pagination template to use.
     | - 'default_cursor_template': The default cursor pagination template to use.
     |
-    | To publish templates, run: php async-pdo publish:templates
+    | To publish templates, run: php hibla-db publish:templates
     | The templates will be copied to the path specified below.
     |
     */

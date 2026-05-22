@@ -325,7 +325,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     public function paginate(int $perPage = 15, ?string $path = null): PromiseInterface
     {
         $page = RequestHelper::getCurrentPage();
-        $path = $path ?? RequestHelper::getCurrentPath();
+        $path ??= RequestHelper::getCurrentPath();
 
         return $this->count()->then(function (int $total) use ($perPage, $page, $path) {
             return $this->forPage($page, $perPage)->get()
@@ -342,7 +342,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     public function cursorPaginate(int $perPage = 15, string $cursorColumn = 'id', ?string $path = null): PromiseInterface
     {
         $cursor = RequestHelper::getCursor();
-        $path = $path ?? RequestHelper::getCurrentPath();
+        $path ??= RequestHelper::getCurrentPath();
 
         $query = CursorPaginationHelper::applyCursor($this, $cursor, $cursorColumn);
 

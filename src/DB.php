@@ -16,7 +16,9 @@ class DB
 {
     private static ?DatabaseManager $manager = null;
 
-    private function __construct() {}
+    private function __construct()
+    {
+    }
 
     /**
      * Get the singleton DatabaseManager instance.

@@ -16,6 +16,7 @@ interface RawQueryInterface
      *
      * @param string $sql
      * @param array<int, mixed> $bindings
+     *
      * @return PromiseInterface<array<int, array<string, mixed>>|array<int, object>>
      */
     public function raw(string $sql, array $bindings = []): PromiseInterface;
@@ -25,6 +26,7 @@ interface RawQueryInterface
      *
      * @param string $sql
      * @param array<int, mixed> $bindings
+     *
      * @return PromiseInterface<array<string, mixed>|object|null>
      */
     public function rawFirst(string $sql, array $bindings = []): PromiseInterface;
@@ -34,6 +36,7 @@ interface RawQueryInterface
      *
      * @param string $sql
      * @param array<int, mixed> $bindings
+     *
      * @return PromiseInterface<mixed>
      */
     public function rawValue(string $sql, array $bindings = []): PromiseInterface;
@@ -43,6 +46,7 @@ interface RawQueryInterface
      *
      * @param string $sql
      * @param array<int, mixed> $bindings
+     *
      * @return PromiseInterface<int> The number of affected rows.
      */
     public function rawExecute(string $sql, array $bindings = []): PromiseInterface;

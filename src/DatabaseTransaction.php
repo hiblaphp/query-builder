@@ -17,15 +17,14 @@ class DatabaseTransaction implements DatabaseTransactionInterface
     public function __construct(
         private readonly Transaction $transaction,
         private readonly string $driverName = 'mysql'
-    ) {
-    }
+    ) {}
 
     /**
      * {@inheritdoc}
      */
     public function table(string $table): QueryBuilderInterface
     {
-        return new QueryBuilder($this->transaction, $this->driverName, $table);
+        return new QueryBuilder($this->transaction, $this->driverName)->from($table);
     }
 
     /**

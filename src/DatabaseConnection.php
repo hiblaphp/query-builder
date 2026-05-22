@@ -22,12 +22,12 @@ class DatabaseConnection implements DatabaseConnectionInterface
     ) {
     }
 
-    /**
+   /**
      * {@inheritdoc}
      */
     public function table(string $table): QueryBuilderInterface
     {
-        return new QueryBuilder($this->client, $this->driverName, $table);
+        return new QueryBuilder($this->client, $this->driverName)->from($table);
     }
 
     /**

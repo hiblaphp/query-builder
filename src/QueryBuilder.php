@@ -37,13 +37,8 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function __construct(
         QueryInterface|array|string|null $connection = null,
-        string|null $driver = null,
-        string $table = ''
+        string|null $driver = null
     ) {
-        if ($table !== '') {
-            $this->table = $table;
-        }
-
         if ($connection instanceof QueryInterface) {
             $this->client = $connection;
             $this->driver = $driver ?? 'mysql';
@@ -75,7 +70,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     protected function newQuery(): static
     {
-        return new static($this->client, $this->driver, '');
+        return new static($this->client, $this->driver);
     }
 
     /**
@@ -155,7 +150,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     private function convertToObjects(array $results): array
     {
-        return array_map(static fn (array $row): object => (object) $row, $results);
+        return array_map(static fn(array $row): object => (object) $row, $results);
     }
 
     /**
@@ -239,7 +234,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         $sql = $this->buildCountQuery($column);
 
         return $this->client->fetchValue($sql, null, $this->getCompiledBindings())
-            ->then(fn (mixed $value) => (int) $value)
+            ->then(fn(mixed $value) => (int) $value)
         ;
     }
 
@@ -248,7 +243,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function exists(): PromiseInterface
     {
-        return $this->count()->then(fn (int $count) => $count > 0);
+        return $this->count()->then(fn(int $count) => $count > 0);
     }
 
     /**

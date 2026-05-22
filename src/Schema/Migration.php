@@ -32,12 +32,12 @@ abstract class Migration
     /**
      * Run the migration.
      */
-    abstract public function up(): mixed;
+    abstract public function up(): void;
 
     /**
      * Reverse the migration.
      */
-    abstract public function down(): mixed;
+    abstract public function down(): void;
 
     /**
      * Get the database connection for this migration.
@@ -220,9 +220,9 @@ abstract class Migration
     /**
      * Get a query builder for a table.
      *
-     * @return QueryBuilderInterface // Updated return type annotation
+     * @return QueryBuilderInterface 
      */
-    protected function db(string $table): QueryBuilderInterface // Updated type hint
+    protected function db(string $table): QueryBuilderInterface 
     {
         return DB::connection($this->connection)->table($table);
     }

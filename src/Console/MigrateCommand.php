@@ -619,11 +619,7 @@ class MigrateCommand extends Command
 
     private function executeMigration(object $migration): void
     {
-        $result = $migration->up();
-
-        if ($result instanceof PromiseInterface) {
-            await($result);
-        }
+        $migration->up();
     }
 
     private function logMigration(string $relativePath, int $batchNumber, ?string $migrationConnection): void

@@ -444,11 +444,7 @@ class MigrateResetCommand extends Command
 
     private function runDownMethod(object $migration): void
     {
-        $result = $migration->down();
-
-        if ($result instanceof PromiseInterface) {
-            await($result);
-        }
+        $migration->down();
     }
 
     private function displayRollbackSuccess(): void

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Console;
 
 use Carbon\Carbon;
-use Hibla\QueryBuilder\Console\Traits\FindProjectRoot;
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
+use Rcalicdan\ConfigLoader\Config;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,22 +17,14 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class MakeMigrationCommand extends Command
 {
     use LoadsSchemaConfiguration;
-    use FindProjectRoot;
 
     private SymfonyStyle $io;
-
     private ?string $projectRoot = null;
-
     private string $migrationsPath;
-
     private string $migrationName;
-
     private ?string $table;
-
     private ?string $alter;
-
     private ?string $connection = null;
-
     private ?string $subdirectory = null;
 
     protected function configure(): void
@@ -99,6 +91,19 @@ class MakeMigrationCommand extends Command
         }
 
         return Command::SUCCESS;
+    }
+
+    private function initializeProjectRoot(): bool
+    {
+        $this->projectRoot = Config::getRootPath();
+
+        if ($this->projectRoot === null) {
+            $this->io->error('Could not find project root. Ensure a vendor directory exists.');
+
+            return false;
+        }
+
+        return true;
     }
 
     private function parseMigrationName(string $input): void

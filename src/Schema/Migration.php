@@ -6,7 +6,7 @@ namespace Hibla\QueryBuilder\Schema;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\DB;
-use Hibla\QueryBuilder\Utilities\Builder;
+use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface; 
 
 /**
  * Base migration class that provides helper methods and configuration for migrations.
@@ -220,9 +220,9 @@ abstract class Migration
     /**
      * Get a query builder for a table.
      *
-     * @return Builder
+     * @return QueryBuilderInterface // Updated return type annotation
      */
-    protected function db(string $table): Builder
+    protected function db(string $table): QueryBuilderInterface // Updated type hint
     {
         return DB::connection($this->connection)->table($table);
     }

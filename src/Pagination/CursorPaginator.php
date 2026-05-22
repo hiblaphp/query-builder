@@ -112,7 +112,7 @@ class CursorPaginator
     {
         if ($template === null) {
             /** @var string $template */
-            $template = Config::get('pdo-schema.pagination.default_cursor_template') ?? 'cursor-simple';
+            $template = Config::loadFromRoot('pdo-schema.pagination.default_cursor_template') ?? 'cursor-simple';
         }
 
         if (! $this->hasMore()) {

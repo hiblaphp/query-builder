@@ -202,7 +202,7 @@ class Paginator
     {
         if ($template === null) {
             /** @var string $template */
-            $template = Config::get('pdo-schema.pagination.default_template') ?? 'tailwind';
+            $template = Config::loadFromRoot('pdo-schema.pagination.default_template') ?? 'tailwind';
         }
 
         if (! $this->hasPages()) {

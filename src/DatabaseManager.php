@@ -54,9 +54,9 @@ class DatabaseManager implements ConnectionResolverInterface
     private function configurePaginationTemplates(): void
     {
         try {
-            $dbConfig = Config::get('async-database');
+            $dbConfig = Config::loadFromRoot('hibla-database');
 
-            if (! is_array($dbConfig)) {
+            if (! \is_array($dbConfig)) {
                 return;
             }
 
@@ -64,13 +64,13 @@ class DatabaseManager implements ConnectionResolverInterface
             $typedConfig = $dbConfig;
             $paginationConfig = $typedConfig['pagination'] ?? [];
 
-            if (! is_array($paginationConfig)) {
+            if (! \is_array($paginationConfig)) {
                 return;
             }
 
             $templatesPath = $paginationConfig['templates_path'] ?? null;
 
-            if (is_string($templatesPath) && trim($templatesPath) !== '' && is_dir($templatesPath)) {
+            if (\is_string($templatesPath) && trim($templatesPath) !== '' && is_dir($templatesPath)) {
                 Paginator::setTemplatesPath($templatesPath);
                 CursorPaginator::setTemplatesPath($templatesPath);
             }
@@ -116,7 +116,7 @@ class DatabaseManager implements ConnectionResolverInterface
             $this->connections[$name]->getClient()->close();
             unset($this->connections[$name]);
         }
-        
+
         if ($this->defaultConnectionName === $name) {
             $this->defaultConnectionName = null;
         }
@@ -141,7 +141,7 @@ class DatabaseManager implements ConnectionResolverInterface
                 maxWaiters: (int) ($config['max_waiters'] ?? 0),
                 acquireTimeout: (float) ($config['acquire_timeout'] ?? 10.0),
             ),
-            
+
             default => throw new \InvalidArgumentException("Driver '{$driver}' is not supported yet."),
         };
     }
@@ -150,6 +150,7 @@ class DatabaseManager implements ConnectionResolverInterface
      * Get the default connection name from configuration.
      *
      * @return string
+     *
      * @throws DatabaseConfigNotFoundException
      * @throws InvalidConnectionConfigException
      */
@@ -159,14 +160,14 @@ class DatabaseManager implements ConnectionResolverInterface
             return $this->defaultConnectionName;
         }
 
-        $dbConfigAll = Config::get('async-database');
+        $dbConfigAll = Config::loadFromRoot('hibla-database');
 
-        if (! is_array($dbConfigAll)) {
+        if (! \is_array($dbConfigAll)) {
             throw new DatabaseConfigNotFoundException();
         }
 
         $defaultConnection = $dbConfigAll['default'] ?? null;
-        if (! is_string($defaultConnection)) {
+        if (! \is_string($defaultConnection)) {
             throw new InvalidConnectionConfigException('Default connection name must be a string.');
         }
 
@@ -183,18 +184,18 @@ class DatabaseManager implements ConnectionResolverInterface
      */
     private function initializeFromConfig(string $name): DatabaseConnectionInterface
     {
-        $dbConfigAll = Config::get('async-database');
+        $dbConfigAll = Config::loadFromRoot('hibla-database');
 
-        if (! is_array($dbConfigAll)) {
+        if (! \is_array($dbConfigAll)) {
             throw new DatabaseConfigNotFoundException();
         }
 
         $connections = $dbConfigAll['connections'] ?? null;
-        if (! is_array($connections)) {
+        if (! \is_array($connections)) {
             throw new InvalidConnectionConfigException('Database connections configuration must be an array.');
         }
 
-        if (! isset($connections[$name]) || ! is_array($connections[$name])) {
+        if (! isset($connections[$name]) || ! \is_array($connections[$name])) {
             throw new InvalidConnectionConfigException("Connection '{$name}' not found in configuration.");
         }
 
@@ -204,12 +205,11 @@ class DatabaseManager implements ConnectionResolverInterface
 
         $client = $this->resolveClientFromConfig($connectionConfig);
         $connection = new DatabaseConnection($client, $driver);
-        
+
         $this->connections[$name] = $connection;
 
         return $connection;
     }
-
 
     /**
      * Start a new query builder on the default connection.
@@ -263,7 +263,9 @@ class DatabaseManager implements ConnectionResolverInterface
      * Execute an auto-managed transaction.
      *
      * @template TResult
+     *
      * @param callable(Interfaces\DatabaseTransactionInterface): TResult $callback
+     *
      * @return PromiseInterface<TResult>
      */
     public function transaction(callable $callback): PromiseInterface

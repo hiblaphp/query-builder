@@ -38,7 +38,7 @@ class DatabaseManager
 
     public function __construct(?string $connection = null)
     {
-        $dbConfig = Config::get('async-database');
+        $dbConfig = Config::loadFromRoot('hibla-database');
 
         if (! \is_array($dbConfig)) {
             throw new SchemaMigrationException('Invalid database configuration format');

@@ -253,7 +253,7 @@ class MigrateCommand extends Command
     private function getDatabaseName(): string
     {
         try {
-            $dbConfig = Config::get('async-database');
+            $dbConfig = Config::loadFromRoot('hibla-database');
 
             if (! \is_array($dbConfig)) {
                 return 'unknown';

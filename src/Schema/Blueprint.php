@@ -589,7 +589,7 @@ class Blueprint
     public function timestamps(?string $timezone = null): void
     {
         /** @var string $timezone */
-        $timezone = Config::get('pdo-schema.timezone', 'UTC');
+        $timezone = Config::loadFromRoot('pdo-schema.timezone', 'UTC');
 
         $this->timestamp('created_at')->nullable()->useCurrent()->timezone($timezone);
         $this->timestamp('updated_at')->nullable()->useCurrent()->useCurrentOnUpdate()->timezone($timezone);

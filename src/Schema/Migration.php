@@ -6,7 +6,7 @@ namespace Hibla\QueryBuilder\Schema;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\DB;
-use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface; 
+use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
 
 /**
  * Base migration class that provides helper methods and configuration for migrations.

@@ -101,7 +101,7 @@ class PublishTemplatesCommand extends Command
     private function getConfiguredPath(): ?string
     {
         try {
-            $dbConfig = Config::get('async-database');
+            $dbConfig = Config::loadFromRoot('hibla-database');
 
             if (! \is_array($dbConfig)) {
                 return null;
@@ -370,7 +370,7 @@ class PublishTemplatesCommand extends Command
     private function buildVendorPath(): string
     {
         return $this->projectRoot . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'hibla'
-            . DIRECTORY_SEPARATOR . 'async-database' . DIRECTORY_SEPARATOR . 'src'
+            . DIRECTORY_SEPARATOR . 'hibla-database' . DIRECTORY_SEPARATOR . 'src'
             . DIRECTORY_SEPARATOR . 'Pagination' . DIRECTORY_SEPARATOR . 'templates';
     }
 

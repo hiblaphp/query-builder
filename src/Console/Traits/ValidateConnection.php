@@ -46,7 +46,7 @@ trait ValidateConnection
     private function getAvailableConnections(): array
     {
         try {
-            $dbConfig = Config::get('async-database');
+            $dbConfig = Config::loadFromRoot('hibla-database');
 
             if (! \is_array($dbConfig)) {
                 return [];

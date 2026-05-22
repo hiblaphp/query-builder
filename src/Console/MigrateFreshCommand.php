@@ -418,7 +418,7 @@ class MigrateFreshCommand extends Command
      */
     private function getDatabaseConfig(): ?array
     {
-        $dbConfig = Config::get('async-database');
+        $dbConfig = Config::loadFromRoot('hibla-database');
 
         if (! \is_array($dbConfig)) {
             return null;

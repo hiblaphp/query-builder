@@ -76,8 +76,8 @@ class InitCommand extends Command
     private function copyConfigFiles(string $configDir): int
     {
         $files = [
-            'async-database.php' => $this->getSourceConfigPath('async-database.php'),
-            'async-migrations.php' => $this->getSourceConfigPath('async-migrations.php'),
+            'hibla-database.php' => $this->getSourceConfigPath('hibla-database.php'),
+            'hibla-migrations.php' => $this->getSourceConfigPath('hibla-migrations.php'),
         ];
 
         $copiedFiles = [];

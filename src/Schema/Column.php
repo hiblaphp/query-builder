@@ -104,7 +104,7 @@ class Column
 
         if (\in_array($type, ['TIMESTAMP', 'DATETIME', 'DATE'], true)) {
             /** @var string $tz */
-            $tz = Config::get('pdo-schema.timezone', 'UTC');
+            $tz = Config::loadFromRoot('pdo-schema.timezone', 'UTC');
             $this->timezone = $tz;
         }
     }

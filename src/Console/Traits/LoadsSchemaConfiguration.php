@@ -48,7 +48,7 @@ trait LoadsSchemaConfiguration
     private function loadConfigSafely(?string $connection): array
     {
         try {
-            $config = Config::get('async-migrations');
+            $config = Config::loadFromRoot('hibla-migrations');
 
             if (! \is_array($config)) {
                 return [];

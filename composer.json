@@ -1,5 +1,5 @@
 {
-    "name": "hiblaphp/pdo-query-builder",
+    "name": "hiblaphp/query-builder",
     "description": "Framework Agnostic Asynchonous Query Builder",
     "type": "library",
     "license": "MIT",

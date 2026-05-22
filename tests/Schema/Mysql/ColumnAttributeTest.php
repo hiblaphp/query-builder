@@ -18,9 +18,9 @@ describe('Column Attributes', function () {
             $table->id();
             $table->string('email')->nullable();
             $table->string('phone')->nullable(false);
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('users')->await();
+        $exists = schema()->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -32,9 +32,9 @@ describe('Column Attributes', function () {
             $table->integer('count')->default(0);
             $table->boolean('active')->default(true);
             $table->decimal('amount', 10, 2)->default(0.00);
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('settings')->await();
+        $exists = schema()->hasTable('settings')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -43,9 +43,9 @@ describe('Column Attributes', function () {
             $table->id();
             $table->integer('count')->unsigned();
             $table->bigInteger('big_count')->unsigned();
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('counters')->await();
+        $exists = schema()->hasTable('counters')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -55,9 +55,9 @@ describe('Column Attributes', function () {
             $table->string('message');
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->onUpdate('CURRENT_TIMESTAMP');
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('logs')->await();
+        $exists = schema()->hasTable('logs')->wait();
         expect($exists)->toBeTruthy();
     });
 });

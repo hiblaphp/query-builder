@@ -48,7 +48,7 @@ class SchemaTestHelper
         $config = self::getDriverConfig($driver);
         DB::init($config, $poolSize);
 
-        DB::rawExecute('SELECT 1')->await();
+        DB::rawExecute('SELECT 1')->wait();
     }
 
     /**
@@ -115,7 +115,7 @@ class SchemaTestHelper
 
     public static function initializeDatabase(): void
     {
-        DB::rawExecute('SELECT 1')->await();
+        DB::rawExecute('SELECT 1')->wait();
     }
 
     public static function createSchemaBuilder(?string $driver = null): SchemaBuilder
@@ -127,7 +127,7 @@ class SchemaTestHelper
     {
         foreach (self::$testTables as $table) {
             try {
-                $schema->dropIfExists($table)->await();
+                $schema->dropIfExists($table)->wait();
             } catch (\Exception $e) {
                 // Ignore if table doesn't exist
             }

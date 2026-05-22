@@ -20,14 +20,14 @@ describe('Stress Tests', function () {
             schema('sqlite')->create($tableName, function (Blueprint $table) {
                 $table->id();
                 $table->string('name');
-            })->await();
+            })->wait();
 
-            $exists = schema('sqlite')->hasTable($tableName)->await();
+            $exists = schema('sqlite')->hasTable($tableName)->wait();
             expect($exists)->toBeTruthy();
 
-            schema('sqlite')->drop($tableName)->await();
+            schema('sqlite')->drop($tableName)->wait();
 
-            $exists = schema('sqlite')->hasTable($tableName)->await();
+            $exists = schema('sqlite')->hasTable($tableName)->wait();
             expect($exists)->toBeFalsy();
         }
     });
@@ -36,25 +36,25 @@ describe('Stress Tests', function () {
         schema('sqlite')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('sqlite')->table('users', function (Blueprint $table) {
             $table->string('email')->nullable();
-        })->await();
+        })->wait();
 
         schema('sqlite')->table('users', function (Blueprint $table) {
             $table->index('email');
-        })->await();
+        })->wait();
 
         schema('sqlite')->table('users', function (Blueprint $table) {
             $table->renameColumn('name', 'full_name');
-        })->await();
+        })->wait();
 
         schema('sqlite')->table('users', function (Blueprint $table) {
             $table->integer('age')->default(0);
-        })->await();
+        })->wait();
 
-        $exists = schema('sqlite')->hasTable('users')->await();
+        $exists = schema('sqlite')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 });

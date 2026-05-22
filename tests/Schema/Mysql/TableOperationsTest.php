@@ -17,18 +17,18 @@ describe('Table Operations', function () {
         schema()->create('temp_table', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
-        schema()->drop('temp_table')->await();
+        schema()->drop('temp_table')->wait();
 
-        $exists = schema()->hasTable('temp_table')->await();
+        $exists = schema()->hasTable('temp_table')->wait();
         expect($exists)->toBeFalsy();
     });
 
     it('drops a table if exists', function () {
-        schema()->dropIfExists('nonexistent_table')->await();
+        schema()->dropIfExists('nonexistent_table')->wait();
 
-        $exists = schema()->hasTable('nonexistent_table')->await();
+        $exists = schema()->hasTable('nonexistent_table')->wait();
         expect($exists)->toBeFalsy();
     });
 
@@ -36,28 +36,28 @@ describe('Table Operations', function () {
         schema()->create('old_name', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
-        schema()->rename('old_name', 'new_name')->await();
+        schema()->rename('old_name', 'new_name')->wait();
 
-        $oldExists = schema()->hasTable('old_name')->await();
-        $newExists = schema()->hasTable('new_name')->await();
+        $oldExists = schema()->hasTable('old_name')->wait();
+        $newExists = schema()->hasTable('new_name')->wait();
 
         expect($oldExists)->toBeFalsy();
         expect($newExists)->toBeTruthy();
 
-        schema()->dropIfExists('new_name')->await();
+        schema()->dropIfExists('new_name')->wait();
     });
 
     it('checks if table exists', function () {
-        $exists = schema()->hasTable('nonexistent')->await();
+        $exists = schema()->hasTable('nonexistent')->wait();
         expect($exists)->toBeFalsy();
 
         schema()->create('users', function (Blueprint $table) {
             $table->id();
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('users')->await();
+        $exists = schema()->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 });

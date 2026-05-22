@@ -19,14 +19,14 @@ describe('Data Insertion and Verification', function () {
             $table->string('name');
             $table->string('email')->unique();
             $table->integer('age')->default(0);
-        })->await();
+        })->wait();
 
         Hibla\QueryBuilder\DB::rawExecute(
             'INSERT INTO users (name, email, age) VALUES (?, ?, ?)',
             ['John Doe', 'john@example.com', 30]
-        )->await();
+        )->wait();
 
-        $user = Hibla\QueryBuilder\DB::rawFirst('SELECT * FROM users WHERE email = ?', ['john@example.com'])->await();
+        $user = Hibla\QueryBuilder\DB::rawFirst('SELECT * FROM users WHERE email = ?', ['john@example.com'])->wait();
 
         expect($user)->not->toBeNull();
         expect($user['name'])->toBe('John Doe');
@@ -41,21 +41,21 @@ describe('Data Insertion and Verification', function () {
             $table->decimal('price', 10, 2)->default(0.00);
             $table->integer('stock')->default(0);
             $table->boolean('active')->default(true);
-        })->await();
+        })->wait();
 
         Hibla\QueryBuilder\DB::rawExecute(
             'INSERT INTO products (name) VALUES (?)',
             ['Test Product']
-        )->await();
+        )->wait();
 
-        $product = Hibla\QueryBuilder\DB::rawFirst('SELECT * FROM products WHERE name = ?', ['Test Product'])->await();
+        $product = Hibla\QueryBuilder\DB::rawFirst('SELECT * FROM products WHERE name = ?', ['Test Product'])->wait();
 
         expect($product)->not->toBeNull();
         expect((float) $product['price'])->toBe(0.00);
         expect((int) $product['stock'])->toBe(0);
         expect((int) $product['active'])->toBe(1);
 
-        schema('pgsql')->dropIfExists('products')->await();
+        schema('pgsql')->dropIfExists('products')->wait();
     });
 
     it('respects nullable constraints', function () {
@@ -63,38 +63,38 @@ describe('Data Insertion and Verification', function () {
             $table->id();
             $table->string('bio')->nullable();
             $table->string('website')->nullable();
-        })->await();
+        })->wait();
 
         Hibla\QueryBuilder\DB::rawExecute(
             'INSERT INTO profiles (bio) VALUES (?)',
             [null]
-        )->await();
+        )->wait();
 
-        $profile = Hibla\QueryBuilder\DB::rawFirst('SELECT * FROM profiles ORDER BY id DESC LIMIT 1', [])->await();
+        $profile = Hibla\QueryBuilder\DB::rawFirst('SELECT * FROM profiles ORDER BY id DESC LIMIT 1', [])->wait();
 
         expect($profile)->not->toBeNull();
         expect($profile['bio'])->toBeNull();
         expect($profile['website'])->toBeNull();
 
-        schema('pgsql')->dropIfExists('profiles')->await();
+        schema('pgsql')->dropIfExists('profiles')->wait();
     });
 
     it('enforces unique constraints', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('email')->unique();
-        })->await();
+        })->wait();
 
         Hibla\QueryBuilder\DB::rawExecute(
             'INSERT INTO users (email) VALUES (?)',
             ['test@example.com']
-        )->await();
+        )->wait();
 
         expect(function () {
             Hibla\QueryBuilder\DB::rawExecute(
                 'INSERT INTO users (email) VALUES (?)',
                 ['test@example.com']
-            )->await();
+            )->wait();
         })->toThrow(Exception::class);
     });
 
@@ -102,27 +102,27 @@ describe('Data Insertion and Verification', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('pgsql')->create('posts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained();
             $table->string('title');
-        })->await();
+        })->wait();
 
         Hibla\QueryBuilder\DB::rawExecute(
             'INSERT INTO users (name) VALUES (?)',
             ['John Doe']
-        )->await();
+        )->wait();
 
-        $userId = Hibla\QueryBuilder\DB::rawValue('SELECT id FROM users WHERE name = ?', ['John Doe'])->await();
+        $userId = Hibla\QueryBuilder\DB::rawValue('SELECT id FROM users WHERE name = ?', ['John Doe'])->wait();
 
         Hibla\QueryBuilder\DB::rawExecute(
             'INSERT INTO posts (user_id, title) VALUES (?, ?)',
             [$userId, 'Test Post']
-        )->await();
+        )->wait();
 
-        $post = Hibla\QueryBuilder\DB::rawFirst('SELECT * FROM posts WHERE title = ?', ['Test Post'])->await();
+        $post = Hibla\QueryBuilder\DB::rawFirst('SELECT * FROM posts WHERE title = ?', ['Test Post'])->wait();
         expect($post)->not->toBeNull();
         expect((int) $post['user_id'])->toBe((int) $userId);
 
@@ -130,7 +130,7 @@ describe('Data Insertion and Verification', function () {
             Hibla\QueryBuilder\DB::rawExecute(
                 'INSERT INTO posts (user_id, title) VALUES (?, ?)',
                 [99999, 'Invalid Post']
-            )->await();
+            )->wait();
         })->toThrow(Exception::class);
     });
 
@@ -138,37 +138,37 @@ describe('Data Insertion and Verification', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('pgsql')->create('posts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('title');
-        })->await();
+        })->wait();
 
         Hibla\QueryBuilder\DB::rawExecute(
             'INSERT INTO users (name) VALUES (?)',
             ['Jane Doe']
-        )->await();
+        )->wait();
 
-        $userId = Hibla\QueryBuilder\DB::rawValue('SELECT id FROM users WHERE name = ?', ['Jane Doe'])->await();
+        $userId = Hibla\QueryBuilder\DB::rawValue('SELECT id FROM users WHERE name = ?', ['Jane Doe'])->wait();
 
         Hibla\QueryBuilder\DB::rawExecute(
             'INSERT INTO posts (user_id, title) VALUES (?, ?)',
             [$userId, 'Post 1']
-        )->await();
+        )->wait();
 
         Hibla\QueryBuilder\DB::rawExecute(
             'INSERT INTO posts (user_id, title) VALUES (?, ?)',
             [$userId, 'Post 2']
-        )->await();
+        )->wait();
 
-        $postCount = Hibla\QueryBuilder\DB::rawValue('SELECT COUNT(*) FROM posts WHERE user_id = ?', [$userId])->await();
+        $postCount = Hibla\QueryBuilder\DB::rawValue('SELECT COUNT(*) FROM posts WHERE user_id = ?', [$userId])->wait();
         expect((int) $postCount)->toBe(2);
 
-        Hibla\QueryBuilder\DB::rawExecute('DELETE FROM users WHERE id = ?', [$userId])->await();
+        Hibla\QueryBuilder\DB::rawExecute('DELETE FROM users WHERE id = ?', [$userId])->wait();
 
-        $postCount = Hibla\QueryBuilder\DB::rawValue('SELECT COUNT(*) FROM posts WHERE user_id = ?', [$userId])->await();
+        $postCount = Hibla\QueryBuilder\DB::rawValue('SELECT COUNT(*) FROM posts WHERE user_id = ?', [$userId])->wait();
         expect((int) $postCount)->toBe(0);
     });
 });

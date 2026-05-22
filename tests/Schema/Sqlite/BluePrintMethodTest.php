@@ -28,9 +28,9 @@ describe('Blueprint Methods', function () {
             $table->string('name');
             $table->charset('utf8');
             $table->collation('utf8_general_ci');
-        })->await();
+        })->wait();
 
-        $exists = schema('sqlite')->hasTable('users')->await();
+        $exists = schema('sqlite')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 });

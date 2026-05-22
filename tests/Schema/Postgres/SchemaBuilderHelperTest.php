@@ -18,11 +18,11 @@ describe('SchemaBuilder Helper Methods', function () {
             $table->id();
             $table->string('name');
             $table->string('email');
-        })->await();
+        })->wait();
 
-        schema('pgsql')->dropColumn('users', 'email')->await();
+        schema('pgsql')->dropColumn('users', 'email')->wait();
 
-        $exists = schema('pgsql')->hasTable('users')->await();
+        $exists = schema('pgsql')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -30,11 +30,11 @@ describe('SchemaBuilder Helper Methods', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
-        schema('pgsql')->renameColumn('users', 'name', 'full_name')->await();
+        schema('pgsql')->renameColumn('users', 'name', 'full_name')->wait();
 
-        $exists = schema('pgsql')->hasTable('users')->await();
+        $exists = schema('pgsql')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -42,11 +42,11 @@ describe('SchemaBuilder Helper Methods', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('email')->index();
-        })->await();
+        })->wait();
 
-        schema('pgsql')->dropIndex('users', 'users_email_index')->await();
+        schema('pgsql')->dropIndex('users', 'users_email_index')->wait();
 
-        $exists = schema('pgsql')->hasTable('users')->await();
+        $exists = schema('pgsql')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -54,17 +54,17 @@ describe('SchemaBuilder Helper Methods', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('pgsql')->create('posts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained();
             $table->string('title');
-        })->await();
+        })->wait();
 
-        schema('pgsql')->dropForeign('posts', 'posts_user_id_foreign')->await();
+        schema('pgsql')->dropForeign('posts', 'posts_user_id_foreign')->wait();
 
-        $exists = schema('pgsql')->hasTable('posts')->await();
+        $exists = schema('pgsql')->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 });

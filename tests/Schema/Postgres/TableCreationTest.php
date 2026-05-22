@@ -19,9 +19,9 @@ describe('Table Creation', function () {
             $table->string('name');
             $table->string('email')->unique();
             $table->timestamps();
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('users')->await();
+        $exists = schema('pgsql')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -36,9 +36,9 @@ describe('Table Creation', function () {
             $table->json('metadata')->nullable();
             $table->timestamp('published_at')->nullable();
             $table->timestamps();
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('posts')->await();
+        $exists = schema('pgsql')->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -49,9 +49,9 @@ describe('Table Creation', function () {
             $table->bigIncrements('big_id');
             $table->smallIncrements('small_id');
             $table->string('name');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('categories')->await();
+        $exists = schema('pgsql')->hasTable('categories')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -65,9 +65,9 @@ describe('Table Creation', function () {
             $table->bigInteger('big_num');
             $table->unsignedTinyInteger('unsigned_tiny');
             $table->unsignedBigInteger('unsigned_big');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('stats')->await();
+        $exists = schema('pgsql')->hasTable('stats')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -78,9 +78,9 @@ describe('Table Creation', function () {
             $table->mediumText('medium_text');
             $table->longText('long_text');
             $table->string('title', 100);
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('documents')->await();
+        $exists = schema('pgsql')->hasTable('documents')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -91,9 +91,9 @@ describe('Table Creation', function () {
             $table->float('rate', 5, 2);
             $table->double('precise_value', 15, 8);
             $table->unsignedDecimal('positive_amount', 8, 2);
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('financials')->await();
+        $exists = schema('pgsql')->hasTable('financials')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -104,9 +104,9 @@ describe('Table Creation', function () {
             $table->dateTime('event_datetime');
             $table->timestamp('event_timestamp');
             $table->timestamps();
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('events')->await();
+        $exists = schema('pgsql')->hasTable('events')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -115,9 +115,9 @@ describe('Table Creation', function () {
             $table->id();
             $table->enum('status', ['pending', 'processing', 'completed', 'cancelled']);
             $table->timestamps();
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('orders')->await();
+        $exists = schema('pgsql')->hasTable('orders')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -127,9 +127,9 @@ describe('Table Creation', function () {
             $table->string('name');
             $table->timestamps();
             $table->softDeletes();
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('users')->await();
+        $exists = schema('pgsql')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -138,9 +138,9 @@ describe('Table Creation', function () {
             $table->id();
             $table->string('name')->comment('User full name');
             $table->string('email')->comment('User email address')->unique();
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('users')->await();
+        $exists = schema('pgsql')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -150,9 +150,9 @@ describe('Table Creation', function () {
             $table->string('name');
             $table->string('email')->after('name');
             $table->timestamps();
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('users')->await();
+        $exists = schema('pgsql')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 });

@@ -37,7 +37,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function __construct(
         QueryInterface|array|string|null $connection = null,
-        ?string $driver = null,
+        string|null $driver = null,
         string $table = ''
     ) {
         if ($table !== '') {

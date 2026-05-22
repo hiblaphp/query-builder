@@ -13,11 +13,10 @@ return [
     |--------------------------------------------------------------------------
     |
     | This option controls the default database connection that will be used
-    | by your application. The value should match one of the connection names
-    | defined in the 'connections' array below.
+    | by your application.
     |
     */
-    'default' => env('DB_CONNECTION', 'sqlite'),
+    'default' => env('DB_CONNECTION', 'mysql'),
 
     /*
     |--------------------------------------------------------------------------
@@ -25,28 +24,9 @@ return [
     |--------------------------------------------------------------------------
     |
     | Here are the database connections configured for your application.
-    | Each connection can be customized with specific driver options and
-    | PDO attributes to control behavior like error handling and fetch modes.
-    | You can add more connections as needed for your application.
-    |
-    | Supported drivers: "sqlite", "mysql", "pgsql", "pgsql_native", "mysqli", "sqlsrv"
     |
     */
     'connections' => [
-        'sqlite' => [
-            'driver' => 'sqlite',
-            'database' => match ($path = env('DB_SQLITE_PATH', null)) {
-                ':memory:' => 'file::memory:?cache=shared',
-                null => __DIR__ . '/../database/database.sqlite',
-                default => $path,
-            },
-            'pool_size' => env('DB_POOL_SIZE', 10, true),
-            'options' => [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            ],
-        ],
-
         'mysql' => [
             'driver' => 'mysql',
             'host' => env('DB_HOST', '127.0.0.1'),
@@ -54,71 +34,26 @@ return [
             'database' => env('DB_DATABASE', 'test'),
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
+            'max_connections' => env('DB_MAX_CONNECTIONS', 10, convertNumeric: true),
+            'min_connections' => env('DB_MIN_CONNECTIONS', 0, convertNumeric: true),
+            'enable_server_side_cancellation' => env('DB_ENABLE_SERVER_SIDE_CANCELLATION', false),
+            'compress' => env('DB_COMPRESS', false),
             'charset' => 'utf8mb4',
-            'pool_size' => env('DB_POOL_SIZE', 10, true),
-            'options' => [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false,
-                PDO::ATTR_PERSISTENT => true,
-            ],
-        ],
-
-        'mysqli' => [
-            'driver' => 'mysqli',
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', 3306, true),
-            'database' => env('DB_DATABASE', 'test'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'charset' => 'utf8mb4',
-            'pool_size' => env('DB_POOL_SIZE', 10, true),
-            'persistent' => true,
-            'options' => [
-                MYSQLI_OPT_INT_AND_FLOAT_NATIVE => true,
-            ],
-        ],
-
-        'pgsql' => [
-            'driver' => 'pgsql',
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', 5432, true),
-            'database' => env('DB_DATABASE', 'test'),
-            'username' => env('DB_USERNAME', 'postgres'),
-            'password' => env('DB_PASSWORD', ''),
-            'charset' => 'utf8',
-            'pool_size' => env('DB_POOL_SIZE', 10, true),
-            'options' => [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                PDO::ATTR_EMULATE_PREPARES => false,
-                PDO::ATTR_PERSISTENT => true,
-            ],
-        ],
-
-        'pgsql_native' => [
-            'driver' => 'pgsql_native',
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', 5432, true),
-            'database' => env('DB_DATABASE', 'test'),
-            'username' => env('DB_USERNAME', 'postgres'),
-            'password' => env('DB_PASSWORD', ''),
-            'pool_size' => env('DB_POOL_SIZE', 10, true),
-            'persistent' => true,
-        ],
-
-        'sqlsrv' => [
-            'driver' => 'sqlsrv',
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', 1433),
-            'database' => env('DB_DATABASE', 'test'),
-            'username' => env('DB_USERNAME', ''),
-            'password' => env('DB_PASSWORD', ''),
-            'pool_size' => env('DB_POOL_SIZE', 10, true),
-            'options' => [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            ],
+            'idle_timeout' => 60,
+            'max_lifetime' => 3600,
+            'max_waiters' => 0,
+            'acquire_timeout' => 10.0,
+            'enable_statement_cache' => true,
+            'statement_cache_size' => 256,
+            'connect_timeout' => 10,
+            'reset_connection' => false,
+            'multi_statements' => false,
+            'cast_prepared_types' => true,
+            'ssl' => false,
+            'ssl_verify' => false,
+            'ssl_ca' => null,
+            'ssl_cert' => null,
+            'ssl_key' => null,
         ],
     ],
 

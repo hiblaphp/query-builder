@@ -37,10 +37,23 @@ class DatabaseManager implements ConnectionResolverInterface
     public function resolveClientFromConfig(array $config): SqlClientInterface
     {
         $driver = strtolower($config['driver'] ?? 'mysql');
-        $poolSize = (int) ($config['pool_size'] ?? 10);
 
         return match ($driver) {
-            'mysql', 'mysqli' => new MysqlClient($config, maxConnections: $poolSize),
+            'mysql' => new MysqlClient(
+                config: $config,
+                minConnections: (int) ($config['min_connections'] ?? 0),
+                maxConnections: (int) ($config['pool_size'] ?? $config['max_connections'] ?? 10),
+                idleTimeout: (int) ($config['idle_timeout'] ?? 60),
+                maxLifetime: (int) ($config['max_lifetime'] ?? 3600),
+                statementCacheSize: (int) ($config['statement_cache_size'] ?? 256),
+                enableStatementCache: (bool) ($config['enable_statement_cache'] ?? true),
+                maxWaiters: (int) ($config['max_waiters'] ?? 0),
+                acquireTimeout: (float) ($config['acquire_timeout'] ?? 10.0),
+            ),
+
+            // 'pgsql' => new PgsqlClient(...), // Ready for future async Postgres client
+            // 'sqlite' => new SqliteClient(...), // Ready for future async SQLite client
+
             default => throw new \InvalidArgumentException("Driver '{$driver}' is not supported yet."),
         };
     }

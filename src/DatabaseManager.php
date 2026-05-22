@@ -84,6 +84,20 @@ class DatabaseManager implements ConnectionResolverInterface
     }
 
     /**
+     * Remove a connection by name.
+     */
+    public function removeConnection(string $name): void
+    {
+        if (isset($this->connections[$name])) {
+            $this->connections[$name]->getClient()->close();
+        }
+
+        if ($this->defaultConnectionName === $name) {
+            $this->defaultConnectionName = null;
+        }
+    }
+
+    /**
      * Get the default connection name, loading from config if necessary.
      */
     public function getDefaultConnectionName(): string

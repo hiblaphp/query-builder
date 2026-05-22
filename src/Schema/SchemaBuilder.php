@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Schema;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
-use Hibla\QueryBuilder\ConnectionProxy;
 use Hibla\QueryBuilder\DB;
-use Rcalicdan\ConfigLoader\Config;
+use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
 
 use function Hibla\async;
 use function Hibla\await;
@@ -23,34 +22,15 @@ class SchemaBuilder
     public function __construct(?string $driver = null, ?string $connection = null)
     {
         $this->connection = $connection;
-        $this->driver = $driver ?? $this->detectDriver();
+        $this->driver = $driver ?? $this->getConnection()->getDriverName();
     }
 
-    private function detectDriver(): string
+    /**
+     * Get the database connection to use.
+     */
+    private function getConnection(): DatabaseConnectionInterface
     {
-        $dbConfig = Config::get('async-database');
-
-        if (! \is_array($dbConfig)) {
-            return 'mysql';
-        }
-
-        $connectionName = $this->connection ?? ($dbConfig['default'] ?? 'mysql');
-        if (! \is_string($connectionName)) {
-            return 'mysql';
-        }
-
-        $connections = $dbConfig['connections'] ?? [];
-        if (! \is_array($connections)) {
-            return 'mysql';
-        }
-
-        $connectionConfig = $connections[$connectionName] ?? [];
-        if (! \is_array($connectionConfig)) {
-            return 'mysql';
-        }
-        $driver = $connectionConfig['driver'] ?? 'mysql';
-
-        return \is_string($driver) ? strtolower($driver) : 'mysql';
+        return DB::connection($this->connection);
     }
 
     private function getSQLiteBuilder(): SQLiteSchemaBuilder
@@ -62,12 +42,14 @@ class SchemaBuilder
         return $this->sqliteBuilder;
     }
 
-    /**
-     * Get the database connection to use.
-     */
-    private function getConnection(): ConnectionProxy
+    private function getCompiler(): SchemaCompiler
     {
-        return DB::connection($this->connection);
+        return match ($this->driver) {
+            'mysql', 'mysqli' => new Compilers\MySQLSchemaCompiler(),
+            'pgsql', 'pgsql_native' => new Compilers\PostgreSQLSchemaCompiler(),
+            'sqlite' => new Compilers\SQLiteSchemaCompiler(),
+            default => new Compilers\MySQLSchemaCompiler(),
+        };
     }
 
     /**
@@ -77,20 +59,21 @@ class SchemaBuilder
      */
     public function create(string $table, callable $callback): PromiseInterface
     {
-        $blueprint = new Blueprint($table);
-        $callback($blueprint);
+        return async(function () use ($table, $callback) {
+            $blueprint = new Blueprint($table);
+            $callback($blueprint);
 
-        $this->processColumnIndexes($blueprint);
+            $this->processColumnIndexes($blueprint);
 
-        $compiler = $this->getCompiler();
-        $sql = $compiler->compileCreate($blueprint);
+            $compiler = $this->getCompiler();
+            $sql = $compiler->compileCreate($blueprint);
 
-        if ($this->driver === 'sqlite') {
-            return $this->getSQLiteBuilder()->handleCreate($sql);
-        }
+            if ($this->driver === 'sqlite') {
+                return await($this->getSQLiteBuilder()->handleCreate($sql));
+            }
 
-        /** @phpstan-ignore-next-line */
-        return $this->getConnection()->rawExecute($sql, []);
+            return await($this->getConnection()->rawExecute($sql, []));
+        });
     }
 
     /**
@@ -100,10 +83,12 @@ class SchemaBuilder
      */
     public function dropIfExists(string $table): PromiseInterface
     {
-        $compiler = $this->getCompiler();
-        $sql = $compiler->compileDropIfExists($table);
+        return async(function () use ($table) {
+            $compiler = $this->getCompiler();
+            $sql = $compiler->compileDropIfExists($table);
 
-        return $this->getConnection()->rawExecute($sql, []);
+            return await($this->getConnection()->rawExecute($sql, []));
+        });
     }
 
     /**
@@ -113,10 +98,12 @@ class SchemaBuilder
      */
     public function drop(string $table): PromiseInterface
     {
-        $compiler = $this->getCompiler();
-        $sql = $compiler->compileDrop($table);
+        return async(function () use ($table) {
+            $compiler = $this->getCompiler();
+            $sql = $compiler->compileDrop($table);
 
-        return $this->getConnection()->rawExecute($sql, []);
+            return await($this->getConnection()->rawExecute($sql, []));
+        });
     }
 
     /**
@@ -126,10 +113,12 @@ class SchemaBuilder
      */
     public function hasTable(string $table): PromiseInterface
     {
-        $compiler = $this->getCompiler();
-        $sql = $compiler->compileTableExists($table);
+        return async(function () use ($table) {
+            $compiler = $this->getCompiler();
+            $sql = $compiler->compileTableExists($table);
 
-        return $this->getConnection()->rawValue($sql, []);
+            return await($this->getConnection()->rawValue($sql, []));
+        });
     }
 
     /**
@@ -139,28 +128,31 @@ class SchemaBuilder
      */
     public function table(string $table, callable $callback): PromiseInterface
     {
-        $blueprint = new Blueprint($table);
-        $callback($blueprint);
+        return async(function () use ($table, $callback) {
+            $blueprint = new Blueprint($table);
+            $callback($blueprint);
 
-        $this->processColumnIndexes($blueprint);
+            $this->processColumnIndexes($blueprint);
 
-        $compiler = $this->getCompiler();
+            $compiler = $this->getCompiler();
 
-        if ($this->driver === 'sqlite') {
-            /** @phpstan-ignore-next-line */
-            return $this->getSQLiteBuilder()->handleTable($table, $blueprint);
-        }
+            if ($this->driver === 'sqlite') {
+                return await($this->getSQLiteBuilder()->handleTable($table, $blueprint));
+            }
 
-        $sql = $compiler->compileAlter($blueprint);
+            $sql = $compiler->compileAlter($blueprint);
 
-        if (\is_array($sql)) {
-            $statements = $this->toList($sql);
+            if (\is_array($sql)) {
+                $results = [];
+                foreach ($sql as $statement) {
+                    $results[] = await($this->getConnection()->rawExecute($statement, []));
+                }
 
-            return $this->executeMultipleOrNull($statements);
-        }
+                return \count($results) === 0 ? null : $results;
+            }
 
-        /** @phpstan-ignore-next-line */
-        return $this->getConnection()->rawExecute($sql, []);
+            return await($this->getConnection()->rawExecute($sql, []));
+        });
     }
 
     /**
@@ -170,10 +162,12 @@ class SchemaBuilder
      */
     public function rename(string $from, string $to): PromiseInterface
     {
-        $compiler = $this->getCompiler();
-        $sql = $compiler->compileRename($from, $to);
+        return async(function () use ($from, $to) {
+            $compiler = $this->getCompiler();
+            $sql = $compiler->compileRename($from, $to);
 
-        return $this->getConnection()->rawExecute($sql, []);
+            return await($this->getConnection()->rawExecute($sql, []));
+        });
     }
 
     /**
@@ -185,29 +179,29 @@ class SchemaBuilder
      */
     public function dropColumn(string $table, string|array $columns): PromiseInterface
     {
-        $blueprint = new Blueprint($table);
-        $blueprint->dropColumn($columns);
+        return async(function () use ($table, $columns) {
+            $blueprint = new Blueprint($table);
+            $blueprint->dropColumn($columns);
 
-        $compiler = $this->getCompiler();
+            $compiler = $this->getCompiler();
 
-        if ($this->driver === 'sqlite') {
-            /** @phpstan-ignore-next-line */
-            return $this->getSQLiteBuilder()->handleDropColumn($table, $blueprint);
-        }
-
-        $sql = $compiler->compileAlter($blueprint);
-
-        if (\is_array($sql)) {
-            if (\count($sql) === 0) {
-                return $this->nullPromise();
+            if ($this->driver === 'sqlite') {
+                return await($this->getSQLiteBuilder()->handleDropColumn($table, $blueprint));
             }
-            $statements = $this->toList($sql);
 
-            return $this->executeMultipleOrNull($statements);
-        }
+            $sql = $compiler->compileAlter($blueprint);
 
-        /** @phpstan-ignore-next-line */
-        return $this->getConnection()->rawExecute($sql, []);
+            if (\is_array($sql)) {
+                $results = [];
+                foreach ($sql as $statement) {
+                    $results[] = await($this->getConnection()->rawExecute($statement, []));
+                }
+
+                return \count($results) === 0 ? null : $results;
+            }
+
+            return await($this->getConnection()->rawExecute($sql, []));
+        });
     }
 
     /**
@@ -217,20 +211,24 @@ class SchemaBuilder
      */
     public function renameColumn(string $table, string $from, string $to): PromiseInterface
     {
-        $blueprint = new Blueprint($table);
-        $blueprint->renameColumn($from, $to);
+        return async(function () use ($table, $from, $to) {
+            $blueprint = new Blueprint($table);
+            $blueprint->renameColumn($from, $to);
 
-        $compiler = $this->getCompiler();
-        $sql = $compiler->compileAlter($blueprint);
+            $compiler = $this->getCompiler();
+            $sql = $compiler->compileAlter($blueprint);
 
-        if (\is_array($sql)) {
-            $statements = $this->toList($sql);
+            if (\is_array($sql)) {
+                $results = [];
+                foreach ($sql as $statement) {
+                    $results[] = await($this->getConnection()->rawExecute($statement, []));
+                }
 
-            return $this->executeMultipleNoNull($statements);
-        }
+                return $results;
+            }
 
-        /** @phpstan-ignore-next-line */
-        return $this->getConnection()->rawExecute($sql, []);
+            return await($this->getConnection()->rawExecute($sql, []));
+        });
     }
 
     /**
@@ -242,29 +240,29 @@ class SchemaBuilder
      */
     public function dropIndex(string $table, string|array $index): PromiseInterface
     {
-        $blueprint = new Blueprint($table);
-        $blueprint->dropIndex($index);
+        return async(function () use ($table, $index) {
+            $blueprint = new Blueprint($table);
+            $blueprint->dropIndex($index);
 
-        $compiler = $this->getCompiler();
+            $compiler = $this->getCompiler();
 
-        if ($this->driver === 'sqlite') {
-            /** @phpstan-ignore-next-line */
-            return $this->getSQLiteBuilder()->handleDropIndex($table, $blueprint);
-        }
-
-        $sql = $compiler->compileAlter($blueprint);
-
-        if (\is_array($sql)) {
-            if (\count($sql) === 0) {
-                return $this->nullPromise();
+            if ($this->driver === 'sqlite') {
+                return await($this->getSQLiteBuilder()->handleDropIndex($table, $blueprint));
             }
-            $statements = $this->toList($sql);
 
-            return $this->executeMultipleOrNull($statements);
-        }
+            $sql = $compiler->compileAlter($blueprint);
 
-        /** @phpstan-ignore-next-line */
-        return $this->getConnection()->rawExecute($sql, []);
+            if (\is_array($sql)) {
+                $results = [];
+                foreach ($sql as $statement) {
+                    $results[] = await($this->getConnection()->rawExecute($statement, []));
+                }
+
+                return \count($results) === 0 ? null : $results;
+            }
+
+            return await($this->getConnection()->rawExecute($sql, []));
+        });
     }
 
     /**
@@ -276,105 +274,29 @@ class SchemaBuilder
      */
     public function dropForeign(string $table, string|array $foreignKey): PromiseInterface
     {
-        $blueprint = new Blueprint($table);
-        $blueprint->dropForeign($foreignKey);
+        return async(function () use ($table, $foreignKey) {
+            $blueprint = new Blueprint($table);
+            $blueprint->dropForeign($foreignKey);
 
-        $compiler = $this->getCompiler();
+            $compiler = $this->getCompiler();
 
-        if ($this->driver === 'sqlite') {
-            /** @phpstan-ignore-next-line */
-            return $this->getSQLiteBuilder()->handleDropForeign($table, $blueprint);
-        }
-
-        $sql = $compiler->compileAlter($blueprint);
-
-        if (\is_array($sql)) {
-            if (\count($sql) === 0) {
-                return $this->nullPromise();
-            }
-            $statements = $this->toList($sql);
-
-            return $this->executeMultipleOrNull($statements);
-        }
-
-        /** @phpstan-ignore-next-line */
-        return $this->getConnection()->rawExecute($sql, []);
-    }
-
-    /**
-     * Convert array to a list type for PHPStan.
-     *
-     * @param array<mixed> $items
-     *
-     * @return list<string>
-     */
-    private function toList(array $items): array
-    {
-        /** @var list<string> */
-        return array_values($items);
-    }
-
-    /**
-     * Create a null promise for empty operations.
-     *
-     * @return PromiseInterface<int|list<int>|null>
-     */
-    private function nullPromise(): PromiseInterface
-    {
-        /** @phpstan-ignore-next-line */
-        return async(static fn () => null);
-    }
-
-    /**
-     * Execute multiple SQL statements, returning list of results or null if empty.
-     *
-     * @param list<string> $statements
-     *
-     * @return PromiseInterface<int|list<int>|null>
-     */
-    private function executeMultipleOrNull(array $statements): PromiseInterface
-    {
-        /** @phpstan-ignore-next-line */
-        return async(function () use ($statements) {
-            $results = [];
-            foreach ($statements as $sql) {
-                $result = await($this->getConnection()->rawExecute($sql, []));
-                $results[] = $result;
+            if ($this->driver === 'sqlite') {
+                return await($this->getSQLiteBuilder()->handleDropForeign($table, $blueprint));
             }
 
-            return \count($results) === 0 ? null : $results;
+            $sql = $compiler->compileAlter($blueprint);
+
+            if (\is_array($sql)) {
+                $results = [];
+                foreach ($sql as $statement) {
+                    $results[] = await($this->getConnection()->rawExecute($statement, []));
+                }
+
+                return \count($results) === 0 ? null : $results;
+            }
+
+            return await($this->getConnection()->rawExecute($sql, []));
         });
-    }
-
-    /**
-     * Execute multiple SQL statements, returning list of results.
-     *
-     * @param list<string> $statements
-     *
-     * @return PromiseInterface<int|list<int>>
-     */
-    private function executeMultipleNoNull(array $statements): PromiseInterface
-    {
-        /** @phpstan-ignore-next-line */
-        return async(function () use ($statements) {
-            $results = [];
-            foreach ($statements as $sql) {
-                $result = await($this->getConnection()->rawExecute($sql, []));
-                $results[] = $result;
-            }
-
-            return $results;
-        });
-    }
-
-    private function getCompiler(): SchemaCompiler
-    {
-        return match ($this->driver) {
-            'mysql', 'mysqli' => new Compilers\MySQLSchemaCompiler(),
-            'pgsql', 'pgsql_native' => new Compilers\PostgreSQLSchemaCompiler(),
-            'sqlite' => new Compilers\SQLiteSchemaCompiler(),
-            default => new Compilers\MySQLSchemaCompiler(),
-        };
     }
 
     /**

@@ -8,6 +8,7 @@ use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
 use Hibla\QueryBuilder\Interfaces\DatabaseTransactionInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
+use Hibla\Sql\SqlClientInterface;
 
 /**
  * Static Facade for the DatabaseManager.
@@ -21,15 +22,42 @@ class DB
     }
 
     /**
-     * Get the singleton DatabaseManager instance.
+     * Get the singleton DatabaseManager instance internally.
      */
-    public static function getManager(): DatabaseManager
+    private static function getManager(): DatabaseManager
     {
         if (self::$manager === null) {
             self::$manager = new DatabaseManager();
         }
 
         return self::$manager;
+    }
+
+    /**
+     * Register a new database connection dynamically.
+     */
+    public static function addConnection(string $name, DatabaseConnectionInterface $connection): void
+    {
+        self::getManager()->addConnection($name, $connection);
+    }
+
+    /**
+     * Remove an existing database connection.
+     */
+    public static function removeConnection(string $name): void
+    {
+        self::getManager()->removeConnection($name);
+    }
+
+    /**
+     * Resolve a raw SQL client from a configuration array.
+     * Useful for dynamic connections or schema builders.
+     *
+     * @param array<string, mixed> $config
+     */
+    public static function resolveClientFromConfig(array $config): SqlClientInterface
+    {
+        return self::getManager()->resolveClientFromConfig($config);
     }
 
     /**

@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Schema;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
-use Hibla\QueryBuilder\ConnectionProxy;
 use Hibla\QueryBuilder\DB;
-use Rcalicdan\ConfigLoader\Config;
+use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
 
 class MigrationRepository
 {
@@ -27,45 +26,13 @@ class MigrationRepository
     {
         $this->table = $table;
         $this->connection = $connection;
-        $this->driver = $this->detectDriver();
-    }
-
-    private function detectDriver(): string
-    {
-        try {
-            $dbConfig = Config::get('async-database');
-
-            if (! \is_array($dbConfig)) {
-                return 'mysql';
-            }
-
-            $connectionName = $this->connection ?? ($dbConfig['default'] ?? 'mysql');
-            if (! \is_string($connectionName)) {
-                return 'mysql';
-            }
-
-            $connections = $dbConfig['connections'] ?? [];
-            if (! \is_array($connections)) {
-                return 'mysql';
-            }
-
-            $connectionConfig = $connections[$connectionName] ?? [];
-            if (! \is_array($connectionConfig)) {
-                return 'mysql';
-            }
-
-            $driver = $connectionConfig['driver'] ?? 'mysql';
-
-            return \is_string($driver) ? strtolower($driver) : 'mysql';
-        } catch (\Throwable $e) {
-            return 'mysql';
-        }
+        $this->driver = $this->getConnection()->getDriverName();
     }
 
     /**
      * Get the database connection to use.
      */
-    private function getConnection(): ConnectionProxy
+    private function getConnection(): DatabaseConnectionInterface
     {
         return DB::connection($this->connection);
     }
@@ -74,7 +41,6 @@ class MigrationRepository
     {
         return match ($this->driver) {
             'pgsql', 'pgsql_native' => "\"{$identifier}\"",
-            'sqlsrv' => "[{$identifier}]",
             'sqlite', 'mysql', 'mysqli' => "`{$identifier}`",
             default => "`{$identifier}`",
         };
@@ -139,9 +105,7 @@ class MigrationRepository
     {
         $table = $this->quoteIdentifier($this->table);
 
-        $sql = match ($this->driver) {
-            default => "SELECT migration FROM {$table} ORDER BY batch DESC, migration DESC LIMIT ?",
-        };
+        $sql = "SELECT migration FROM {$table} ORDER BY batch DESC, migration DESC LIMIT ?";
 
         return $this->getConnection()->raw($sql, [$steps]);
     }

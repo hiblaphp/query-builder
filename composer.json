@@ -37,14 +37,14 @@
         "phpstan/phpstan-strict-rules": "^2.0"
     },
     "bin": [
-        "bin/pdo-query-builder"
+        "bin/hibla-database"
     ],
     "scripts": {
         "post-install-cmd": [
-            "@php -r \"if (!is_dir('config')) { echo '\\nRun: ./vendor/bin/pdo-query-builder init\\n\\n'; }\""
+            "@php -r \"if (!is_dir('config')) { echo '\\nRun: ./vendor/bin/hibla-database init\\n\\n'; }\""
         ],
         "post-update-cmd": [
-            "@php -r \"if (!is_dir('config')) { echo '\\nRun: ./vendor/bin/pdo-query-builder init\\n\\n'; }\""
+            "@php -r \"if (!is_dir('config')) { echo '\\nRun: ./vendor/bin/hibla-database init\\n\\n'; }\""
         ],
         "test": "./vendor/bin/pest",
         "test:unit": "./vendor/bin/pest tests/Unit",

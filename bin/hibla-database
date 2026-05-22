@@ -17,16 +17,15 @@ use Hibla\QueryBuilder\Console\StatusCommand;
 
 $application = new Application('Hibla Query Builder', '1.0.0');
 
-// Register all commands
-$application->add(new InitCommand());
-$application->add(new PublishTemplatesCommand());
-$application->add(new MakeMigrationCommand());
-$application->add(new MigrateCommand());
-$application->add(new MigrateRollbackCommand());
-$application->add(new MigrateResetCommand());
-$application->add(new MigrateRefreshCommand());
-$application->add(new MigrateFreshCommand());
-$application->add(new MigrateStatusCommand());
-$application->add(new StatusCommand());
+$application->addCommand(new InitCommand());
+$application->addCommand(new PublishTemplatesCommand());
+$application->addCommand(new MakeMigrationCommand());
+$application->addCommand(new MigrateCommand());
+$application->addCommand(new MigrateRollbackCommand());
+$application->addCommand(new MigrateResetCommand());
+$application->addCommand(new MigrateRefreshCommand());
+$application->addCommand(new MigrateFreshCommand());
+$application->addCommand(new MigrateStatusCommand());
+$application->addCommand(new StatusCommand());
 
 $application->run();

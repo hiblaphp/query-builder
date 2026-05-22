@@ -6,6 +6,7 @@ namespace Hibla\QueryBuilder;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\Promise\Promise;
+use Hibla\QueryBuilder\Interfaces\ConnectionResolverInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
 use Hibla\QueryBuilder\Pagination\CursorPaginator;
 use Hibla\QueryBuilder\Pagination\Paginator;
@@ -21,11 +22,21 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
 
     private bool $returnAsObject = false;
 
+    private static ?ConnectionResolverInterface $resolver = null;
+
     /**
-     * @param QueryInterface|array<string, mixed>|null $connection
+     * Inject the connection resolver bridge.
+     */
+    public static function setConnectionResolver(ConnectionResolverInterface $resolver): void
+    {
+        self::$resolver = $resolver;
+    }
+
+    /**
+     * @param QueryInterface|array<string, mixed>|string|null $connection
      */
     public function __construct(
-        QueryInterface|array|null $connection = null,
+        QueryInterface|array|string|null $connection = null,
         ?string $driver = null,
         string $table = ''
     ) {
@@ -33,22 +44,29 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
             $this->table = $table;
         }
 
-        if ($connection === null) {
-            // Fallback to default DB Facade connection
-            $dbConnection = DB::connection();
-            $this->client = $dbConnection->getClient();
-            $this->driver = $driver ?? $dbConnection->getDriverName();
-        } elseif (\is_array($connection)) {
-            // Ad-hoc configuration passed directly
-            $this->driver = $driver ?? $connection['driver'] ?? 'mysql';
-            $this->client = match ($this->driver) {
-                'mysql', 'mysqli' => new \Hibla\Mysql\MysqlClient($connection),
-                default => throw new \InvalidArgumentException("Driver '{$this->driver}' not supported yet."),
-            };
-        } else {
-            // Injected directly (e.g., from DatabaseConnection or DatabaseTransaction wrappers)
+        if ($connection instanceof QueryInterface) {
             $this->client = $connection;
             $this->driver = $driver ?? 'mysql';
+        } elseif (\is_array($connection)) {
+            $this->ensureResolverIsSet();
+            $this->client = self::$resolver->resolveClientFromConfig($connection);
+            $this->driver = $driver ?? $connection['driver'] ?? 'mysql';
+
+        } else {
+            $this->ensureResolverIsSet();
+            $conn = self::$resolver->connection($connection);
+            $this->client = $conn->getClient();
+            $this->driver = $driver ?? $conn->getDriverName();
+        }
+    }
+
+    private function ensureResolverIsSet(): void
+    {
+        if (self::$resolver === null) {
+            throw new \RuntimeException(
+                'A ConnectionResolver has not been set. Either initialize the DatabaseManager first (e.g., DB::getManager()), ' .
+                'or pass a valid QueryInterface directly into the QueryBuilder constructor.'
+            );
         }
     }
 

@@ -8,14 +8,16 @@ use Hibla\Mysql\MysqlClient;
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\Exceptions\DatabaseConfigNotFoundException;
 use Hibla\QueryBuilder\Exceptions\InvalidConnectionConfigException;
+use Hibla\QueryBuilder\Interfaces\ConnectionResolverInterface;
 use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
+use Hibla\Sql\SqlClientInterface;
 use Rcalicdan\ConfigLoader\Config;
 
 /**
- * Manages the registry of active database connection pools.
+ * @internal Do not use this directly
  */
-class DatabaseManager
+class DatabaseManager implements ConnectionResolverInterface
 {
     /**
      * @var array<string, DatabaseConnectionInterface>
@@ -23,6 +25,25 @@ class DatabaseManager
     private array $connections = [];
 
     private ?string $defaultConnectionName = null;
+
+    public function __construct()
+    {
+        QueryBuilder::setConnectionResolver($this);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function resolveClientFromConfig(array $config): SqlClientInterface
+    {
+        $driver = strtolower($config['driver'] ?? 'mysql');
+        $poolSize = (int) ($config['pool_size'] ?? 10);
+
+        return match ($driver) {
+            'mysql', 'mysqli' => new MysqlClient($config, maxConnections: $poolSize),
+            default => throw new \InvalidArgumentException("Driver '{$driver}' is not supported yet."),
+        };
+    }
 
     /**
      * Get or initialize a database connection by name.

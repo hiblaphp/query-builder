@@ -10,6 +10,9 @@ use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
 use Hibla\Sql\Result;
 use Hibla\Sql\Transaction;
 
+/**
+ * @internal Do not use this directly
+ */
 class DatabaseTransaction implements DatabaseTransactionInterface
 {
     public function __construct(

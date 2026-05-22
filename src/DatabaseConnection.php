@@ -12,6 +12,9 @@ use Hibla\Sql\SqlClientInterface;
 use Hibla\Sql\Transaction;
 use Hibla\Sql\TransactionOptions;
 
+/**
+ * @internal Do not use this directly
+ */
 class DatabaseConnection implements DatabaseConnectionInterface
 {
     public function __construct(

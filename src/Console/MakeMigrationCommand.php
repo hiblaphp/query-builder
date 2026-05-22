@@ -19,12 +19,19 @@ class MakeMigrationCommand extends Command
     use LoadsSchemaConfiguration;
 
     private SymfonyStyle $io;
+
     private ?string $projectRoot = null;
+
     private string $migrationsPath;
+
     private string $migrationName;
+
     private ?string $table;
+
     private ?string $alter;
+
     private ?string $connection = null;
+
     private ?string $subdirectory = null;
 
     protected function configure(): void

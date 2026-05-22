@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Console;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
-use Hibla\QueryBuilder\Console\Traits\FindProjectRoot;
 use Hibla\QueryBuilder\Console\Traits\InitializeDatabase;
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
 use Hibla\QueryBuilder\Schema\MigrationRepository;
 use InvalidArgumentException;
+use Rcalicdan\ConfigLoader\Config;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -22,7 +22,6 @@ use function Hibla\await;
 class MigrateResetCommand extends Command
 {
     use LoadsSchemaConfiguration;
-    use FindProjectRoot;
     use InitializeDatabase;
     use ValidateConnection;
 
@@ -91,6 +90,19 @@ class MigrateResetCommand extends Command
         }
     }
 
+    private function initializeProjectRoot(): bool
+    {
+        $this->projectRoot = Config::getRootPath();
+
+        if ($this->projectRoot === null) {
+            $this->io->error('Could not find project root. Ensure a vendor directory exists.');
+
+            return false;
+        }
+
+        return true;
+    }
+
     private function initializeCommandState(InputInterface $input, OutputInterface $output): void
     {
         $this->io = new SymfonyStyle($input, $output);
@@ -131,7 +143,6 @@ class MigrateResetCommand extends Command
     {
         $this->initializeDatabase();
         $this->repository = new MigrationRepository($this->getMigrationsTable($this->connection), $this->connection);
-        // REMOVED: $this->schema = new SchemaBuilder(null, $this->connection);
     }
 
     private function handleResetResult(int|false $result): int

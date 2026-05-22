@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Console;
 
-use Hibla\QueryBuilder\Console\Traits\FindProjectRoot;
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
 use Hibla\QueryBuilder\DB;
@@ -22,7 +21,6 @@ use function Hibla\await;
 class MigrateFreshCommand extends Command
 {
     use LoadsSchemaConfiguration;
-    use FindProjectRoot;
     use ValidateConnection;
 
     private SymfonyStyle $io;
@@ -67,7 +65,11 @@ class MigrateFreshCommand extends Command
             return Command::SUCCESS;
         }
 
-        if (! $this->initializeProjectRoot()) {
+        $this->projectRoot = Config::getRootPath();
+
+        if ($this->projectRoot === null) {
+            $this->io->error('Could not find project root. Ensure a vendor directory exists.');
+
             return Command::FAILURE;
         }
 

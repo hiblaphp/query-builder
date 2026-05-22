@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Console;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
-use Hibla\QueryBuilder\Console\Traits\FindProjectRoot;
 use Hibla\QueryBuilder\Console\Traits\InitializeDatabase;
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
@@ -24,7 +23,6 @@ use function Hibla\await;
 class MigrateCommand extends Command
 {
     use LoadsSchemaConfiguration;
-    use FindProjectRoot;
     use InitializeDatabase;
     use ValidateConnection;
 
@@ -81,6 +79,19 @@ class MigrateCommand extends Command
         }
     }
 
+    private function initializeProjectRoot(): bool
+    {
+        $this->projectRoot = Config::getRootPath();
+
+        if ($this->projectRoot === null) {
+            $this->io->error('Could not find project root. Ensure a vendor directory exists.');
+
+            return false;
+        }
+
+        return true;
+    }
+
     private function initializeIo(InputInterface $input, OutputInterface $output): void
     {
         $this->io = new SymfonyStyle($input, $output);
@@ -114,7 +125,6 @@ class MigrateCommand extends Command
         }
 
         $this->initializeDatabase();
-        // REMOVED: $this->schema = new SchemaBuilder(null, $this->connection);
 
         $this->io->writeln('Preparing migration repository...');
 

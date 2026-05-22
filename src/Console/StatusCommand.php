@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Console;
 
-use Hibla\QueryBuilder\Console\Traits\FindProjectRoot;
+use Rcalicdan\ConfigLoader\Config;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -12,8 +12,6 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class StatusCommand extends Command
 {
-    use FindProjectRoot;
-
     private SymfonyStyle $io;
 
     private ?string $projectRoot = null;
@@ -22,8 +20,8 @@ class StatusCommand extends Command
      * @var array<string, string>
      */
     private array $configFiles = [
-        'pdo-query-builder.php' => 'Config File',
-        'pdo-schema.php' => 'Schema File',
+        'hibla-database.php' => 'Config File',
+        'hibla-migrations.php' => 'Schema File',
     ];
 
     protected function configure(): void
@@ -39,9 +37,10 @@ class StatusCommand extends Command
         $this->io = new SymfonyStyle($input, $output);
         $this->io->title('PDO Query Builder - Status');
 
-        $this->projectRoot = $this->findProjectRoot();
+        $this->projectRoot = Config::getRootPath();
+
         if ($this->projectRoot === null) {
-            $this->io->error('Could not find project root');
+            $this->io->error('Could not find project root. Ensure a vendor directory exists.');
 
             return Command::FAILURE;
         }
@@ -49,7 +48,7 @@ class StatusCommand extends Command
         $this->displayStatusTable();
 
         if (! $this->allRequiredFilesExist()) {
-            $this->io->note('Run: ./vendor/bin/pdo-query-builder init');
+            $this->io->note('Run: ./vendor/bin/hibla-query-builder init');
 
             return Command::FAILURE;
         }
@@ -109,6 +108,6 @@ class StatusCommand extends Command
             throw new \LogicException('Project root must be initialized before getting config file path.');
         }
 
-        return $this->projectRoot . '/config/' . $filename;
+        return $this->projectRoot . '/' . $filename;
     }
 }

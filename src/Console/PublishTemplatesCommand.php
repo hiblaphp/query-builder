@@ -14,7 +14,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class PublishTemplatesCommand extends Command
 {
     private SymfonyStyle $io;
+
     private ?string $projectRoot = null;
+
     private bool $force;
 
     protected function configure(): void

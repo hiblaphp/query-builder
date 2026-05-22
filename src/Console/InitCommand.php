@@ -14,7 +14,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class InitCommand extends Command
 {
     private SymfonyStyle $io;
+
     private ?string $projectRoot = null;
+
     private bool $force;
 
     protected function configure(): void
@@ -35,7 +37,7 @@ class InitCommand extends Command
         $this->io->title('Hibla Database - Initialize');
 
         $this->projectRoot = Config::getRootPath();
-        
+
         if ($this->projectRoot === null) {
             $this->io->error('Could not find project root. Ensure a vendor directory exists.');
 
@@ -80,7 +82,7 @@ class InitCommand extends Command
             $this->io->success("✓ Configuration created in project root: {$filename}");
         }
 
-        return count($failedFiles) === 0 ? Command::SUCCESS : Command::FAILURE;
+        return \count($failedFiles) === 0 ? Command::SUCCESS : Command::FAILURE;
     }
 
     private function copyFile(string $filename, string $sourceConfig, string $targetDir): string
@@ -196,11 +198,11 @@ PHP;
         }
     }
 
-   /**
-     * Get the absolute path to the configuration templates inside this package.
-     */
+    /**
+      * Get the absolute path to the configuration templates inside this package.
+      */
     private function getSourceConfigPath(string $filename): string
     {
-        return dirname(__DIR__, 2) . '/' . $filename;
+        return \dirname(__DIR__, 2) . '/' . $filename;
     }
 }

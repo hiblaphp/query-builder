@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Console;
 
-use Hibla\QueryBuilder\Console\Traits\FindProjectRoot;
 use Hibla\QueryBuilder\Console\Traits\InitializeDatabase;
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
 use Hibla\QueryBuilder\Schema\MigrationRepository;
 use InvalidArgumentException;
+use Rcalicdan\ConfigLoader\Config;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -21,7 +21,6 @@ use function Hibla\await;
 class MigrateStatusCommand extends Command
 {
     use LoadsSchemaConfiguration;
-    use FindProjectRoot;
     use InitializeDatabase;
     use ValidateConnection;
 
@@ -77,6 +76,19 @@ class MigrateStatusCommand extends Command
 
             return Command::FAILURE;
         }
+    }
+
+    private function initializeProjectRoot(): bool
+    {
+        $this->projectRoot = Config::getRootPath();
+
+        if ($this->projectRoot === null) {
+            $this->io->error('Could not find project root. Ensure a vendor directory exists.');
+
+            return false;
+        }
+
+        return true;
     }
 
     private function setConnectionFromInput(InputInterface $input): void

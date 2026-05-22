@@ -16,6 +16,8 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+use function Hibla\await;
+
 class MigrateStatusCommand extends Command
 {
     use LoadsSchemaConfiguration;

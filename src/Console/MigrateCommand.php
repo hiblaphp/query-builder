@@ -7,6 +7,8 @@ namespace Hibla\QueryBuilder\Console;
 use Hibla\QueryBuilder\Console\Traits\InitializeDatabase;
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
+use Hibla\QueryBuilder\DB;
+use Hibla\QueryBuilder\Interfaces\DatabaseTransactionInterface;
 use Hibla\QueryBuilder\Schema\DatabaseManager;
 use Hibla\QueryBuilder\Schema\MigrationRepository;
 use InvalidArgumentException;
@@ -576,9 +578,22 @@ class MigrateCommand extends Command
 
             $this->displayMigrationProgress($displayName, $migrationConnection);
 
-            $this->executeMigration($migration);
+            $useTransaction = method_exists($migration, 'shouldRunWithinTransaction') && $migration->shouldRunWithinTransaction();
 
-            $this->logMigration($relativePath, $batchNumber, $migrationConnection);
+            if ($useTransaction) {
+                await(
+                    DB::connection($migrationConnection)->transaction(function ($tx) use ($migration, $relativePath, $batchNumber, $migrationConnection) {
+                        if (method_exists($migration, 'setTransaction')) {
+                            $migration->setTransaction($tx);
+                        }
+                        $this->executeMigration($migration);
+                        $this->logMigration($relativePath, $batchNumber, $migrationConnection, $tx);
+                    })
+                );
+            } else {
+                $this->executeMigration($migration);
+                $this->logMigration($relativePath, $batchNumber, $migrationConnection);
+            }
 
             $this->io->writeln(' <info>✓</info>');
 
@@ -617,10 +632,10 @@ class MigrateCommand extends Command
         $migration->up();
     }
 
-    private function logMigration(string $relativePath, int $batchNumber, ?string $migrationConnection): void
+    private function logMigration(string $relativePath, int $batchNumber, ?string $migrationConnection, ?DatabaseTransactionInterface $tx = null): void
     {
         $repository = $this->getRepository($migrationConnection);
-        await($repository->log($relativePath, $batchNumber));
+        await($repository->log($relativePath, $batchNumber, $tx));
     }
 
     private function displayMigrationError(string $displayName, \Throwable $e): void

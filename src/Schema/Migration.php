@@ -6,6 +6,7 @@ namespace Hibla\QueryBuilder\Schema;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\DB;
+use Hibla\QueryBuilder\Interfaces\DatabaseTransactionInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
 
 /**
@@ -23,6 +24,11 @@ abstract class Migration
      * Indicates if the migration should be wrapped in a transaction.
      */
     protected bool $withinTransaction = true;
+
+    /**
+     * The active database transaction instance, if running within one.
+     */
+    protected ?DatabaseTransactionInterface $transaction = null;
 
     /**
      * The schema builder instance.
@@ -76,12 +82,26 @@ abstract class Migration
     }
 
     /**
+     * Set the active transaction for this migration.
+     */
+    public function setTransaction(?DatabaseTransactionInterface $transaction): self
+    {
+        $this->transaction = $transaction;
+
+        return $this;
+    }
+
+    /**
      * Get the schema builder for the configured connection.
      */
     protected function getSchema(): SchemaBuilder
     {
         if ($this->schema === null) {
             $this->schema = new SchemaBuilder(null, $this->connection);
+            
+            if ($this->transaction !== null) {
+                $this->schema->setTransaction($this->transaction);
+            }
         }
 
         return $this->schema;
@@ -202,7 +222,9 @@ abstract class Migration
      */
     protected function raw(string $sql, array $bindings = []): PromiseInterface
     {
-        return DB::connection($this->connection)->raw($sql, $bindings);
+        $client = $this->transaction ?? DB::connection($this->connection);
+        
+        return $client->raw($sql, $bindings);
     }
 
     /**
@@ -214,7 +236,9 @@ abstract class Migration
      */
     protected function rawExecute(string $sql, array $bindings = []): PromiseInterface
     {
-        return DB::connection($this->connection)->rawExecute($sql, $bindings);
+        $client = $this->transaction ?? DB::connection($this->connection);
+        
+        return $client->rawExecute($sql, $bindings);
     }
 
     /**
@@ -224,6 +248,10 @@ abstract class Migration
      */
     protected function db(string $table): QueryBuilderInterface
     {
+        if ($this->transaction !== null) {
+            return $this->transaction->table($table);
+        }
+
         return DB::connection($this->connection)->table($table);
     }
 }

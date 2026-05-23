@@ -7,6 +7,8 @@ namespace Hibla\QueryBuilder\Schema;
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\DB;
 use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
+use Hibla\QueryBuilder\Interfaces\DatabaseTransactionInterface;
+use Hibla\QueryBuilder\Interfaces\RawQueryInterface;
 
 use function Hibla\async;
 use function Hibla\await;
@@ -19,10 +21,20 @@ class SchemaBuilder
 
     private ?string $connection = null;
 
+    private ?DatabaseTransactionInterface $transaction = null;
+
     public function __construct(?string $driver = null, ?string $connection = null)
     {
         $this->connection = $connection;
         $this->driver = $driver ?? $this->getConnection()->getDriverName();
+    }
+
+    /**
+     * Set the active database transaction for the schema operations.
+     */
+    public function setTransaction(?DatabaseTransactionInterface $transaction): void
+    {
+        $this->transaction = $transaction;
     }
 
     /**
@@ -31,6 +43,14 @@ class SchemaBuilder
     private function getConnection(): DatabaseConnectionInterface
     {
         return DB::connection($this->connection);
+    }
+
+    /**
+     * Get the query client to use (either the active transaction or the raw connection).
+     */
+    private function getQueryClient(): RawQueryInterface
+    {
+        return $this->transaction ?? $this->getConnection();
     }
 
     private function getSQLiteBuilder(): SQLiteSchemaBuilder
@@ -72,7 +92,7 @@ class SchemaBuilder
                 return await($this->getSQLiteBuilder()->handleCreate($sql));
             }
 
-            return await($this->getConnection()->rawExecute($sql, []));
+            return await($this->getQueryClient()->rawExecute($sql, []));
         });
     }
 
@@ -87,7 +107,7 @@ class SchemaBuilder
             $compiler = $this->getCompiler();
             $sql = $compiler->compileDropIfExists($table);
 
-            return await($this->getConnection()->rawExecute($sql, []));
+            return await($this->getQueryClient()->rawExecute($sql, []));
         });
     }
 
@@ -102,7 +122,7 @@ class SchemaBuilder
             $compiler = $this->getCompiler();
             $sql = $compiler->compileDrop($table);
 
-            return await($this->getConnection()->rawExecute($sql, []));
+            return await($this->getQueryClient()->rawExecute($sql, []));
         });
     }
 
@@ -117,7 +137,7 @@ class SchemaBuilder
             $compiler = $this->getCompiler();
             $sql = $compiler->compileTableExists($table);
 
-            return await($this->getConnection()->rawValue($sql, []));
+            return await($this->getQueryClient()->rawValue($sql, []));
         });
     }
 
@@ -145,13 +165,13 @@ class SchemaBuilder
             if (\is_array($sql)) {
                 $results = [];
                 foreach ($sql as $statement) {
-                    $results[] = await($this->getConnection()->rawExecute($statement, []));
+                    $results[] = await($this->getQueryClient()->rawExecute($statement, []));
                 }
 
                 return \count($results) === 0 ? null : $results;
             }
 
-            return await($this->getConnection()->rawExecute($sql, []));
+            return await($this->getQueryClient()->rawExecute($sql, []));
         });
     }
 
@@ -166,7 +186,7 @@ class SchemaBuilder
             $compiler = $this->getCompiler();
             $sql = $compiler->compileRename($from, $to);
 
-            return await($this->getConnection()->rawExecute($sql, []));
+            return await($this->getQueryClient()->rawExecute($sql, []));
         });
     }
 
@@ -194,13 +214,13 @@ class SchemaBuilder
             if (\is_array($sql)) {
                 $results = [];
                 foreach ($sql as $statement) {
-                    $results[] = await($this->getConnection()->rawExecute($statement, []));
+                    $results[] = await($this->getQueryClient()->rawExecute($statement, []));
                 }
 
                 return \count($results) === 0 ? null : $results;
             }
 
-            return await($this->getConnection()->rawExecute($sql, []));
+            return await($this->getQueryClient()->rawExecute($sql, []));
         });
     }
 
@@ -221,13 +241,13 @@ class SchemaBuilder
             if (\is_array($sql)) {
                 $results = [];
                 foreach ($sql as $statement) {
-                    $results[] = await($this->getConnection()->rawExecute($statement, []));
+                    $results[] = await($this->getQueryClient()->rawExecute($statement, []));
                 }
 
                 return $results;
             }
 
-            return await($this->getConnection()->rawExecute($sql, []));
+            return await($this->getQueryClient()->rawExecute($sql, []));
         });
     }
 
@@ -255,13 +275,13 @@ class SchemaBuilder
             if (\is_array($sql)) {
                 $results = [];
                 foreach ($sql as $statement) {
-                    $results[] = await($this->getConnection()->rawExecute($statement, []));
+                    $results[] = await($this->getQueryClient()->rawExecute($statement, []));
                 }
 
                 return \count($results) === 0 ? null : $results;
             }
 
-            return await($this->getConnection()->rawExecute($sql, []));
+            return await($this->getQueryClient()->rawExecute($sql, []));
         });
     }
 
@@ -289,13 +309,13 @@ class SchemaBuilder
             if (\is_array($sql)) {
                 $results = [];
                 foreach ($sql as $statement) {
-                    $results[] = await($this->getConnection()->rawExecute($statement, []));
+                    $results[] = await($this->getQueryClient()->rawExecute($statement, []));
                 }
 
                 return \count($results) === 0 ? null : $results;
             }
 
-            return await($this->getConnection()->rawExecute($sql, []));
+            return await($this->getQueryClient()->rawExecute($sql, []));
         });
     }
 

@@ -8,6 +8,7 @@ use Hibla\QueryBuilder\Console\Traits\InitializeDatabase;
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
 use Hibla\QueryBuilder\Console\Traits\ProhibitsDestructiveCommands;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
+use Hibla\QueryBuilder\DB;
 use Hibla\QueryBuilder\Schema\MigrationRepository;
 use InvalidArgumentException;
 use Rcalicdan\ConfigLoader\Config;
@@ -269,9 +270,22 @@ class MigrateRollbackCommand extends Command
 
             $this->displayRollbackProgress($relativePath, $migrationConnection);
 
-            $this->executeDownMethod($migration);
+            $useTransaction = method_exists($migration, 'shouldRunWithinTransaction') && $migration->shouldRunWithinTransaction();
 
-            await($this->repository->delete($relativePath));
+            if ($useTransaction) {
+                await(
+                    DB::connection($migrationConnection)->transaction(function ($tx) use ($migration, $relativePath) {
+                        if (method_exists($migration, 'setTransaction')) {
+                            $migration->setTransaction($tx);
+                        }
+                        $this->executeDownMethod($migration);
+                        await($this->repository->delete($relativePath, $tx));
+                    })
+                );
+            } else {
+                $this->executeDownMethod($migration);
+                await($this->repository->delete($relativePath));
+            }
 
             $this->io->writeln(' <info>✓</info>');
 

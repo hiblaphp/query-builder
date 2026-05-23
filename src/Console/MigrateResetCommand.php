@@ -8,6 +8,7 @@ use Hibla\QueryBuilder\Console\Traits\InitializeDatabase;
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
 use Hibla\QueryBuilder\Console\Traits\ProhibitsDestructiveCommands;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
+use Hibla\QueryBuilder\DB;
 use Hibla\QueryBuilder\Schema\MigrationRepository;
 use InvalidArgumentException;
 use Rcalicdan\ConfigLoader\Config;
@@ -402,8 +403,21 @@ class MigrateResetCommand extends Command
         }
 
         $migrationConnection = $this->resolveMigrationConnection($migration);
-        $this->executeMigrationDown($migration, $relativePath, $migrationConnection);
-        await($this->repository->delete($relativePath));
+
+        $useTransaction = method_exists($migration, 'shouldRunWithinTransaction') && $migration->shouldRunWithinTransaction();
+
+        if ($useTransaction) {
+            await(DB::connection($migrationConnection)->transaction(function ($tx) use ($migration, $relativePath, $migrationConnection) {
+                if (method_exists($migration, 'setTransaction')) {
+                    $migration->setTransaction($tx);
+                }
+                $this->executeMigrationDown($migration, $relativePath, $migrationConnection);
+                await($this->repository->delete($relativePath, $tx));
+            }));
+        } else {
+            $this->executeMigrationDown($migration, $relativePath, $migrationConnection);
+            await($this->repository->delete($relativePath));
+        }
 
         return true;
     }

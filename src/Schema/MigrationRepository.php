@@ -7,6 +7,7 @@ namespace Hibla\QueryBuilder\Schema;
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\DB;
 use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
+use Hibla\QueryBuilder\Interfaces\DatabaseTransactionInterface;
 
 class MigrationRepository
 {
@@ -142,14 +143,16 @@ class MigrationRepository
      *
      * @param string $file The migration file name.
      * @param int $batch The batch number.
+     * @param DatabaseTransactionInterface|null $tx The active transaction, if any.
      *
      * @return PromiseInterface<int> Resolves with the number of affected rows.
      */
-    public function log(string $file, int $batch): PromiseInterface
+    public function log(string $file, int $batch, ?DatabaseTransactionInterface $tx = null): PromiseInterface
     {
         $table = $this->quoteIdentifier($this->table);
+        $client = $tx ?? $this->getConnection();
 
-        return $this->getConnection()->rawExecute(
+        return $client->rawExecute(
             "INSERT INTO {$table} (migration, batch) VALUES (?, ?)",
             [$file, $batch]
         );
@@ -159,14 +162,16 @@ class MigrationRepository
      * Remove a migration from the log.
      *
      * @param string $migration The migration file name.
+     * @param DatabaseTransactionInterface|null $tx The active transaction, if any.
      *
      * @return PromiseInterface<int> Resolves with the number of affected rows.
      */
-    public function delete(string $migration): PromiseInterface
+    public function delete(string $migration, ?DatabaseTransactionInterface $tx = null): PromiseInterface
     {
         $table = $this->quoteIdentifier($this->table);
+        $client = $tx ?? $this->getConnection();
 
-        return $this->getConnection()->rawExecute(
+        return $client->rawExecute(
             "DELETE FROM {$table} WHERE migration = ?",
             [$migration]
         );

@@ -6,6 +6,7 @@ namespace Hibla\QueryBuilder\Console;
 
 use Hibla\QueryBuilder\Console\Traits\InitializeDatabase;
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
+use Hibla\QueryBuilder\Console\Traits\ProhibitsDestructiveCommands;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
 use Hibla\QueryBuilder\Schema\MigrationRepository;
 use InvalidArgumentException;
@@ -23,6 +24,7 @@ class MigrateRollbackCommand extends Command
     use LoadsSchemaConfiguration;
     use InitializeDatabase;
     use ValidateConnection;
+    use ProhibitsDestructiveCommands;
 
     private SymfonyStyle $io;
 
@@ -49,6 +51,11 @@ class MigrateRollbackCommand extends Command
     {
         $this->io = new SymfonyStyle($input, $output);
         $this->output = $output;
+
+        if ($this->isDestructiveCommandProhibited($this->io)) {
+            return Command::FAILURE;
+        }
+
         $this->io->title('Rollback Migrations');
 
         $this->setConnectionFromInput($input);

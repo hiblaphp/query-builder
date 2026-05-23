@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Console;
 
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
+use Hibla\QueryBuilder\Console\Traits\ProhibitsDestructiveCommands;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
 use Hibla\QueryBuilder\DB;
 use InvalidArgumentException;
@@ -22,6 +23,7 @@ class MigrateFreshCommand extends Command
 {
     use LoadsSchemaConfiguration;
     use ValidateConnection;
+    use ProhibitsDestructiveCommands;
 
     private SymfonyStyle $io;
 
@@ -47,6 +49,11 @@ class MigrateFreshCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->initializeIo($input, $output);
+
+        if ($this->isDestructiveCommandProhibited($this->io)) {
+            return Command::FAILURE;
+        }
+
         $this->io->title('Fresh Migration');
 
         $this->setConnectionFromInput($input);

@@ -17,7 +17,8 @@ class DatabaseTransaction implements DatabaseTransactionInterface
     public function __construct(
         private readonly Transaction $transaction,
         private readonly string $driverName = 'mysql'
-    ) {}
+    ) {
+    }
 
     /**
      * {@inheritdoc}

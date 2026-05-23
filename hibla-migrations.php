@@ -9,6 +9,18 @@ use function Rcalicdan\ConfigLoader\env;
 return [
     /*
     |--------------------------------------------------------------------------
+    | Safe Mode
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, destructive commands like migrate:fresh, migrate:reset,
+    | and migrate:refresh will be completely disabled to prevent accidental
+    | data loss. Highly recommended for production environments.
+    |
+    */
+    'safe_mode' => env('DB_SAFE_MODE', false),
+
+    /*
+    |--------------------------------------------------------------------------
     | Migrations Path
     |--------------------------------------------------------------------------
     |

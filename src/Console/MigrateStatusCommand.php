@@ -324,7 +324,7 @@ class MigrateStatusCommand extends Command
 
             if (\is_string($path)) {
                 $normalizedPath = $this->normalizePath($path);
-                $ranMap[$normalizedPath] = \is_int($batch) ? $batch : 0;
+                $ranMap[$normalizedPath] = is_numeric($batch) ? (int) $batch : 0;
             }
         }
 

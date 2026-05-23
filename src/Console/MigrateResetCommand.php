@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Console;
 
-use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\Console\Traits\InitializeDatabase;
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
+use Hibla\QueryBuilder\Console\Traits\ProhibitsDestructiveCommands;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
 use Hibla\QueryBuilder\Schema\MigrationRepository;
 use InvalidArgumentException;
@@ -24,6 +24,7 @@ class MigrateResetCommand extends Command
     use LoadsSchemaConfiguration;
     use InitializeDatabase;
     use ValidateConnection;
+    use ProhibitsDestructiveCommands;
 
     private SymfonyStyle $io;
 
@@ -49,6 +50,10 @@ class MigrateResetCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->initializeCommandState($input, $output);
+
+        if ($this->isDestructiveCommandProhibited($this->io)) {
+            return Command::FAILURE;
+        }
 
         $connectionOption = $input->getOption('connection');
         $this->connection = $this->parseConnectionOption($connectionOption);

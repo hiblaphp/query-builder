@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Console;
 
+use Hibla\QueryBuilder\Console\Traits\ProhibitsDestructiveCommands;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
 use InvalidArgumentException;
 use Symfony\Component\Console\Command\Command;
@@ -17,6 +18,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class MigrateRefreshCommand extends Command
 {
     use ValidateConnection;
+    use ProhibitsDestructiveCommands;
 
     private SymfonyStyle $io;
 
@@ -43,6 +45,11 @@ class MigrateRefreshCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->initializeCommand($input, $output);
+
+        if ($this->isDestructiveCommandProhibited($this->io)) {
+            return Command::FAILURE;
+        }
+
         $this->io->title('Refresh Migrations');
 
         $this->extractOptions($input);

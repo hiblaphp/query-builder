@@ -220,9 +220,9 @@ abstract class Migration
     /**
      * Get a query builder for a table.
      *
-     * @return QueryBuilderInterface 
+     * @return QueryBuilderInterface
      */
-    protected function db(string $table): QueryBuilderInterface 
+    protected function db(string $table): QueryBuilderInterface
     {
         return DB::connection($this->connection)->table($table);
     }

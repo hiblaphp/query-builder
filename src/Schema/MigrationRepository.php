@@ -88,10 +88,14 @@ class MigrationRepository
     {
         $table = $this->quoteIdentifier($this->table);
 
-        return $this->getConnection()->raw(
-            "SELECT id, migration, batch, executed_at FROM {$table} ORDER BY batch DESC, id DESC",
-            []
-        );
+        return $this->getConnection()
+            ->table($this->table)
+            ->toArray()
+            ->raw(
+                "SELECT id, migration, batch, executed_at FROM {$table} ORDER BY batch DESC, id DESC",
+                []
+            )
+        ;
     }
 
     /**
@@ -107,7 +111,11 @@ class MigrationRepository
 
         $sql = "SELECT migration FROM {$table} ORDER BY batch DESC, migration DESC LIMIT ?";
 
-        return $this->getConnection()->raw($sql, [$steps]);
+        return $this->getConnection()
+            ->table($this->table)
+            ->toArray()
+            ->raw($sql, [$steps])
+        ;
     }
 
     /**
@@ -119,10 +127,14 @@ class MigrationRepository
     {
         $table = $this->quoteIdentifier($this->table);
 
-        return $this->getConnection()->raw(
-            "SELECT id, migration, batch, executed_at FROM {$table} WHERE batch = (SELECT MAX(batch) FROM {$table}) ORDER BY id DESC",
-            []
-        );
+        return $this->getConnection()
+            ->table($this->table)
+            ->toArray()
+            ->raw(
+                "SELECT id, migration, batch, executed_at FROM {$table} WHERE batch = (SELECT MAX(batch) FROM {$table}) ORDER BY id DESC",
+                []
+            )
+        ;
     }
 
     /**

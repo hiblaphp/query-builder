@@ -150,7 +150,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     private function convertToObjects(array $results): array
     {
-        return array_map(static fn(array $row): object => (object) $row, $results);
+        return array_map(static fn (array $row): object => (object) $row, $results);
     }
 
     /**
@@ -234,7 +234,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         $sql = $this->buildCountQuery($column);
 
         return $this->client->fetchValue($sql, null, $this->getCompiledBindings())
-            ->then(fn(mixed $value) => (int) $value)
+            ->then(fn (mixed $value) => (int) $value)
         ;
     }
 
@@ -243,7 +243,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function exists(): PromiseInterface
     {
-        return $this->count()->then(fn(int $count) => $count > 0);
+        return $this->count()->then(fn (int $count) => $count > 0);
     }
 
     /**

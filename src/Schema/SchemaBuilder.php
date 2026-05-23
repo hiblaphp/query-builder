@@ -45,8 +45,8 @@ class SchemaBuilder
     private function getCompiler(): SchemaCompiler
     {
         return match ($this->driver) {
-            'mysql', 'mysqli' => new Compilers\MySQLSchemaCompiler(),
-            'pgsql', 'pgsql_native' => new Compilers\PostgreSQLSchemaCompiler(),
+            'mysql' => new Compilers\MySQLSchemaCompiler(),
+            'pgsql' => new Compilers\PostgreSQLSchemaCompiler(),
             'sqlite' => new Compilers\SQLiteSchemaCompiler(),
             default => new Compilers\MySQLSchemaCompiler(),
         };

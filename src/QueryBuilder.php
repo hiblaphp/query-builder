@@ -20,7 +20,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
 {
     private readonly QueryInterface $client;
 
-    private bool $returnAsObject = false;
+    private bool $returnAsObject = true;
 
     private static ?ConnectionResolverInterface $resolver = null;
 

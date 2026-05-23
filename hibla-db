@@ -13,11 +13,11 @@ use Hibla\QueryBuilder\Console\MigrateResetCommand;
 use Hibla\QueryBuilder\Console\MigrateRefreshCommand;
 use Hibla\QueryBuilder\Console\MigrateFreshCommand;
 use Hibla\QueryBuilder\Console\MigrateStatusCommand;
+use Hibla\QueryBuilder\Console\SchemaDumpCommand; 
 use Hibla\QueryBuilder\Console\StatusCommand;
 
 $application = new Application('Hibla Query Builder', '1.0.0');
 
-// Register all commands
 $application->addCommand(new InitCommand());
 $application->addCommand(new PublishTemplatesCommand());
 $application->addCommand(new MakeMigrationCommand());
@@ -27,6 +27,7 @@ $application->addCommand(new MigrateResetCommand());
 $application->addCommand(new MigrateRefreshCommand());
 $application->addCommand(new MigrateFreshCommand());
 $application->addCommand(new MigrateStatusCommand());
+$application->addCommand(new SchemaDumpCommand());  
 $application->addCommand(new StatusCommand());
 
 $application->run();

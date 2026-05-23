@@ -7,10 +7,10 @@ namespace Hibla\QueryBuilder\Console;
 use Hibla\QueryBuilder\Console\Traits\InitializeDatabase;
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
-use Hibla\QueryBuilder\DB;
 use Hibla\QueryBuilder\Interfaces\DatabaseTransactionInterface;
 use Hibla\QueryBuilder\Schema\DatabaseManager;
 use Hibla\QueryBuilder\Schema\MigrationRepository;
+use Hibla\QueryBuilder\Schema\States\SchemaState;
 use InvalidArgumentException;
 use Rcalicdan\ConfigLoader\Config;
 use Symfony\Component\Console\Command\Command;
@@ -18,6 +18,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Hibla\QueryBuilder\DB;
 
 use function Hibla\await;
 
@@ -118,6 +119,8 @@ class MigrateCommand extends Command
 
         $this->initializeDatabase();
 
+        $this->loadSchemaStateIfNeeded();
+
         $this->io->writeln('Preparing migration repository...');
 
         $primaryRepository = $this->getRepository($this->connection);
@@ -137,6 +140,39 @@ class MigrateCommand extends Command
         }
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * Load the schema state file if it exists and the DB is empty.
+     */
+    private function loadSchemaStateIfNeeded(): void
+    {
+        $repository = $this->getRepository($this->connection);
+        
+        // If the repository exists, the database is already initialized. Skip loading schema.
+        if (await($repository->repositoryExists()) > 0) {
+            return;
+        }
+
+        $schemaConfig = $this->getSchemaConfig($this->connection);
+        $connectionName = $this->connection ?? 'mysql';
+        $schemaPath = $schemaConfig['schema_path'] . DIRECTORY_SEPARATOR . $connectionName . '-schema.sql';
+
+        if (file_exists($schemaPath)) {
+            $this->io->write("Loading schema state from <comment>{$schemaPath}</comment>... ");
+            
+            try {
+                $state = SchemaState::make($this->connection);
+                $dbConfig = $this->getDatabaseConfig($this->connection);
+
+                $state->load($dbConfig, $schemaPath);
+                $this->io->writeln("<info>✓</info>");
+            } catch (\Throwable $e) {
+                $this->io->newLine();
+                $this->io->error("Failed to load schema: " . $e->getMessage());
+                throw $e;
+            }
+        }
     }
 
     private function getStepOption(InputInterface $input): int
@@ -178,7 +214,6 @@ class MigrateCommand extends Command
         try {
             $dbManager = new DatabaseManager($this->connection);
 
-            // FIXED: We must await the Promise returned by databaseExists()
             $exists = await($dbManager->databaseExists());
 
             if (! $exists) {
@@ -282,6 +317,35 @@ class MigrateCommand extends Command
             return \is_string($database) ? $database : 'unknown';
         } catch (\Throwable $e) {
             return 'unknown';
+        }
+    }
+
+    /**
+     * Get the database configuration for the specified connection.
+     *
+     * @param string|null $connection
+     * @return array<string, mixed>
+     */
+    private function getDatabaseConfig(?string $connection = null): array
+    {
+        try {
+            $dbConfig = Config::loadFromRoot('hibla-database');
+            
+            if (! \is_array($dbConfig)) {
+                return [];
+            }
+            
+            $connectionName = $connection ?? ($dbConfig['default'] ?? 'mysql');
+            $connections = $dbConfig['connections'] ?? [];
+            
+            if (! \is_array($connections)) {
+                return [];
+            }
+            
+            $config = $connections[$connectionName] ?? [];
+            return \is_array($config) ? $config : [];
+        } catch (\Throwable $e) {
+            return [];
         }
     }
 

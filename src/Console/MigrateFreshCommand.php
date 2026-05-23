@@ -7,6 +7,7 @@ namespace Hibla\QueryBuilder\Console;
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
 use Hibla\QueryBuilder\Console\Traits\ProhibitsDestructiveCommands;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
+use Hibla\QueryBuilder\Schema\States\SchemaState;
 use Hibla\QueryBuilder\DB;
 use InvalidArgumentException;
 use Rcalicdan\ConfigLoader\Config;
@@ -125,6 +126,8 @@ class MigrateFreshCommand extends Command
             return Command::FAILURE;
         }
 
+        $this->loadSchemaStateIfNeeded();
+
         $path = $this->getPathOption($input);
 
         if (! $this->runMigrationsWithFeedback($path)) {
@@ -134,6 +137,36 @@ class MigrateFreshCommand extends Command
         $this->io->success('Database refreshed successfully!');
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * Load the schema state file if it exists.
+     */
+    private function loadSchemaStateIfNeeded(): void
+    {
+        $schemaConfig = $this->getSchemaConfig($this->connection);
+        $connectionName = $this->connection ?? 'mysql';
+        $schemaPath = $schemaConfig['schema_path'] . DIRECTORY_SEPARATOR . $connectionName . '-schema.sql';
+
+        if (file_exists($schemaPath)) {
+            $this->io->write("Loading schema state from <comment>{$schemaPath}</comment>... ");
+            
+            try {
+                $state = SchemaState::make($this->connection);
+                
+                $dbConfig = $this->getDatabaseConfig();
+                $connName = $dbConfig !== null ? $this->getConnectionName($dbConfig) : 'mysql';
+                $connections = $dbConfig !== null ? $this->getConnections($dbConfig) : [];
+                $config = $this->getConnectionConfig($connections, $connName) ?? [];
+
+                $state->load($config, $schemaPath);
+                $this->io->writeln("<info>✓</info>");
+            } catch (\Throwable $e) {
+                $this->io->newLine();
+                $this->io->error("Failed to load schema: " . $e->getMessage());
+                throw $e;
+            }
+        }
     }
 
     private function getPathOption(InputInterface $input): ?string

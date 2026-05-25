@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Utilities;
 
+use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
+
 /**
  * Helper class for cursor-based pagination operations.
  */
@@ -77,17 +79,17 @@ class CursorPaginationHelper
     /**
      * Apply cursor condition to the query builder.
      *
-     * @param Builder $builder
+     * @param QueryBuilderInterface $builder
      * @param string|null $cursor
      * @param string $cursorColumn
      *
-     * @return Builder
+     * @return QueryBuilderInterface
      */
     public static function applyCursor(
-        Builder $builder,
+        QueryBuilderInterface $builder,
         ?string $cursor,
         string $cursorColumn
-    ): Builder {
+    ): QueryBuilderInterface {
         $cursorValue = self::decodeCursor($cursor);
 
         if ($cursorValue === false) {

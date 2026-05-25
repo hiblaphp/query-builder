@@ -157,7 +157,8 @@ class SchemaBuilder
             $compiler = $this->getCompiler();
 
             if ($this->driver === 'sqlite') {
-                return await($this->getSQLiteBuilder()->handleTable($table, $blueprint));
+                $result = await($this->getSQLiteBuilder()->handleTable($table, $blueprint));
+                return \is_bool($result) ? null : $result;
             }
 
             $sql = $compiler->compileAlter($blueprint);
@@ -206,7 +207,9 @@ class SchemaBuilder
             $compiler = $this->getCompiler();
 
             if ($this->driver === 'sqlite') {
-                return await($this->getSQLiteBuilder()->handleDropColumn($table, $blueprint));
+                // Normalize bool → null: SQLite returns true when no statements were executed.
+                $result = await($this->getSQLiteBuilder()->handleDropColumn($table, $blueprint));
+                return \is_bool($result) ? null : $result;
             }
 
             $sql = $compiler->compileAlter($blueprint);
@@ -267,7 +270,9 @@ class SchemaBuilder
             $compiler = $this->getCompiler();
 
             if ($this->driver === 'sqlite') {
-                return await($this->getSQLiteBuilder()->handleDropIndex($table, $blueprint));
+                // Normalize bool → null: SQLite returns true when no statements were executed.
+                $result = await($this->getSQLiteBuilder()->handleDropIndex($table, $blueprint));
+                return \is_bool($result) ? null : $result;
             }
 
             $sql = $compiler->compileAlter($blueprint);
@@ -301,7 +306,8 @@ class SchemaBuilder
             $compiler = $this->getCompiler();
 
             if ($this->driver === 'sqlite') {
-                return await($this->getSQLiteBuilder()->handleDropForeign($table, $blueprint));
+                $result = await($this->getSQLiteBuilder()->handleDropForeign($table, $blueprint));
+                return \is_bool($result) ? null : $result;
             }
 
             $sql = $compiler->compileAlter($blueprint);

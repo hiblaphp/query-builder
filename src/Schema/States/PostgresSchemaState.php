@@ -4,18 +4,30 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Schema\States;
 
+use Hibla\QueryBuilder\Traits\ExtractsConfigValues;
+
 class PostgresSchemaState extends SchemaState
 {
+    use ExtractsConfigValues;
+
+    /**
+     * Dump the PostgreSQL schema and migrations table data to a file.
+     *
+     * Runs two sequential `pg_dump` commands:
+     *   1. `--schema-only` — writes the full DDL (no ownership/privileges) to {@see $path}.
+     *   2. `--data-only`   — appends the rows of the migrations table to {@see $path}.
+     *
+     * @param array<string, mixed> $config          Database connection configuration.
+     * @param string               $path            Destination file path for the dump.
+     * @param string               $migrationsTable Name of the migrations tracking table.
+     */
     public function dump(array $config, string $path, string $migrationsTable): void
     {
-        $host = $config['host'] ?? '127.0.0.1';
-        $port = (string) ($config['port'] ?? 5432);
-        $user = $config['username'] ?? 'postgres';
-        $db = $config['database'] ?? '';
-
-        $env = isset($config['password']) && $config['password'] !== ''
-            ? ['PGPASSWORD' => $config['password']]
-            : [];
+        $host = $this->extractString($config, 'host', '127.0.0.1');
+        $port = $this->extractPort($config, '5432');
+        $user = $this->extractString($config, 'username', 'postgres');
+        $db   = $this->extractString($config, 'database', '');
+        $env  = $this->extractPasswordEnv($config, 'PGPASSWORD');
 
         $this->executeCommandAndWriteToFile(
             ['pg_dump', '-h', $host, '-p', $port, '-U', $user, '--schema-only', '--no-owner', '--no-privileges', $db],
@@ -32,16 +44,21 @@ class PostgresSchemaState extends SchemaState
         );
     }
 
+    /**
+     * Load a previously dumped SQL file into the PostgreSQL database.
+     *
+     * Pipes the contents of {@see $path} directly into `psql` via stdin.
+     *
+     * @param array<string, mixed> $config Database connection configuration.
+     * @param string               $path   Path to the SQL dump file to load.
+     */
     public function load(array $config, string $path): void
     {
-        $host = $config['host'] ?? '127.0.0.1';
-        $port = (string) ($config['port'] ?? 5432);
-        $user = $config['username'] ?? 'postgres';
-        $db = $config['database'] ?? '';
-
-        $env = isset($config['password']) && $config['password'] !== ''
-            ? ['PGPASSWORD' => $config['password']]
-            : [];
+        $host = $this->extractString($config, 'host', '127.0.0.1');
+        $port = $this->extractPort($config, '5432');
+        $user = $this->extractString($config, 'username', 'postgres');
+        $db   = $this->extractString($config, 'database', '');
+        $env  = $this->extractPasswordEnv($config, 'PGPASSWORD');
 
         $this->executeCommandFromFile(
             ['psql', '-h', $host, '-p', $port, '-U', $user, '-d', $db],

@@ -89,7 +89,8 @@ class MigrationRepository
     {
         $table = $this->quoteIdentifier($this->table);
 
-        return $this->getConnection()
+        /** @var PromiseInterface<array<int, array<string, mixed>>> $result */
+        $result = $this->getConnection()
             ->table($this->table)
             ->toArray()
             ->raw(
@@ -97,6 +98,8 @@ class MigrationRepository
                 []
             )
         ;
+
+        return $result;
     }
 
     /**
@@ -112,11 +115,14 @@ class MigrationRepository
 
         $sql = "SELECT migration FROM {$table} ORDER BY batch DESC, migration DESC LIMIT ?";
 
-        return $this->getConnection()
+        /** @var PromiseInterface<array<int, array<string, mixed>>> $result */
+        $result = $this->getConnection()
             ->table($this->table)
             ->toArray()
             ->raw($sql, [$steps])
         ;
+
+        return $result;
     }
 
     /**
@@ -128,7 +134,8 @@ class MigrationRepository
     {
         $table = $this->quoteIdentifier($this->table);
 
-        return $this->getConnection()
+        /** @var PromiseInterface<array<int, array<string, mixed>>> $result */
+        $result = $this->getConnection()
             ->table($this->table)
             ->toArray()
             ->raw(
@@ -136,6 +143,8 @@ class MigrationRepository
                 []
             )
         ;
+
+        return $result;
     }
 
     /**

@@ -52,11 +52,9 @@ class SQLiteSchemaBuilder
             \count($blueprint->getDropIndexes()) > 0;
 
         if (! $needsRecreation) {
-            /** @phpstan-ignore-next-line */
             return $this->executeAlter($blueprint);
         }
 
-        /** @phpstan-ignore-next-line */
         return $this->handleTableRecreation($table, $blueprint);
     }
 
@@ -109,7 +107,6 @@ class SQLiteSchemaBuilder
      */
     private function handleTableRecreation(string $table, Blueprint $blueprint): PromiseInterface
     {
-        /** @phpstan-ignore-next-line */
         return async(function () use ($table, $blueprint) {
             $existingColumns = await(DB::raw("PRAGMA table_info(`{$table}`)", []));
 
@@ -122,9 +119,10 @@ class SQLiteSchemaBuilder
             $sql = $this->compiler->compileAlter($blueprint);
 
             if (\is_array($sql)) {
-                return $this->executeStatements($sql);
+                return await($this->executeStatements($sql));
             }
 
+            /** @var int|list<int>|bool */
             return await(DB::rawExecute($sql, []));
         });
     }
@@ -168,14 +166,14 @@ class SQLiteSchemaBuilder
      */
     private function executeAlter(Blueprint $blueprint): PromiseInterface
     {
-        /** @phpstan-ignore-next-line */
         return async(function () use ($blueprint) {
             $sql = $this->compiler->compileAlter($blueprint);
 
             if (\is_array($sql)) {
-                return \count($sql) === 0 ? true : $this->executeMultiple($sql);
+                return \count($sql) === 0 ? true : await($this->executeMultiple($sql));
             }
 
+            /** @var int|list<int>|bool */
             return await(DB::rawExecute($sql, []));
         });
     }
@@ -222,6 +220,7 @@ class SQLiteSchemaBuilder
                 $results[] = await(DB::rawExecute($sql, []));
             }
 
+            /** @var list<int> */
             return $results;
         });
     }

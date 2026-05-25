@@ -25,7 +25,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     private static ?ConnectionResolverInterface $resolver = null;
 
     /**
-     * Inject the connection resolver bridge.
+     * @internal This method is used by the DatabaseManager to set the global connection resolver bridge.
      */
     public static function setConnectionResolver(ConnectionResolverInterface $resolver): void
     {

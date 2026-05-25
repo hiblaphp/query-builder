@@ -216,7 +216,7 @@ abstract class Migration
     /**
      * Execute raw SQL.
      *
-     * @param array<int|string, mixed> $bindings
+     * @param array<int, mixed> $bindings
      *
      * @return PromiseInterface<array<int, array<string, mixed>>>
      */
@@ -224,13 +224,16 @@ abstract class Migration
     {
         $client = $this->transaction ?? DB::connection($this->connection);
 
-        return $client->raw($sql, $bindings);
+        /** @var PromiseInterface<array<int, array<string, mixed>>> $result */
+        $result = $client->raw($sql, $bindings);
+
+        return $result;
     }
 
     /**
      * Execute a raw statement.
      *
-     * @param array<int|string, mixed> $bindings
+     * @param array<int, mixed> $bindings
      *
      * @return PromiseInterface<int>
      */

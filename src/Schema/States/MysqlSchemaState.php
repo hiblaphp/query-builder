@@ -17,19 +17,17 @@ class MySQLSchemaState extends SchemaState
             ? ['MYSQL_PWD' => $config['password']] 
             : [];
 
-        // 1. Dump Schema
         $this->executeCommandAndWriteToFile(
-            ['mysqldump', '-u', $user, '-h', $host, '-P', $port, '--no-data', '--skip-comments', '--skip-routines', $db],
+            ['mysqldump', '-u', $user, '-h', $host, '-P', $port, '--no-data', '--skip-comments', '--skip-routines', '--no-tablespaces', $db],
             $path,
             false,
             $env
         );
 
-        // 2. Dump Migrations Table Data
         $this->executeCommandAndWriteToFile(
-            ['mysqldump', '-u', $user, '-h', $host, '-P', $port, '--no-create-info', '--skip-comments', $db, $migrationsTable],
+            ['mysqldump', '-u', $user, '-h', $host, '-P', $port, '--no-create-info', '--skip-comments', '--no-tablespaces', $db, $migrationsTable],
             $path,
-            true, // append
+            true, 
             $env
         );
     }

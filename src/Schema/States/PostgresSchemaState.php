@@ -17,7 +17,6 @@ class PostgresSchemaState extends SchemaState
             ? ['PGPASSWORD' => $config['password']]
             : [];
 
-        // 1. Dump Schema
         $this->executeCommandAndWriteToFile(
             ['pg_dump', '-h', $host, '-p', $port, '-U', $user, '--schema-only', '--no-owner', '--no-privileges', $db],
             $path,
@@ -25,11 +24,10 @@ class PostgresSchemaState extends SchemaState
             $env
         );
 
-        // 2. Dump Migrations Table Data
         $this->executeCommandAndWriteToFile(
             ['pg_dump', '-h', $host, '-p', $port, '-U', $user, '--data-only', '-t', $migrationsTable, $db],
             $path,
-            true, // append
+            true, 
             $env
         );
     }

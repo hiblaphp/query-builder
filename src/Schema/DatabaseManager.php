@@ -101,15 +101,13 @@ class DatabaseManager
     /**
      * @return PromiseInterface<bool>
      */
-    /**
-     * @return PromiseInterface<bool>
-     */
     private function createMySQLDatabase(string $database): PromiseInterface
     {
         return async(function () use ($database) {
-            $tempConfig = array_merge($this->config, ['database' => 'mysql']);
-            $tempConnectionName = '_temp_' . uniqid();
+            $tempConfig = $this->config;
+            $tempConfig['database'] = 'information_schema';
 
+            $tempConnectionName = '_temp_' . uniqid();
             $client = DB::resolveClientFromConfig($tempConfig);
 
             DB::addConnection(
@@ -215,7 +213,9 @@ class DatabaseManager
     private function checkMySQLDatabase(string $database): PromiseInterface
     {
         return async(function () use ($database) {
-            $tempConfig = array_merge($this->config, ['database' => 'mysql']);
+            $tempConfig = $this->config;
+            $tempConfig['database'] = 'information_schema';
+
             $tempConnectionName = '_temp_' . uniqid();
 
             $client = DB::resolveClientFromConfig($tempConfig);

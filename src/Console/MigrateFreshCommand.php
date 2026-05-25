@@ -313,110 +313,42 @@ class MigrateFreshCommand extends Command
      */
     private function getMigratedTables(): array
     {
-        $migrationFiles = $this->getAllMigrationFiles($this->connection);
-        $targetConnection = $this->getTargetConnection();
-
-        $tables = $this->extractTablesFromMigrations($migrationFiles, $targetConnection);
-
-        sort($tables);
-
-        return $tables;
-    }
-
-    private function getTargetConnection(): string
-    {
-        $defaultConnection = $this->getDefaultConnection();
-
-        return $this->connection ?? $defaultConnection;
-    }
-
-    /**
-     * @param list<string> $migrationFiles
-     *
-     * @return list<string>
-     */
-    private function extractTablesFromMigrations(array $migrationFiles, string $targetConnection): array
-    {
-        $tables = [];
-        $defaultConnection = $this->getDefaultConnection();
-
-        foreach ($migrationFiles as $file) {
-            $tablesInFile = $this->extractTablesFromMigrationFile($file, $targetConnection, $defaultConnection);
-            $tables = array_merge($tables, $tablesInFile);
-        }
-
-        return array_values(array_unique($tables));
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function extractTablesFromMigrationFile(
-        string $file,
-        string $targetConnection,
-        string $defaultConnection
-    ): array {
-        $content = file_get_contents($file);
-
-        if ($content === false) {
-            return [];
-        }
-
-        if (! $this->isMigrationForTargetConnection($content, $targetConnection, $defaultConnection)) {
-            return [];
-        }
-
-        return $this->parseTableNamesFromContent($content);
-    }
-
-    private function isMigrationForTargetConnection(
-        string $content,
-        string $targetConnection,
-        string $defaultConnection
-    ): bool {
-        $migrationConnection = $this->extractMigrationConnection($content);
-
-        if ($migrationConnection === null) {
-            $migrationConnection = $defaultConnection;
-        }
-
-        return $migrationConnection === $targetConnection;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function parseTableNamesFromContent(string $content): array
-    {
         $tables = [];
 
-        $matchResult = preg_match_all('/->create\([\'"]([^\'"]+)[\'"]\s*,/i', $content, $matches);
+        switch ($this->driver) {
+            case 'mysql':
+            case 'mysqli':
+                $results = await(DB::connection($this->connection)->raw('SHOW TABLES'));
+                foreach ($results as $row) {
+                    $tables[] = array_values((array) $row)[0];
+                }
 
-        if ($matchResult !== false && $matchResult > 0) {
-            return $matches[1];
+                break;
+
+            case 'pgsql':
+            case 'pgsql_native':
+                $sql = "SELECT tablename FROM pg_tables WHERE schemaname = 'public'";
+                $results = await(DB::connection($this->connection)->raw($sql));
+                foreach ($results as $row) {
+                    $tables[] = ((array) $row)['tablename'];
+                }
+
+                break;
+
+            case 'sqlite':
+                $sql = "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'";
+                $results = await(DB::connection($this->connection)->raw($sql));
+                foreach ($results as $row) {
+                    $tables[] = ((array) $row)['name'];
+                }
+
+                break;
         }
 
-        return $tables;
-    }
+        $migrationsTable = $this->getMigrationsTable($this->connection);
+        $tables = array_filter($tables, fn ($table) => $table !== $migrationsTable);
 
-    /**
-     * Extract the connection property from a migration file content
-     */
-    private function extractMigrationConnection(string $content): ?string
-    {
-        $matchResult = preg_match('/protected\s+\??string\s+\$connection\s*=\s*[\'"]([^\'"]+)[\'"]/', $content, $matches);
-
-        if ($matchResult !== false && $matchResult > 0) {
-            return $matches[1];
-        }
-
-        $matchResult = preg_match('/protected\s+\$connection\s*=\s*[\'"]([^\'"]+)[\'"]/', $content, $matches);
-
-        if ($matchResult !== false && $matchResult > 0) {
-            return $matches[1];
-        }
-
-        return null;
+        return array_values($tables);
     }
 
     /**

@@ -27,6 +27,35 @@ return [
     |
     */
     'connections' => [
+        'connect_b' => [
+            'driver' => 'mysql',
+            'host' => env('DB_HOST_CONNECT_B', '127.0.0.1'),
+            'port' => env('DB_PORT_CONNECT_B', 3306, true),
+            'database' => env('DB_DATABASE_CONNECT_B', 'test'),
+            'username' => env('DB_USERNAME_CONNECT_B', 'root'),
+            'password' => env('DB_PASSWORD_CONNECT_B', ''),
+            'max_connections' => env('DB_MAX_CONNECTIONS', 10, convertNumeric: true),
+            'min_connections' => env('DB_MIN_CONNECTIONS', 0, convertNumeric: true),
+            'enable_server_side_cancellation' => env('DB_ENABLE_SERVER_SIDE_CANCELLATION', false),
+            'compress' => env('DB_COMPRESS', false),
+            'charset' => 'utf8mb4',
+            'idle_timeout' => 60,
+            'max_lifetime' => 3600,
+            'max_waiters' => 0,
+            'acquire_timeout' => 10.0,
+            'enable_statement_cache' => true,
+            'statement_cache_size' => 256,
+            'connect_timeout' => 10,
+            'reset_connection' => false,
+            'multi_statements' => false,
+            'cast_prepared_types' => true,
+            'ssl' => false,
+            'ssl_verify' => false,
+            'ssl_ca' => null,
+            'ssl_cert' => null,
+            'ssl_key' => null,
+        ],
+
         'mysql' => [
             'driver' => 'mysql',
             'host' => env('DB_HOST', '127.0.0.1'),

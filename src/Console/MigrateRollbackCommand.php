@@ -9,6 +9,7 @@ use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
 use Hibla\QueryBuilder\Console\Traits\ProhibitsDestructiveCommands;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
 use Hibla\QueryBuilder\DB;
+use Hibla\QueryBuilder\Schema\Migration;
 use Hibla\QueryBuilder\Schema\MigrationRepository;
 use InvalidArgumentException;
 use Rcalicdan\ConfigLoader\Config;
@@ -262,22 +263,16 @@ class MigrateRollbackCommand extends Command
                 return false;
             }
 
-            if (! $this->validateMigrationClass($migration, $relativePath)) {
-                return false;
-            }
-
             $migrationConnection = $this->determineMigrationConnection($migration);
 
             $this->displayRollbackProgress($relativePath, $migrationConnection);
 
-            $useTransaction = method_exists($migration, 'shouldRunWithinTransaction') && $migration->shouldRunWithinTransaction();
+            $useTransaction = $migration->shouldRunWithinTransaction();
 
             if ($useTransaction) {
                 await(
                     DB::connection($migrationConnection)->transaction(function ($tx) use ($migration, $relativePath) {
-                        if (method_exists($migration, 'setTransaction')) {
-                            $migration->setTransaction($tx);
-                        }
+                        $migration->setTransaction($tx);
                         $this->executeDownMethod($migration);
                         await($this->repository->delete($relativePath, $tx));
                     })
@@ -297,12 +292,12 @@ class MigrateRollbackCommand extends Command
         }
     }
 
-    private function loadMigrationFile(string $file, string $relativePath): ?object
+    private function loadMigrationFile(string $file, string $relativePath): ?Migration
     {
         $migration = require $file;
 
-        if (! \is_object($migration)) {
-            $this->io->error("Migration file {$relativePath} did not return an object.");
+        if (! $migration instanceof Migration) {
+            $this->io->error("Migration file {$relativePath} did not return a Migration instance.");
 
             return null;
         }
@@ -310,18 +305,15 @@ class MigrateRollbackCommand extends Command
         return $migration;
     }
 
-    private function determineMigrationConnection(object $migration): ?string
+    private function determineMigrationConnection(Migration $migration): ?string
     {
-        $migrationConnection = $this->connection;
+        $declaredConnection = $migration->getConnection();
 
-        if (method_exists($migration, 'getConnection')) {
-            $declaredConnection = $migration->getConnection();
-            if (\is_string($declaredConnection)) {
-                $migrationConnection = $declaredConnection;
-            }
+        if (\is_string($declaredConnection)) {
+            return $declaredConnection;
         }
 
-        return $migrationConnection;
+        return $this->connection;
     }
 
     private function displayRollbackProgress(string $relativePath, ?string $migrationConnection): void
@@ -335,7 +327,7 @@ class MigrateRollbackCommand extends Command
         $this->io->write('...');
     }
 
-    private function executeDownMethod(object $migration): void
+    private function executeDownMethod(Migration $migration): void
     {
         $migration->down();
     }
@@ -353,17 +345,6 @@ class MigrateRollbackCommand extends Command
     private function validateMigrationFile(string $file, string $migrationName): bool
     {
         return file_exists($file);
-    }
-
-    private function validateMigrationClass(object $migration, string $migrationName): bool
-    {
-        if (! method_exists($migration, 'down')) {
-            $this->io->error("Migration {$migrationName} does not have a down() method");
-
-            return false;
-        }
-
-        return true;
     }
 
     private function handleCriticalError(\Throwable $e): void

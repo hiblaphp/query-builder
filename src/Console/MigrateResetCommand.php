@@ -9,6 +9,7 @@ use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
 use Hibla\QueryBuilder\Console\Traits\ProhibitsDestructiveCommands;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
 use Hibla\QueryBuilder\DB;
+use Hibla\QueryBuilder\Schema\Migration;
 use Hibla\QueryBuilder\Schema\MigrationRepository;
 use InvalidArgumentException;
 use Rcalicdan\ConfigLoader\Config;
@@ -322,30 +323,17 @@ class MigrateResetCommand extends Command
                 return false;
             }
 
-            $migrationConnection = $this->extractMigrationConnection($migration);
-
-            return $this->compareConnections($migrationConnection, $connection);
+            return $this->compareConnections($migration->getConnection(), $connection);
         } catch (\Throwable $e) {
             return false;
         }
     }
 
-    private function loadMigrationFile(string $file): ?object
+    private function loadMigrationFile(string $file): ?Migration
     {
         $migration = require $file;
 
-        return \is_object($migration) ? $migration : null;
-    }
-
-    private function extractMigrationConnection(object $migration): ?string
-    {
-        if (! method_exists($migration, 'getConnection')) {
-            return null;
-        }
-
-        $connection = $migration->getConnection();
-
-        return \is_string($connection) ? $connection : null;
+        return $migration instanceof Migration ? $migration : null;
     }
 
     private function compareConnections(?string $migrationConnection, ?string $targetConnection): bool
@@ -397,20 +385,17 @@ class MigrateResetCommand extends Command
         $migration = $this->loadMigrationFile($file);
 
         if ($migration === null) {
-            $this->io->error("Migration file did not return an object: {$relativePath}");
+            $this->io->error("Migration file did not return a Migration instance: {$relativePath}");
 
             return false;
         }
 
         $migrationConnection = $this->resolveMigrationConnection($migration);
-
-        $useTransaction = method_exists($migration, 'shouldRunWithinTransaction') && $migration->shouldRunWithinTransaction();
+        $useTransaction = $migration->shouldRunWithinTransaction();
 
         if ($useTransaction) {
             await(DB::connection($migrationConnection)->transaction(function ($tx) use ($migration, $relativePath, $migrationConnection) {
-                if (method_exists($migration, 'setTransaction')) {
-                    $migration->setTransaction($tx);
-                }
+                $migration->setTransaction($tx);
                 $this->executeMigrationDown($migration, $relativePath, $migrationConnection);
                 await($this->repository->delete($relativePath, $tx));
             }));
@@ -422,29 +407,19 @@ class MigrateResetCommand extends Command
         return true;
     }
 
-    private function resolveMigrationConnection(object $migration): ?string
+    private function resolveMigrationConnection(Migration $migration): ?string
     {
-        $migrationConnection = $this->connection;
-
-        if (! method_exists($migration, 'getConnection')) {
-            return $migrationConnection;
-        }
-
         $declaredConnection = $migration->getConnection();
 
         if (\is_string($declaredConnection)) {
             return $declaredConnection;
         }
 
-        return $migrationConnection;
+        return $this->connection;
     }
 
-    private function executeMigrationDown(object $migration, string $relativePath, ?string $migrationConnection): void
+    private function executeMigrationDown(Migration $migration, string $relativePath, ?string $migrationConnection): void
     {
-        if (! method_exists($migration, 'down')) {
-            return;
-        }
-
         $this->displayRollbackProgress($relativePath, $migrationConnection);
         $this->runDownMethod($migration);
         $this->displayRollbackSuccess();
@@ -461,7 +436,7 @@ class MigrateResetCommand extends Command
         $this->io->write('...');
     }
 
-    private function runDownMethod(object $migration): void
+    private function runDownMethod(Migration $migration): void
     {
         $migration->down();
     }

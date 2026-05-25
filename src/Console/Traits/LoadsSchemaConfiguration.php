@@ -139,8 +139,9 @@ trait LoadsSchemaConfiguration
      */
     private function getDefaultSchemaConfig(): array
     {
-        // @phpstan-ignore-next-line
-        $projectRoot = $this->projectRoot ?? '.';
+        $projectRoot = isset($this->projectRoot) && \is_string($this->projectRoot)
+            ? $this->projectRoot
+            : '.';
 
         return [
             'schema_path' => $projectRoot . '/database/schema',
@@ -163,8 +164,9 @@ trait LoadsSchemaConfiguration
         $config = $this->getSchemaConfig($connection);
         $basePath = $config['migrations_path'];
 
-        // @phpstan-ignore-next-line
-        $projectRoot = $this->projectRoot ?? '.';
+        $projectRoot = isset($this->projectRoot) && \is_string($this->projectRoot)
+            ? $this->projectRoot
+            : '.';
 
         if (! $this->isAbsolutePath($basePath)) {
             $basePath = $projectRoot . '/' . ltrim($basePath, '/');

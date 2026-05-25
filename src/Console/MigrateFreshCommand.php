@@ -348,6 +348,7 @@ class MigrateFreshCommand extends Command
         $migrationsTable = $this->getMigrationsTable($this->connection);
         $tables = array_filter($tables, fn ($table) => $table !== $migrationsTable);
 
+        /** @var list<string> */
         return array_values($tables);
     }
 

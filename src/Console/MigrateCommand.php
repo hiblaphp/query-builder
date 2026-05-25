@@ -10,6 +10,7 @@ use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
 use Hibla\QueryBuilder\DB;
 use Hibla\QueryBuilder\Interfaces\DatabaseTransactionInterface;
 use Hibla\QueryBuilder\Schema\DatabaseManager;
+use Hibla\QueryBuilder\Schema\Migration;
 use Hibla\QueryBuilder\Schema\MigrationRepository;
 use Hibla\QueryBuilder\Schema\States\SchemaState;
 use InvalidArgumentException;
@@ -337,7 +338,10 @@ class MigrateCommand extends Command
                 return [];
             }
 
-            $connectionName = $connection ?? ($dbConfig['default'] ?? 'mysql');
+            $default = $dbConfig['default'] ?? null;
+            // Narrow $connectionName to string so it is a valid array key
+            $connectionName = $connection ?? (\is_string($default) ? $default : 'mysql');
+
             $connections = $dbConfig['connections'] ?? [];
 
             if (! \is_array($connections)) {
@@ -346,7 +350,12 @@ class MigrateCommand extends Command
 
             $config = $connections[$connectionName] ?? [];
 
-            return \is_array($config) ? $config : [];
+            if (! \is_array($config)) {
+                return [];
+            }
+
+            /** @var array<string, mixed> $config */
+            return $config;
         } catch (\Throwable $e) {
             return [];
         }
@@ -561,42 +570,11 @@ class MigrateCommand extends Command
 
             $migration = require $file;
 
-            if (! \is_object($migration)) {
+            if (! ($migration instanceof Migration)) {
                 return null;
             }
 
-            return $this->extractConnectionFromMigration($migration);
-        } catch (\Throwable $e) {
-            return null;
-        }
-    }
-
-    private function extractConnectionFromMigration(object $migration): ?string
-    {
-        if (! method_exists($migration, 'getConnection')) {
-            return $this->extractConnectionFromProperty($migration);
-        }
-
-        $connection = $migration->getConnection();
-
-        return \is_string($connection) ? $connection : null;
-    }
-
-    private function extractConnectionFromProperty(object $migration): ?string
-    {
-        try {
-            $reflection = new \ReflectionObject($migration);
-
-            if (! $reflection->hasProperty('connection')) {
-                return null;
-            }
-
-            $property = $reflection->getProperty('connection');
-            $property->setAccessible(true);
-
-            $value = $property->getValue($migration);
-
-            return \is_string($value) ? $value : null;
+            return $migration->getConnection();
         } catch (\Throwable $e) {
             return null;
         }
@@ -645,14 +623,12 @@ class MigrateCommand extends Command
 
             $this->displayMigrationProgress($displayName, $migrationConnection);
 
-            $useTransaction = method_exists($migration, 'shouldRunWithinTransaction') && $migration->shouldRunWithinTransaction();
+            $useTransaction = $migration->shouldRunWithinTransaction();
 
             if ($useTransaction) {
                 await(
                     DB::connection($migrationConnection)->transaction(function ($tx) use ($migration, $relativePath, $batchNumber, $migrationConnection) {
-                        if (method_exists($migration, 'setTransaction')) {
-                            $migration->setTransaction($tx);
-                        }
+                        $migration->setTransaction($tx);
                         $this->executeMigration($migration);
                         $this->logMigration($relativePath, $batchNumber, $migrationConnection, $tx);
                     })
@@ -672,11 +648,12 @@ class MigrateCommand extends Command
         }
     }
 
-    private function loadMigrationFile(string $file, string $displayName): ?object
+    private function loadMigrationFile(string $file, string $displayName): ?Migration
     {
         $migration = require $file;
 
-        if (! \is_object($migration) || ! $this->validateMigrationClass($migration, $displayName)) {
+        if (! ($migration instanceof Migration)) {
+            $this->io->error("Migration {$displayName} must return a Migration instance.");
             return null;
         }
 
@@ -694,7 +671,7 @@ class MigrateCommand extends Command
         $this->io->write('...');
     }
 
-    private function executeMigration(object $migration): void
+    private function executeMigration(Migration $migration): void
     {
         $migration->up();
     }
@@ -713,17 +690,6 @@ class MigrateCommand extends Command
         if ($this->output->isVerbose()) {
             $this->io->writeln($e->getTraceAsString());
         }
-    }
-
-    private function validateMigrationClass(object $migration, string $migrationName): bool
-    {
-        if (! method_exists($migration, 'up')) {
-            $this->io->error("Migration {$migrationName} does not have an up() method");
-
-            return false;
-        }
-
-        return true;
     }
 
     private function handleCriticalError(\Throwable $e): void

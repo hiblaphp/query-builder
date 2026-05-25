@@ -26,6 +26,8 @@ class SchemaDumpCommand extends Command
 
     private ?string $connection = null;
 
+    protected ?string $projectRoot = '.';
+
     protected function configure(): void
     {
         $this
@@ -39,7 +41,10 @@ class SchemaDumpCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->io = new SymfonyStyle($input, $output);
-        $this->connection = $input->getOption('connection') ?? null;
+
+        // getOption() returns mixed; narrow to string|null before assigning
+        $connectionOption = $input->getOption('connection');
+        $this->connection = \is_string($connectionOption) ? $connectionOption : null;
 
         $this->validateConnection($this->connection);
 
@@ -64,7 +69,8 @@ class SchemaDumpCommand extends Command
 
             $this->io->writeln('<info>✓</info>');
 
-            if ($input->getOption('prune')) {
+            // getOption() returns mixed; cast to bool explicitly
+            if ((bool) $input->getOption('prune')) {
                 $this->pruneMigrations();
             }
 
@@ -93,7 +99,13 @@ class SchemaDumpCommand extends Command
         $ranMigrations = await($repository->getRan());
 
         foreach ($ranMigrations as $migration) {
-            $path = $this->getFullMigrationPath($migration['migration'], $this->connection);
+            // $migration['migration'] is mixed; narrow to string before passing
+            $migrationName = $migration['migration'] ?? null;
+            if (! \is_string($migrationName)) {
+                continue;
+            }
+
+            $path = $this->getFullMigrationPath($migrationName, $this->connection);
             if (file_exists($path)) {
                 unlink($path);
             }
@@ -102,11 +114,32 @@ class SchemaDumpCommand extends Command
         $this->io->writeln('<info>✓</info>');
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     private function getDatabaseConfig(?string $connection): array
     {
         $config = Config::loadFromRoot('hibla-database');
-        $connName = $connection ?? $config['default'] ?? 'mysql';
 
-        return $config['connections'][$connName] ?? [];
+        if (! \is_array($config)) {
+            return [];
+        }
+
+        $default = $config['default'] ?? null;
+        $connName = $connection ?? (\is_string($default) ? $default : 'mysql');
+
+        $connections = $config['connections'] ?? null;
+        if (! \is_array($connections)) {
+            return [];
+        }
+
+        $connConfig = $connections[$connName] ?? [];
+
+        if (! \is_array($connConfig)) {
+            return [];
+        }
+
+        /** @var array<string, mixed> $connConfig */
+        return $connConfig;
     }
 }

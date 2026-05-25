@@ -28,7 +28,6 @@ class SQLiteSchemaBuilder
      */
     public function handleCreate(string $sql): PromiseInterface
     {
-        /** @phpstan-ignore-next-line */
         return async(function () use ($sql) {
             await(DB::rawExecute('PRAGMA foreign_keys = ON', []));
 
@@ -122,7 +121,6 @@ class SQLiteSchemaBuilder
                 return await($this->executeStatements($sql));
             }
 
-            /** @var int|list<int>|bool */
             return await(DB::rawExecute($sql, []));
         });
     }
@@ -173,7 +171,6 @@ class SQLiteSchemaBuilder
                 return \count($sql) === 0 ? true : await($this->executeMultiple($sql));
             }
 
-            /** @var int|list<int>|bool */
             return await(DB::rawExecute($sql, []));
         });
     }

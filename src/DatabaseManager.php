@@ -127,23 +127,46 @@ class DatabaseManager implements ConnectionResolverInterface
      */
     public function resolveClientFromConfig(array $config): SqlClientInterface
     {
-        $driver = strtolower($config['driver'] ?? 'mysql');
+        $driver = strtolower(\is_string($config['driver'] ?? null) ? $config['driver'] : 'mysql');
 
-        return match ($driver) {
-            'mysql' => new MysqlClient(
+        if ($driver === 'mysql') {
+            $minVal = $config['min_connections'] ?? null;
+            $minConnections = \is_numeric($minVal) ? (int) $minVal : 0;
+
+            $maxVal = $config['max_connections'] ?? null;
+            $maxConnections = \is_numeric($maxVal) ? (int) $maxVal : 10;
+
+            $idleVal = $config['idle_timeout'] ?? null;
+            $idleTimeout = \is_numeric($idleVal) ? (int) $idleVal : 60;
+
+            $lifetimeVal = $config['max_lifetime'] ?? null;
+            $maxLifetime = \is_numeric($lifetimeVal) ? (int) $lifetimeVal : 3600;
+
+            $cacheSizeVal = $config['statement_cache_size'] ?? null;
+            $statementCacheSize = \is_numeric($cacheSizeVal) ? (int) $cacheSizeVal : 256;
+
+            $enableStatementCache = (bool) ($config['enable_statement_cache'] ?? true);
+
+            $waitersVal = $config['max_waiters'] ?? null;
+            $maxWaiters = \is_numeric($waitersVal) ? (int) $waitersVal : 0;
+
+            $timeoutVal = $config['acquire_timeout'] ?? null;
+            $acquireTimeout = \is_numeric($timeoutVal) ? (float) $timeoutVal : 10.0;
+
+            return new MysqlClient(
                 config: $config,
-                minConnections: (int) ($config['min_connections'] ?? 0),
-                maxConnections: (int) ($config['max_connections'] ?? 10),
-                idleTimeout: (int) ($config['idle_timeout'] ?? 60),
-                maxLifetime: (int) ($config['max_lifetime'] ?? 3600),
-                statementCacheSize: (int) ($config['statement_cache_size'] ?? 256),
-                enableStatementCache: (bool) ($config['enable_statement_cache'] ?? true),
-                maxWaiters: (int) ($config['max_waiters'] ?? 0),
-                acquireTimeout: (float) ($config['acquire_timeout'] ?? 10.0),
-            ),
+                minConnections: $minConnections,
+                maxConnections: $maxConnections,
+                idleTimeout: $idleTimeout,
+                maxLifetime: $maxLifetime,
+                statementCacheSize: $statementCacheSize,
+                enableStatementCache: $enableStatementCache,
+                maxWaiters: $maxWaiters,
+                acquireTimeout: $acquireTimeout,
+            );
+        }
 
-            default => throw new \InvalidArgumentException("Driver '{$driver}' is not supported yet."),
-        };
+        throw new \InvalidArgumentException("Driver '{$driver}' is not supported yet.");
     }
 
     /**
@@ -201,7 +224,7 @@ class DatabaseManager implements ConnectionResolverInterface
 
         /** @var array<string, mixed> $connectionConfig */
         $connectionConfig = $connections[$name];
-        $driver = $connectionConfig['driver'] ?? 'mysql';
+        $driver = \is_string($connectionConfig['driver'] ?? null) ? $connectionConfig['driver'] : 'mysql';
 
         $client = $this->resolveClientFromConfig($connectionConfig);
         $connection = new DatabaseConnection($client, $driver);
@@ -222,6 +245,8 @@ class DatabaseManager implements ConnectionResolverInterface
     /**
      * Execute a raw query and return all rows.
      *
+     * @param array<int, mixed> $bindings
+     *
      * @return PromiseInterface<array<int, array<string, mixed>>|array<int, object>>
      */
     public function raw(string $sql, array $bindings = []): PromiseInterface
@@ -231,6 +256,8 @@ class DatabaseManager implements ConnectionResolverInterface
 
     /**
      * Execute a raw query and return the first result.
+     *
+     * @param array<int, mixed> $bindings
      *
      * @return PromiseInterface<array<string, mixed>|object|null>
      */
@@ -242,6 +269,8 @@ class DatabaseManager implements ConnectionResolverInterface
     /**
      * Execute a raw query and return a single scalar value.
      *
+     * @param array<int, mixed> $bindings
+     *
      * @return PromiseInterface<mixed>
      */
     public function rawValue(string $sql, array $bindings = []): PromiseInterface
@@ -251,6 +280,8 @@ class DatabaseManager implements ConnectionResolverInterface
 
     /**
      * Execute a raw statement (INSERT, UPDATE, DELETE).
+     *
+     * @param array<int, mixed> $bindings
      *
      * @return PromiseInterface<int>
      */

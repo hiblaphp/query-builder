@@ -17,9 +17,7 @@ class DB
 {
     private static ?DatabaseManager $manager = null;
 
-    private function __construct()
-    {
-    }
+    private function __construct() {}
 
     /**
      * Get the singleton DatabaseManager instance internally.
@@ -76,21 +74,53 @@ class DB
         return self::getManager()->table($table);
     }
 
+    /**
+     * Execute a raw query and return all rows.
+     *
+     * @param string $sql
+     * @param array<int, mixed> $bindings
+     *
+     * @return PromiseInterface<array<int, array<string, mixed>>|array<int, object>>
+     */
     public static function raw(string $sql, array $bindings = []): PromiseInterface
     {
         return self::getManager()->raw($sql, $bindings);
     }
 
+    /**
+     * Execute a raw query and return the first result.
+     *
+     * @param string $sql
+     * @param array<int, mixed> $bindings
+     *
+     * @return PromiseInterface<array<string, mixed>|object|null>
+     */
     public static function rawFirst(string $sql, array $bindings = []): PromiseInterface
     {
         return self::getManager()->rawFirst($sql, $bindings);
     }
 
+    /**
+     * Execute a raw query and return a single scalar value.
+     *
+     * @param string $sql
+     * @param array<int, mixed> $bindings
+     *
+     * @return PromiseInterface<mixed>
+     */
     public static function rawValue(string $sql, array $bindings = []): PromiseInterface
     {
         return self::getManager()->rawValue($sql, $bindings);
     }
 
+    /**
+     * Execute a raw statement (INSERT, UPDATE, DELETE).
+     *
+     * @param string $sql
+     * @param array<int, mixed> $bindings
+     *
+     * @return PromiseInterface<int> The number of affected rows.
+     */
     public static function rawExecute(string $sql, array $bindings = []): PromiseInterface
     {
         return self::getManager()->rawExecute($sql, $bindings);

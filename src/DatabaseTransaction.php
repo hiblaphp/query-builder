@@ -30,6 +30,8 @@ class DatabaseTransaction implements DatabaseTransactionInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @return PromiseInterface<mixed>
      */
     public function raw(string $sql, array $bindings = []): PromiseInterface
     {
@@ -38,6 +40,8 @@ class DatabaseTransaction implements DatabaseTransactionInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @return PromiseInterface<mixed>
      */
     public function rawFirst(string $sql, array $bindings = []): PromiseInterface
     {
@@ -46,6 +50,8 @@ class DatabaseTransaction implements DatabaseTransactionInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @return PromiseInterface<mixed>
      */
     public function rawValue(string $sql, array $bindings = []): PromiseInterface
     {
@@ -54,6 +60,8 @@ class DatabaseTransaction implements DatabaseTransactionInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @return PromiseInterface<mixed>
      */
     public function rawExecute(string $sql, array $bindings = []): PromiseInterface
     {
@@ -62,6 +70,8 @@ class DatabaseTransaction implements DatabaseTransactionInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @return PromiseInterface<mixed>
      */
     public function commit(): PromiseInterface
     {
@@ -70,6 +80,8 @@ class DatabaseTransaction implements DatabaseTransactionInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @return PromiseInterface<mixed>
      */
     public function rollback(): PromiseInterface
     {
@@ -78,6 +90,8 @@ class DatabaseTransaction implements DatabaseTransactionInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @return PromiseInterface<mixed>
      */
     public function savepoint(string $identifier): PromiseInterface
     {
@@ -86,6 +100,8 @@ class DatabaseTransaction implements DatabaseTransactionInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @return PromiseInterface<mixed>
      */
     public function rollbackTo(string $identifier): PromiseInterface
     {

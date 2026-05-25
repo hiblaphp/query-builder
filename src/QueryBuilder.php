@@ -44,10 +44,12 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
             $this->driver = $driver ?? 'mysql';
         } elseif (\is_array($connection)) {
             $this->ensureResolverIsSet();
+            assert(self::$resolver !== null);
             $this->client = self::$resolver->resolveClientFromConfig($connection);
-            $this->driver = $driver ?? $connection['driver'] ?? 'mysql';
+            $this->driver = $driver ?? (\is_string($connection['driver'] ?? null) ? $connection['driver'] : 'mysql');
         } else {
             $this->ensureResolverIsSet();
+            assert(self::$resolver !== null);
             $conn = self::$resolver->connection($connection);
             $this->client = $conn->getClient();
             $this->driver = $driver ?? $conn->getDriverName();
@@ -100,7 +102,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function raw(string $sql, array $bindings = []): PromiseInterface
     {
-        return $this->client->query($sql, $bindings)
+        return $this->client->query($sql, array_values($bindings))
             ->then(function (Result $result) {
                 $rows = $result->fetchAll();
 
@@ -114,7 +116,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function rawFirst(string $sql, array $bindings = []): PromiseInterface
     {
-        return $this->client->fetchOne($sql, $bindings)
+        return $this->client->fetchOne($sql, array_values($bindings))
             ->then(function (?array $result) {
                 if ($result === null) {
                     return null;
@@ -130,7 +132,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function rawValue(string $sql, array $bindings = []): PromiseInterface
     {
-        return $this->client->fetchValue($sql, null, $bindings);
+        return $this->client->fetchValue($sql, null, array_values($bindings));
     }
 
     /**
@@ -138,7 +140,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function rawExecute(string $sql, array $bindings = []): PromiseInterface
     {
-        return $this->client->execute($sql, $bindings);
+        return $this->client->execute($sql, array_values($bindings));
     }
 
     /**
@@ -160,7 +162,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     {
         $sql = $this->buildSelectQuery();
 
-        return $this->client->query($sql, $this->getCompiledBindings())
+        return $this->client->query($sql, array_values($this->getCompiledBindings()))
             ->then(function (Result $result) {
                 $rows = $result->fetchAll();
 
@@ -177,7 +179,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         $instanceWithLimit = $this->limit(1);
         $sql = $instanceWithLimit->buildSelectQuery();
 
-        return $instanceWithLimit->client->fetchOne($sql, $instanceWithLimit->getCompiledBindings())
+        return $instanceWithLimit->client->fetchOne($sql, array_values($instanceWithLimit->getCompiledBindings()))
             ->then(function (?array $result) {
                 if ($result === null) {
                     return null;
@@ -222,7 +224,10 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
                 return null;
             }
 
-            return \is_object($result) ? ($result->$column ?? null) : ($result[$column] ?? null);
+            // Cast to array to avoid dynamic property access on object
+            $row = \is_object($result) ? (array) $result : $result;
+
+            return $row[$column] ?? null;
         });
     }
 
@@ -233,8 +238,8 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     {
         $sql = $this->buildCountQuery($column);
 
-        return $this->client->fetchValue($sql, null, $this->getCompiledBindings())
-            ->then(fn (mixed $value) => (int) $value)
+        return $this->client->fetchValue($sql, null, array_values($this->getCompiledBindings()))
+            ->then(fn (mixed $value) => is_numeric($value) ? (int) $value : 0)
         ;
     }
 
@@ -287,7 +292,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
             $bindings = array_merge($bindings, array_values($row));
         }
 
-        return $this->client->execute($sql, $bindings);
+        return $this->client->execute($sql, array_values($bindings));
     }
 
     /**
@@ -299,7 +304,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
             return Promise::resolved(0);
         }
         $sql = $this->buildUpdateQuery($data);
-        $bindings = array_merge(array_values($data), $this->getCompiledBindings());
+        $bindings = array_values(array_merge(array_values($data), $this->getCompiledBindings()));
 
         return $this->client->execute($sql, $bindings);
     }
@@ -311,7 +316,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     {
         $sql = $this->buildDeleteQuery();
 
-        return $this->client->execute($sql, $this->getCompiledBindings());
+        return $this->client->execute($sql, array_values($this->getCompiledBindings()));
     }
 
     /**

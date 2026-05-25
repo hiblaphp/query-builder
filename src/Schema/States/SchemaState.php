@@ -62,8 +62,9 @@ abstract class SchemaState
 
         $process = @proc_open($command, $descriptors, $pipes, null, $processEnv);
 
-        if (!is_resource($process)) {
+        if (! \is_resource($process)) {
             $cmdName = $command[0];
+
             throw new SchemaMigrationException(
                 "Executable '{$cmdName}' could not be found.\n\n" .
                 "Please check your System PATH and ensure '{$cmdName}' is installed and added to your System PATH.\n"
@@ -77,7 +78,7 @@ abstract class SchemaState
             throw new SchemaMigrationException("Failed to open file for writing: {$filePath}");
         }
 
-        while (!feof($pipes[1])) {
+        while (! feof($pipes[1])) {
             $chunk = fread($pipes[1], 8192);
             if ($chunk !== false && $chunk !== '') {
                 fwrite($outputFile, $chunk);
@@ -92,6 +93,7 @@ abstract class SchemaState
 
         if ($exitCode !== 0) {
             $cmdName = $command[0];
+
             throw new SchemaMigrationException("Command '{$cmdName}' failed (Exit {$exitCode}). Error: " . trim((string)$errorOutput));
         }
     }
@@ -107,14 +109,15 @@ abstract class SchemaState
         $descriptors = [
             0 => ['pipe', 'r'],
             1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'], 
+            2 => ['pipe', 'w'],
         ];
 
         $processEnv = array_merge($_SERVER, $_ENV, $env);
         $process = @proc_open($command, $descriptors, $pipes, null, $processEnv);
 
-        if (!is_resource($process)) {
+        if (! \is_resource($process)) {
             $cmdName = $command[0];
+
             throw new SchemaMigrationException(
                 "Executable '{$cmdName}' could not be found.\n\n" .
                 "Please check your System PATH and ensure '{$cmdName}' is installed and added to your System PATH.\n"
@@ -124,7 +127,7 @@ abstract class SchemaState
         $inputFile = fopen($filePath, 'rb');
 
         if ($inputFile !== false) {
-            while (!feof($inputFile)) {
+            while (! feof($inputFile)) {
                 $chunk = fread($inputFile, 8192);
                 if ($chunk !== false && $chunk !== '') {
                     fwrite($pipes[0], $chunk);
@@ -142,6 +145,7 @@ abstract class SchemaState
         $exitCode = proc_close($process);
         if ($exitCode !== 0) {
             $cmdName = $command[0];
+
             throw new SchemaMigrationException("Command '{$cmdName}' failed to load schema (Exit {$exitCode}). Error: " . trim((string)$errorOutput));
         }
     }

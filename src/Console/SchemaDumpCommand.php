@@ -23,6 +23,7 @@ class SchemaDumpCommand extends Command
     use ValidateConnection;
 
     private SymfonyStyle $io;
+
     private ?string $connection = null;
 
     protected function configure(): void
@@ -46,7 +47,7 @@ class SchemaDumpCommand extends Command
         $schemaDirectory = $schemaConfig['schema_path'];
         $migrationsTable = $schemaConfig['migrations_table'];
 
-        if (!is_dir($schemaDirectory)) {
+        if (! is_dir($schemaDirectory)) {
             mkdir($schemaDirectory, 0755, true);
         }
 
@@ -61,7 +62,7 @@ class SchemaDumpCommand extends Command
 
             $state->dump($dbConfig, $path, $migrationsTable);
 
-            $this->io->writeln("<info>✓</info>");
+            $this->io->writeln('<info>✓</info>');
 
             if ($input->getOption('prune')) {
                 $this->pruneMigrations();
@@ -71,19 +72,21 @@ class SchemaDumpCommand extends Command
         } catch (\Throwable $e) {
             $this->io->newLine();
             $this->io->error($e->getMessage());
+
             return Command::FAILURE;
         }
     }
 
     private function pruneMigrations(): void
     {
-        $this->io->write("Pruning migration files... ");
-        
+        $this->io->write('Pruning migration files... ');
+
         $repository = new MigrationRepository($this->getMigrationsTable($this->connection), $this->connection);
-        
+
         // Ensure repository exists before trying to fetch ran migrations
         if (await($repository->repositoryExists()) === 0) {
-            $this->io->writeln("<comment>No migrations to prune.</comment>");
+            $this->io->writeln('<comment>No migrations to prune.</comment>');
+
             return;
         }
 
@@ -96,13 +99,14 @@ class SchemaDumpCommand extends Command
             }
         }
 
-        $this->io->writeln("<info>✓</info>");
+        $this->io->writeln('<info>✓</info>');
     }
 
     private function getDatabaseConfig(?string $connection): array
     {
         $config = Config::loadFromRoot('hibla-database');
         $connName = $connection ?? $config['default'] ?? 'mysql';
+
         return $config['connections'][$connName] ?? [];
     }
 }

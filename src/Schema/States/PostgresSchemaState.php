@@ -27,7 +27,7 @@ class PostgresSchemaState extends SchemaState
         $this->executeCommandAndWriteToFile(
             ['pg_dump', '-h', $host, '-p', $port, '-U', $user, '--data-only', '-t', $migrationsTable, $db],
             $path,
-            true, 
+            true,
             $env
         );
     }

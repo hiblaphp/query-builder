@@ -98,7 +98,7 @@ abstract class Migration
     {
         if ($this->schema === null) {
             $this->schema = new SchemaBuilder(null, $this->connection);
-            
+
             if ($this->transaction !== null) {
                 $this->schema->setTransaction($this->transaction);
             }
@@ -223,7 +223,7 @@ abstract class Migration
     protected function raw(string $sql, array $bindings = []): PromiseInterface
     {
         $client = $this->transaction ?? DB::connection($this->connection);
-        
+
         return $client->raw($sql, $bindings);
     }
 
@@ -237,7 +237,7 @@ abstract class Migration
     protected function rawExecute(string $sql, array $bindings = []): PromiseInterface
     {
         $client = $this->transaction ?? DB::connection($this->connection);
-        
+
         return $client->rawExecute($sql, $bindings);
     }
 

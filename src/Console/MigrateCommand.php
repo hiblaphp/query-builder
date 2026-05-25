@@ -7,6 +7,7 @@ namespace Hibla\QueryBuilder\Console;
 use Hibla\QueryBuilder\Console\Traits\InitializeDatabase;
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
+use Hibla\QueryBuilder\DB;
 use Hibla\QueryBuilder\Interfaces\DatabaseTransactionInterface;
 use Hibla\QueryBuilder\Schema\DatabaseManager;
 use Hibla\QueryBuilder\Schema\MigrationRepository;
@@ -18,7 +19,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Hibla\QueryBuilder\DB;
 
 use function Hibla\await;
 
@@ -148,7 +148,7 @@ class MigrateCommand extends Command
     private function loadSchemaStateIfNeeded(): void
     {
         $repository = $this->getRepository($this->connection);
-        
+
         // If the repository exists, the database is already initialized. Skip loading schema.
         if (await($repository->repositoryExists()) > 0) {
             return;
@@ -160,16 +160,17 @@ class MigrateCommand extends Command
 
         if (file_exists($schemaPath)) {
             $this->io->write("Loading schema state from <comment>{$schemaPath}</comment>... ");
-            
+
             try {
                 $state = SchemaState::make($this->connection);
                 $dbConfig = $this->getDatabaseConfig($this->connection);
 
                 $state->load($dbConfig, $schemaPath);
-                $this->io->writeln("<info>✓</info>");
+                $this->io->writeln('<info>✓</info>');
             } catch (\Throwable $e) {
                 $this->io->newLine();
-                $this->io->error("Failed to load schema: " . $e->getMessage());
+                $this->io->error('Failed to load schema: ' . $e->getMessage());
+
                 throw $e;
             }
         }
@@ -324,25 +325,27 @@ class MigrateCommand extends Command
      * Get the database configuration for the specified connection.
      *
      * @param string|null $connection
+     *
      * @return array<string, mixed>
      */
     private function getDatabaseConfig(?string $connection = null): array
     {
         try {
             $dbConfig = Config::loadFromRoot('hibla-database');
-            
+
             if (! \is_array($dbConfig)) {
                 return [];
             }
-            
+
             $connectionName = $connection ?? ($dbConfig['default'] ?? 'mysql');
             $connections = $dbConfig['connections'] ?? [];
-            
+
             if (! \is_array($connections)) {
                 return [];
             }
-            
+
             $config = $connections[$connectionName] ?? [];
+
             return \is_array($config) ? $config : [];
         } catch (\Throwable $e) {
             return [];

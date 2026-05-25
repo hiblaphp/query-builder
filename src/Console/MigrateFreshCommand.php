@@ -7,8 +7,8 @@ namespace Hibla\QueryBuilder\Console;
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
 use Hibla\QueryBuilder\Console\Traits\ProhibitsDestructiveCommands;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
-use Hibla\QueryBuilder\Schema\States\SchemaState;
 use Hibla\QueryBuilder\DB;
+use Hibla\QueryBuilder\Schema\States\SchemaState;
 use InvalidArgumentException;
 use Rcalicdan\ConfigLoader\Config;
 use Symfony\Component\Console\Command\Command;
@@ -150,20 +150,21 @@ class MigrateFreshCommand extends Command
 
         if (file_exists($schemaPath)) {
             $this->io->write("Loading schema state from <comment>{$schemaPath}</comment>... ");
-            
+
             try {
                 $state = SchemaState::make($this->connection);
-                
+
                 $dbConfig = $this->getDatabaseConfig();
                 $connName = $dbConfig !== null ? $this->getConnectionName($dbConfig) : 'mysql';
                 $connections = $dbConfig !== null ? $this->getConnections($dbConfig) : [];
                 $config = $this->getConnectionConfig($connections, $connName) ?? [];
 
                 $state->load($config, $schemaPath);
-                $this->io->writeln("<info>✓</info>");
+                $this->io->writeln('<info>✓</info>');
             } catch (\Throwable $e) {
                 $this->io->newLine();
-                $this->io->error("Failed to load schema: " . $e->getMessage());
+                $this->io->error('Failed to load schema: ' . $e->getMessage());
+
                 throw $e;
             }
         }

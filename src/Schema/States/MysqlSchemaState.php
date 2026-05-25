@@ -12,9 +12,9 @@ class MySQLSchemaState extends SchemaState
         $port = (string) ($config['port'] ?? 3306);
         $user = $config['username'] ?? 'root';
         $db = $config['database'] ?? '';
-        
-        $env = isset($config['password']) && $config['password'] !== '' 
-            ? ['MYSQL_PWD' => $config['password']] 
+
+        $env = isset($config['password']) && $config['password'] !== ''
+            ? ['MYSQL_PWD' => $config['password']]
             : [];
 
         $this->executeCommandAndWriteToFile(
@@ -27,7 +27,7 @@ class MySQLSchemaState extends SchemaState
         $this->executeCommandAndWriteToFile(
             ['mysqldump', '-u', $user, '-h', $host, '-P', $port, '--no-create-info', '--skip-comments', '--no-tablespaces', $db, $migrationsTable],
             $path,
-            true, 
+            true,
             $env
         );
     }
@@ -39,8 +39,8 @@ class MySQLSchemaState extends SchemaState
         $user = $config['username'] ?? 'root';
         $db = $config['database'] ?? '';
 
-        $env = isset($config['password']) && $config['password'] !== '' 
-            ? ['MYSQL_PWD' => $config['password']] 
+        $env = isset($config['password']) && $config['password'] !== ''
+            ? ['MYSQL_PWD' => $config['password']]
             : [];
 
         $this->executeCommandFromFile(

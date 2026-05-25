@@ -36,33 +36,33 @@ abstract class SchemaState
         $rawConfig = Config::loadFromRoot('hibla-database');
 
         /** @var array<string, mixed> $dbConfig */
-        $dbConfig = is_array($rawConfig) ? $rawConfig : [];
+        $dbConfig = \is_array($rawConfig) ? $rawConfig : [];
 
-        $defaultConnection = isset($dbConfig['default']) && is_string($dbConfig['default'])
+        $defaultConnection = isset($dbConfig['default']) && \is_string($dbConfig['default'])
             ? $dbConfig['default']
             : 'mysql';
 
         $connectionName ??= $defaultConnection;
 
-        $connections = isset($dbConfig['connections']) && is_array($dbConfig['connections'])
+        $connections = isset($dbConfig['connections']) && \is_array($dbConfig['connections'])
             ? $dbConfig['connections']
             : [];
 
         /** @var array<string, mixed> $config */
-        $config = isset($connections[$connectionName]) && is_array($connections[$connectionName])
+        $config = isset($connections[$connectionName]) && \is_array($connections[$connectionName])
             ? $connections[$connectionName]
             : [];
 
-        $rawDriver = isset($config['driver']) && is_string($config['driver'])
+        $rawDriver = isset($config['driver']) && \is_string($config['driver'])
             ? $config['driver']
             : 'mysql';
 
         $driver = strtolower($rawDriver);
 
         return match ($driver) {
-            'mysql', 'mysqli'           => new MySQLSchemaState(),
-            'pgsql', 'pgsql_native'     => new PostgresSchemaState(),
-            'sqlite'                    => new SQLiteSchemaState(),
+            'mysql', 'mysqli' => new MySQLSchemaState(),
+            'pgsql', 'pgsql_native' => new PostgresSchemaState(),
+            'sqlite' => new SQLiteSchemaState(),
             default => throw new SchemaMigrationException(
                 "Schema dumping is not supported for driver: {$driver}"
             ),
@@ -76,10 +76,10 @@ abstract class SchemaState
      * and writes the result to {@see $filePath}. Throws on a non-zero exit code
      * or if the executable cannot be found.
      *
-     * @param list<string>          $command  The command and its arguments.
-     * @param string                $filePath Destination file path for the output.
-     * @param bool                  $append   When true the output is appended; otherwise the file is overwritten.
-     * @param array<string, string> $env      Additional environment variables to inject into the process.
+     * @param list<string> $command The command and its arguments.
+     * @param string $filePath Destination file path for the output.
+     * @param bool $append When true the output is appended; otherwise the file is overwritten.
+     * @param array<string, string> $env Additional environment variables to inject into the process.
      *
      * @throws SchemaMigrationException On spawn failure, file-open failure, or non-zero exit.
      */
@@ -145,9 +145,9 @@ abstract class SchemaState
      * {@see $filePath} into the process stdin in chunks. Throws on a non-zero
      * exit code or if the executable cannot be found.
      *
-     * @param list<string>          $command  The command and its arguments.
-     * @param string                $filePath Source file whose contents are piped to the process.
-     * @param array<string, string> $env      Additional environment variables to inject into the process.
+     * @param list<string> $command The command and its arguments.
+     * @param string $filePath Source file whose contents are piped to the process.
+     * @param array<string, string> $env Additional environment variables to inject into the process.
      *
      * @throws SchemaMigrationException On spawn failure or non-zero exit.
      */

@@ -131,27 +131,27 @@ class DatabaseManager implements ConnectionResolverInterface
 
         if ($driver === 'mysql') {
             $minVal = $config['min_connections'] ?? null;
-            $minConnections = \is_numeric($minVal) ? (int) $minVal : 0;
+            $minConnections = is_numeric($minVal) ? (int) $minVal : 0;
 
             $maxVal = $config['max_connections'] ?? null;
-            $maxConnections = \is_numeric($maxVal) ? (int) $maxVal : 10;
+            $maxConnections = is_numeric($maxVal) ? (int) $maxVal : 10;
 
             $idleVal = $config['idle_timeout'] ?? null;
-            $idleTimeout = \is_numeric($idleVal) ? (int) $idleVal : 60;
+            $idleTimeout = is_numeric($idleVal) ? (int) $idleVal : 60;
 
             $lifetimeVal = $config['max_lifetime'] ?? null;
-            $maxLifetime = \is_numeric($lifetimeVal) ? (int) $lifetimeVal : 3600;
+            $maxLifetime = is_numeric($lifetimeVal) ? (int) $lifetimeVal : 3600;
 
             $cacheSizeVal = $config['statement_cache_size'] ?? null;
-            $statementCacheSize = \is_numeric($cacheSizeVal) ? (int) $cacheSizeVal : 256;
+            $statementCacheSize = is_numeric($cacheSizeVal) ? (int) $cacheSizeVal : 256;
 
             $enableStatementCache = (bool) ($config['enable_statement_cache'] ?? true);
 
             $waitersVal = $config['max_waiters'] ?? null;
-            $maxWaiters = \is_numeric($waitersVal) ? (int) $waitersVal : 0;
+            $maxWaiters = is_numeric($waitersVal) ? (int) $waitersVal : 0;
 
             $timeoutVal = $config['acquire_timeout'] ?? null;
-            $acquireTimeout = \is_numeric($timeoutVal) ? (float) $timeoutVal : 10.0;
+            $acquireTimeout = is_numeric($timeoutVal) ? (float) $timeoutVal : 10.0;
 
             return new MysqlClient(
                 config: $config,

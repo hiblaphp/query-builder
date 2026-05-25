@@ -158,6 +158,7 @@ class SchemaBuilder
 
             if ($this->driver === 'sqlite') {
                 $result = await($this->getSQLiteBuilder()->handleTable($table, $blueprint));
+
                 return \is_bool($result) ? null : $result;
             }
 
@@ -209,6 +210,7 @@ class SchemaBuilder
             if ($this->driver === 'sqlite') {
                 // Normalize bool → null: SQLite returns true when no statements were executed.
                 $result = await($this->getSQLiteBuilder()->handleDropColumn($table, $blueprint));
+
                 return \is_bool($result) ? null : $result;
             }
 
@@ -272,6 +274,7 @@ class SchemaBuilder
             if ($this->driver === 'sqlite') {
                 // Normalize bool → null: SQLite returns true when no statements were executed.
                 $result = await($this->getSQLiteBuilder()->handleDropIndex($table, $blueprint));
+
                 return \is_bool($result) ? null : $result;
             }
 
@@ -307,6 +310,7 @@ class SchemaBuilder
 
             if ($this->driver === 'sqlite') {
                 $result = await($this->getSQLiteBuilder()->handleDropForeign($table, $blueprint));
+
                 return \is_bool($result) ? null : $result;
             }
 

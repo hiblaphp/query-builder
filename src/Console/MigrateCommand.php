@@ -654,6 +654,7 @@ class MigrateCommand extends Command
 
         if (! ($migration instanceof Migration)) {
             $this->io->error("Migration {$displayName} must return a Migration instance.");
+
             return null;
         }
 

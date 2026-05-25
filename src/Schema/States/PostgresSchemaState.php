@@ -17,17 +17,17 @@ class PostgresSchemaState extends SchemaState
      *   1. `--schema-only` — writes the full DDL (no ownership/privileges) to {@see $path}.
      *   2. `--data-only`   — appends the rows of the migrations table to {@see $path}.
      *
-     * @param array<string, mixed> $config          Database connection configuration.
-     * @param string               $path            Destination file path for the dump.
-     * @param string               $migrationsTable Name of the migrations tracking table.
+     * @param array<string, mixed> $config Database connection configuration.
+     * @param string $path Destination file path for the dump.
+     * @param string $migrationsTable Name of the migrations tracking table.
      */
     public function dump(array $config, string $path, string $migrationsTable): void
     {
         $host = $this->extractString($config, 'host', '127.0.0.1');
         $port = $this->extractPort($config, '5432');
         $user = $this->extractString($config, 'username', 'postgres');
-        $db   = $this->extractString($config, 'database', '');
-        $env  = $this->extractPasswordEnv($config, 'PGPASSWORD');
+        $db = $this->extractString($config, 'database', '');
+        $env = $this->extractPasswordEnv($config, 'PGPASSWORD');
 
         $this->executeCommandAndWriteToFile(
             ['pg_dump', '-h', $host, '-p', $port, '-U', $user, '--schema-only', '--no-owner', '--no-privileges', $db],
@@ -50,15 +50,15 @@ class PostgresSchemaState extends SchemaState
      * Pipes the contents of {@see $path} directly into `psql` via stdin.
      *
      * @param array<string, mixed> $config Database connection configuration.
-     * @param string               $path   Path to the SQL dump file to load.
+     * @param string $path Path to the SQL dump file to load.
      */
     public function load(array $config, string $path): void
     {
         $host = $this->extractString($config, 'host', '127.0.0.1');
         $port = $this->extractPort($config, '5432');
         $user = $this->extractString($config, 'username', 'postgres');
-        $db   = $this->extractString($config, 'database', '');
-        $env  = $this->extractPasswordEnv($config, 'PGPASSWORD');
+        $db = $this->extractString($config, 'database', '');
+        $env = $this->extractPasswordEnv($config, 'PGPASSWORD');
 
         $this->executeCommandFromFile(
             ['psql', '-h', $host, '-p', $port, '-U', $user, '-d', $db],

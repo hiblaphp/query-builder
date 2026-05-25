@@ -17,7 +17,7 @@ trait ExtractsConfigValues
     {
         $value = $config[$key] ?? $default;
 
-        return is_string($value) ? $value : $default;
+        return \is_string($value) ? $value : $default;
     }
 
     /**
@@ -32,11 +32,11 @@ trait ExtractsConfigValues
     {
         $value = $config['port'] ?? null;
 
-        if (is_int($value)) {
+        if (\is_int($value)) {
             return (string) $value;
         }
 
-        return is_string($value) ? $value : $default;
+        return \is_string($value) ? $value : $default;
     }
 
     /**
@@ -47,13 +47,14 @@ trait ExtractsConfigValues
      * than the broader {@see array<string, mixed>} PHPStan would otherwise infer.
      *
      * @param array<string, mixed> $config
+     *
      * @return array<string, string>
      */
     private function extractPasswordEnv(array $config, string $envKey): array
     {
         $password = $config['password'] ?? '';
 
-        if (is_string($password) && $password !== '') {
+        if (\is_string($password) && $password !== '') {
             return [$envKey => $password];
         }
 

@@ -44,12 +44,12 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
             $this->driver = $driver ?? 'mysql';
         } elseif (\is_array($connection)) {
             $this->ensureResolverIsSet();
-            assert(self::$resolver !== null);
+            \assert(self::$resolver !== null);
             $this->client = self::$resolver->resolveClientFromConfig($connection);
             $this->driver = $driver ?? (\is_string($connection['driver'] ?? null) ? $connection['driver'] : 'mysql');
         } else {
             $this->ensureResolverIsSet();
-            assert(self::$resolver !== null);
+            \assert(self::$resolver !== null);
             $conn = self::$resolver->connection($connection);
             $this->client = $conn->getClient();
             $this->driver = $driver ?? $conn->getDriverName();

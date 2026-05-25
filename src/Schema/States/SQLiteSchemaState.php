@@ -17,9 +17,9 @@ class SQLiteSchemaState extends SchemaState
      *   1. `.schema`  — writes the full DDL to {@see $path}.
      *   2. `SELECT *` — appends all rows from the migrations table as INSERT statements.
      *
-     * @param array<string, mixed> $config          Database connection configuration.
-     * @param string               $path            Destination file path for the dump.
-     * @param string               $migrationsTable Name of the migrations tracking table.
+     * @param array<string, mixed> $config Database connection configuration.
+     * @param string $path Destination file path for the dump.
+     * @param string $migrationsTable Name of the migrations tracking table.
      */
     public function dump(array $config, string $path, string $migrationsTable): void
     {
@@ -44,7 +44,7 @@ class SQLiteSchemaState extends SchemaState
      * Pipes the contents of {@see $path} directly into `sqlite3` via stdin.
      *
      * @param array<string, mixed> $config Database connection configuration.
-     * @param string               $path   Path to the SQL dump file to load.
+     * @param string $path Path to the SQL dump file to load.
      */
     public function load(array $config, string $path): void
     {

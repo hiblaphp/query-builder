@@ -8,8 +8,8 @@ use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
 use Hibla\QueryBuilder\Console\Traits\ProhibitsDestructiveCommands;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
 use Hibla\QueryBuilder\DB;
+use Hibla\QueryBuilder\Exceptions\DatabaseConfigurationException;
 use Hibla\QueryBuilder\Schema\States\SchemaState;
-use InvalidArgumentException;
 use Rcalicdan\ConfigLoader\Config;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -61,7 +61,7 @@ class MigrateFreshCommand extends Command
 
         try {
             $this->validateConnection($this->connection);
-        } catch (InvalidArgumentException $e) {
+        } catch (DatabaseConfigurationException $e) {
             $this->io->error($e->getMessage());
 
             return Command::FAILURE;

@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Schema\Compilers\Utilities;
 
-use InvalidArgumentException;
+use Hibla\QueryBuilder\Exceptions\SchemaCompilerException;
 
 /**
  * Handles default value compilation for different database systems
  */
 class DefaultValueCompiler
 {
-    /**
+     /**
      * A list of database expressions that should not be quoted.
      *
      * @var list<string>
@@ -44,7 +44,7 @@ class DefaultValueCompiler
             return $this->formatString((string) $default);
         }
 
-        throw new InvalidArgumentException('Unsupported type for default value: ' . \gettype($default));
+        throw new SchemaCompilerException('Unsupported type for default value: ' . \gettype($default));
     }
 
     protected function isExpression(string $value): bool

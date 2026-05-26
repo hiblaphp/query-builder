@@ -6,7 +6,7 @@ namespace Hibla\QueryBuilder\Console;
 
 use Hibla\QueryBuilder\Console\Traits\ProhibitsDestructiveCommands;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
-use InvalidArgumentException;
+use Hibla\QueryBuilder\Exceptions\DatabaseConfigurationException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
@@ -57,7 +57,7 @@ class MigrateRefreshCommand extends Command
 
         try {
             $this->validateConnection($this->connection);
-        } catch (InvalidArgumentException $e) {
+        } catch (DatabaseConfigurationException $e) {
             $this->io->error($e->getMessage());
 
             return Command::FAILURE;

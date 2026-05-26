@@ -124,6 +124,8 @@ class DatabaseManager implements ConnectionResolverInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @throws InvalidConnectionConfigException If the driver is unsupported.
      */
     public function resolveClientFromConfig(array $config): SqlClientInterface
     {
@@ -166,7 +168,7 @@ class DatabaseManager implements ConnectionResolverInterface
             );
         }
 
-        throw new \InvalidArgumentException("Driver '{$driver}' is not supported yet.");
+        throw new InvalidConnectionConfigException("Driver '{$driver}' is not supported yet.");
     }
 
     /**

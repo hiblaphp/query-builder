@@ -7,6 +7,8 @@ namespace Hibla\QueryBuilder\Schema;
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\DatabaseConnection;
 use Hibla\QueryBuilder\DB;
+use Hibla\QueryBuilder\Exceptions\DatabaseConfigurationException;
+use Hibla\QueryBuilder\Exceptions\InvalidConnectionConfigException;
 use Hibla\QueryBuilder\Exceptions\SchemaMigrationException;
 use Rcalicdan\ConfigLoader\Config;
 
@@ -41,22 +43,22 @@ class DatabaseManager
         $dbConfig = Config::loadFromRoot('hibla-database');
 
         if (! \is_array($dbConfig)) {
-            throw new SchemaMigrationException('Invalid database configuration format');
+            throw new DatabaseConfigurationException('Invalid database configuration format');
         }
 
         $connectionName = $connection ?? ($dbConfig['default'] ?? 'mysql');
         if (! \is_string($connectionName)) {
-            throw new SchemaMigrationException('Connection name must be a string');
+            throw new InvalidConnectionConfigException('Connection name must be a string');
         }
 
         $connections = $dbConfig['connections'] ?? [];
         if (! \is_array($connections)) {
-            throw new SchemaMigrationException('Connections configuration must be an array');
+            throw new DatabaseConfigurationException('Connections configuration must be an array');
         }
 
         $config = $connections[$connectionName] ?? [];
         if (! \is_array($config)) {
-            throw new SchemaMigrationException("Configuration for '{$connectionName}' connection is invalid");
+            throw new InvalidConnectionConfigException("Configuration for '{$connectionName}' connection is invalid");
         }
 
         /** @var TConnectionConfig $config */

@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder;
 
+use Hibla\Dns\Exceptions\RecordNotFoundException;
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\Promise\Promise;
+use Hibla\QueryBuilder\Exceptions\QueryBuilderException;
 use Hibla\QueryBuilder\Interfaces\ConnectionResolverInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
 use Hibla\QueryBuilder\Pagination\CursorPaginator;
@@ -59,7 +61,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     private function ensureResolverIsSet(): void
     {
         if (self::$resolver === null) {
-            throw new \RuntimeException(
+            throw new QueryBuilderException(
                 'A ConnectionResolver has not been set. Either initialize the DatabaseManager first (e.g., DB::getManager()), ' .
                     'or pass a valid QueryInterface directly into the QueryBuilder constructor.'
             );
@@ -152,7 +154,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     private function convertToObjects(array $results): array
     {
-        return array_map(static fn (array $row): object => (object) $row, $results);
+        return array_map(static fn(array $row): object => (object) $row, $results);
     }
 
     /**
@@ -207,7 +209,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
             if ($result === null) {
                 $idString = \is_scalar($id) ? (string) $id : 'complex_type';
 
-                throw new \RuntimeException("Record not found with {$column} = {$idString}");
+                throw new RecordNotFoundException("Record not found with {$column} = {$idString}");
             }
 
             return $result;
@@ -239,7 +241,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         $sql = $this->buildCountQuery($column);
 
         return $this->client->fetchValue($sql, null, array_values($this->getCompiledBindings()))
-            ->then(fn (mixed $value) => is_numeric($value) ? (int) $value : 0)
+            ->then(fn(mixed $value) => is_numeric($value) ? (int) $value : 0)
         ;
     }
 
@@ -248,7 +250,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function exists(): PromiseInterface
     {
-        return $this->count()->then(fn (int $count) => $count > 0);
+        return $this->count()->then(fn(int $count) => $count > 0);
     }
 
     /**

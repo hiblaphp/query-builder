@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Pagination;
 
+use Hibla\QueryBuilder\Exceptions\TemplateNotFoundException;
+
 class TemplateEngine
 {
     private string $templatesPath;
@@ -19,7 +21,7 @@ class TemplateEngine
     public static function setTemplatesPath(string $path): void
     {
         if (! is_dir($path)) {
-            throw new \RuntimeException("Templates path does not exist: {$path}");
+            throw new TemplateNotFoundException("Templates path does not exist: {$path}");
         }
     }
 
@@ -30,6 +32,7 @@ class TemplateEngine
      * @param array<string, mixed> $data Variables to pass to template
      *
      * @return string Rendered HTML
+     * @throws TemplateNotFoundException
      */
     public function render(string $template, array $data = []): string
     {
@@ -40,7 +43,7 @@ class TemplateEngine
         $templatePath = $this->getTemplatePath($template);
 
         if (! file_exists($templatePath)) {
-            throw new \RuntimeException("Template not found: {$template} at {$templatePath}");
+            throw new TemplateNotFoundException("Template not found: {$template} at {$templatePath}");
         }
 
         extract($data, EXTR_SKIP);
@@ -52,6 +55,7 @@ class TemplateEngine
 
         return $content !== false ? $content : '';
     }
+
 
     /**
      * Get full path to template file

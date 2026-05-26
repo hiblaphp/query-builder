@@ -3,3 +3,4 @@ composer.lock
 .env
 /database
 test.php
+hibla-console

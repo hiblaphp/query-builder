@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Schema\Compilers\Utilities;
 
+use Hibla\QueryBuilder\Exceptions\SchemaCompilerException;
 use Hibla\QueryBuilder\Schema\Blueprint;
 use Hibla\QueryBuilder\Schema\Column;
 use Hibla\QueryBuilder\Schema\ForeignKey;
@@ -71,7 +72,7 @@ class SQLiteIndexCompiler extends IndexCompiler
         $statements[] = "DROP TABLE `{$table}`";
         $statements[] = "ALTER TABLE `{$tempTable}` RENAME TO `{$table}`";
 
-        $dropIndexNames = array_map(fn ($idx) => $idx[0], $blueprint->getDropIndexes());
+        $dropIndexNames = array_map(fn($idx) => $idx[0], $blueprint->getDropIndexes());
         foreach ($blueprint->getIndexDefinitions() as $indexDef) {
             $indexName = $indexDef->getName();
             if ($indexDef->getType() !== 'PRIMARY' && ! \in_array($indexName, $dropIndexNames, true)) {
@@ -136,7 +137,7 @@ class SQLiteIndexCompiler extends IndexCompiler
             $this->addColumnToBlueprint($newBlueprint, $clonedColumn);
         }
 
-        $dropIndexNames = array_map(fn ($idx) => $idx[0], $originalBlueprint->getDropIndexes());
+        $dropIndexNames = array_map(fn($idx) => $idx[0], $originalBlueprint->getDropIndexes());
         foreach ($originalBlueprint->getIndexDefinitions() as $indexDef) {
             $indexName = $indexDef->getName() ?? 'PRIMARY';
             if (! \in_array($indexName, $dropIndexNames, true)) {
@@ -163,7 +164,7 @@ class SQLiteIndexCompiler extends IndexCompiler
         $type = $pragmaRow['type'] ?? 'TEXT';
 
         if (! \is_string($name) || ! \is_string($type)) {
-            throw new \InvalidArgumentException('Invalid pragma row data');
+            throw new SchemaCompilerException('Invalid pragma row data from SQLite');
         }
 
         $column = new Column($name, $this->mapSqliteTypeToGeneric($type));

@@ -16,7 +16,7 @@ use Hibla\QueryBuilder\Console\MigrateStatusCommand;
 use Hibla\QueryBuilder\Console\SchemaDumpCommand; 
 use Hibla\QueryBuilder\Console\StatusCommand;
 
-$application = new Application('Hibla Query Builder', '1.0.0');
+$application = new Application('Hibla Database', '1.0.0');
 
 $application->addCommand(new InitCommand());
 $application->addCommand(new PublishTemplatesCommand());

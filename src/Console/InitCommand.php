@@ -48,8 +48,6 @@ class InitCommand extends Command
             return Command::FAILURE;
         }
 
-        $this->createHiblaDbExecutable();
-
         $this->promptEnvFileCreation();
 
         return Command::SUCCESS;
@@ -110,39 +108,6 @@ class InitCommand extends Command
         }
 
         return 'copied';
-    }
-
-    private function createHiblaDbExecutable(): void
-    {
-        $executablePath = $this->projectRoot . '/hibla-db';
-
-        if (file_exists($executablePath) && ! $this->force) {
-            $this->io->warning('hibla-db file already exists. Use --force to overwrite.');
-
-            return;
-        }
-
-        $stub = $this->getHiblaDbStub();
-
-        if (file_put_contents($executablePath, $stub) === false) {
-            $this->io->error('Failed to create hibla-db file');
-
-            return;
-        }
-
-        if (DIRECTORY_SEPARATOR === '/') {
-            chmod($executablePath, 0755);
-        }
-
-        $this->io->success('✓ Created hibla-db executable in project root');
-        $this->io->section('Usage:');
-        $this->io->listing([
-            'php hibla-db init',
-            'php hibla-db migrate',
-            'php hibla-db make:migration create_users_table',
-            'php hibla-db migrate:rollback',
-            'php hibla-db migrate:status',
-        ]);
     }
 
     private function getHiblaDbStub(): string

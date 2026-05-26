@@ -147,81 +147,170 @@ class MigrateStatusCommand extends Command
 
     private function displayMigrationStatus(?string $path, bool $pendingOnly, bool $ranOnly): void
     {
-        $migrationFiles = $this->loadMigrationFiles($path);
+        $localFiles = $this->loadLocalMigrationFiles($path);
+        $dbMigrations = $this->loadRanMigrationsFromDatabase();
 
-        if ($migrationFiles === null) {
+        if (\count($localFiles) === 0 && \count($dbMigrations) === 0) {
+            $this->io->warning('No migrations found in files or database.');
+
             return;
         }
 
-        $migrationFiles = $this->applyConnectionFilter($migrationFiles);
-
-        if ($migrationFiles === null) {
-            return;
-        }
-
-        $ranMigrationsByConnection = $this->getRanMigrationsForAllConnections($migrationFiles);
-
-        $rows = $this->buildStatusRowsWithMultipleConnections($migrationFiles, $ranMigrationsByConnection, $pendingOnly, $ranOnly);
+        $rows = $this->buildUnifiedStatusRows($localFiles, $dbMigrations, $pendingOnly, $ranOnly);
 
         if (! $this->displayRowsOrEmptyMessage($rows, $pendingOnly, $ranOnly)) {
             return;
         }
 
-        $this->displayStatusTable($migrationFiles, $rows);
+        $this->displayStatusTable($rows);
         $this->displaySummary($rows);
     }
 
     /**
-     * @return list<string>|null
+     * @return list<string>
      */
-    private function loadMigrationFiles(?string $path): ?array
+    private function loadLocalMigrationFiles(?string $path): array
     {
         if ($path !== null) {
             $pattern = rtrim($path, '/') . '/*.php';
-            $migrationFiles = $this->getFilteredMigrationFiles($pattern, $this->connection);
-
-            if (\count($migrationFiles) === 0) {
-                $this->io->warning("No migration files found in path: {$path}");
-
-                return null;
-            }
-
-            $this->io->note("Showing migrations from path: {$path}");
-
-            return $migrationFiles;
+            $files = $this->getFilteredMigrationFiles($pattern, $this->connection);
+        } else {
+            $files = $this->getAllMigrationFiles($this->connection);
         }
 
-        $migrationFiles = $this->getAllMigrationFiles($this->connection);
+        $connToMatch = $this->connection ?? 'default';
 
-        if (\count($migrationFiles) === 0) {
-            $this->io->warning('No migration files found');
-
-            return null;
-        }
-
-        return $migrationFiles;
+        return $this->filterMigrationsByConnection($files, $connToMatch);
     }
 
     /**
-     * @param list<string> $migrationFiles
-     *
-     * @return list<string>|null
+     * @return list<array<string, mixed>>
      */
-    private function applyConnectionFilter(array $migrationFiles): ?array
+    private function loadRanMigrationsFromDatabase(): array
     {
-        if ($this->connection === null) {
-            return $migrationFiles;
+        try {
+            $repository = new MigrationRepository(
+                $this->getMigrationsTable($this->connection),
+                $this->connection
+            );
+
+            if (await($repository->repositoryExists()) === 0) {
+                return [];
+            }
+
+            $ran = await($repository->getRan());
+
+            return \is_array($ran) ? array_values($ran) : [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
+     * @param list<string> $localFiles
+     * @param list<array<string, mixed>> $dbMigrations
+     *
+     * @return list<array{0: string, 1: string, 2: string, 3: string}>
+     */
+    private function buildUnifiedStatusRows(array $localFiles, array $dbMigrations, bool $pendingOnly, bool $ranOnly): array
+    {
+        $connectionDisplay = $this->connection ?? '<comment>default</comment>';
+
+        $map = $this->mapDatabaseMigrations($dbMigrations, $connectionDisplay);
+        $map = $this->mergeLocalFilesIntoMap($map, $localFiles, $connectionDisplay);
+
+        return $this->filterAndFormatRows($map, $pendingOnly, $ranOnly);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $dbMigrations
+     *
+     * @return array<string, array{path: string, status: string, batch: string, connection: string, is_ran: bool}>
+     */
+    private function mapDatabaseMigrations(array $dbMigrations, string $connectionDisplay): array
+    {
+        $map = [];
+
+        foreach ($dbMigrations as $ran) {
+            $migration = $ran['migration'] ?? null;
+            $batch = $ran['batch'] ?? 0;
+
+            if (\is_string($migration)) {
+                $normalizedPath = $this->normalizePath($migration);
+
+                $batchStr = \is_int($batch) || \is_string($batch) ? (string) $batch : '0';
+
+                $map[$normalizedPath] = [
+                    'path' => $normalizedPath,
+                    'status' => '<info>✓ Ran (Pruned)</info>', // Assumed pruned until proven otherwise
+                    'batch' => $batchStr,
+                    'connection' => $connectionDisplay,
+                    'is_ran' => true,
+                ];
+            }
         }
 
-        $filtered = $this->filterMigrationsByConnection($migrationFiles, $this->connection);
+        return $map;
+    }
 
-        if (\count($filtered) === 0) {
-            $this->io->warning("No migrations found for connection: {$this->connection}");
+    /**
+     * @param array<string, array{path: string, status: string, batch: string, connection: string, is_ran: bool}> $map
+     * @param list<string> $localFiles
+     *
+     * @return array<string, array{path: string, status: string, batch: string, connection: string, is_ran: bool}>
+     */
+    private function mergeLocalFilesIntoMap(array $map, array $localFiles, string $connectionDisplay): array
+    {
+        foreach ($localFiles as $file) {
+            $relativePath = $this->getRelativeMigrationPath($file, $this->connection);
+            $normalizedPath = $this->normalizePath($relativePath);
 
-            return null;
+            if (isset($map[$normalizedPath])) {
+                // It is in the DB and the file exists locally
+                $map[$normalizedPath]['status'] = '<info>✓ Ran</info>';
+            } else {
+                // It is a local file but not in the DB
+                $map[$normalizedPath] = [
+                    'path' => $normalizedPath,
+                    'status' => '<comment>Pending</comment>',
+                    'batch' => '-',
+                    'connection' => $connectionDisplay,
+                    'is_ran' => false,
+                ];
+            }
         }
 
-        return $filtered;
+        return $map;
+    }
+
+    /**
+     * @param array<string, array{path: string, status: string, batch: string, connection: string, is_ran: bool}> $map
+     *
+     * @return list<array{0: string, 1: string, 2: string, 3: string}>
+     */
+    private function filterAndFormatRows(array $map, bool $pendingOnly, bool $ranOnly): array
+    {
+        $rows = [];
+
+        foreach ($map as $data) {
+            if ($pendingOnly && $data['is_ran']) {
+                continue;
+            }
+            if ($ranOnly && ! $data['is_ran']) {
+                continue;
+            }
+
+            $rows[] = [
+                $data['path'],
+                $data['status'],
+                $data['batch'],
+                $data['connection'],
+            ];
+        }
+
+        usort($rows, fn($a, $b) => strcmp($a[0], $b[0]));
+
+        return $rows;
     }
 
     /**
@@ -243,18 +332,31 @@ class MigrateStatusCommand extends Command
     }
 
     /**
-     * @param list<string> $migrationFiles
      * @param list<array{0: string, 1: string, 2: string, 3: string}> $rows
      */
-    private function displayStatusTable(array $migrationFiles, array $rows): void
+    private function displayStatusTable(array $rows): void
     {
-        $hasNestedMigrations = $this->hasNestedStructure($migrationFiles);
+        $hasNestedMigrations = $this->hasNestedStructureFromRows($rows);
 
         if ($hasNestedMigrations) {
             $this->displayGroupedStatus($rows);
         } else {
             $this->io->table(['Migration', 'Status', 'Batch', 'Connection'], $rows);
         }
+    }
+
+    /**
+     * @param list<array{0: string, 1: string, 2: string, 3: string}> $rows
+     */
+    private function hasNestedStructureFromRows(array $rows): bool
+    {
+        foreach ($rows as $row) {
+            if (str_contains($row[0], '/')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -290,190 +392,9 @@ class MigrateStatusCommand extends Command
         return false;
     }
 
-    /**
-     * @param list<string> $migrationFiles
-     *
-     * @return array<string, array<string, int>>
-     */
-    private function getRanMigrationsForAllConnections(array $migrationFiles): array
-    {
-        $connectionsToCheck = $this->extractUniqueConnections($migrationFiles);
-        $ranByConnection = [];
-
-        foreach ($connectionsToCheck as $connectionKey => $connectionName) {
-            $ranByConnection[$connectionKey] = $this->getRanMigrationsForConnection($connectionName);
-        }
-
-        return $ranByConnection;
-    }
-
-    /**
-     * @param list<string> $migrationFiles
-     *
-     * @return array<string, string|null>
-     */
-    private function extractUniqueConnections(array $migrationFiles): array
-    {
-        $connectionsToCheck = [];
-
-        foreach ($migrationFiles as $file) {
-            $migrationConnection = $this->getMigrationConnection($file);
-            $connectionKey = $migrationConnection ?? 'default';
-            $connectionsToCheck[$connectionKey] = $migrationConnection;
-        }
-
-        return $connectionsToCheck;
-    }
-
-    /**
-     * @return array<string, int>
-     */
-    private function getRanMigrationsForConnection(?string $connectionName): array
-    {
-        $repository = new MigrationRepository(
-            $this->getMigrationsTable($connectionName),
-            $connectionName
-        );
-
-        try {
-            await($repository->createRepository());
-            /** @var list<array<string, mixed>> $ranMigrations */
-            $ranMigrations = await($repository->getRan());
-
-            return $this->buildRanMigrationMap($ranMigrations);
-        } catch (\Throwable $e) {
-            return [];
-        }
-    }
-
-    /**
-     * @param list<array<string, mixed>> $ranMigrations
-     *
-     * @return array<string, int>
-     */
-    private function buildRanMigrationMap(array $ranMigrations): array
-    {
-        $ranMap = [];
-
-        foreach ($ranMigrations as $migration) {
-            $path = $migration['migration'] ?? null;
-            $batch = $migration['batch'] ?? null;
-
-            if (\is_string($path)) {
-                $normalizedPath = $this->normalizePath($path);
-                $ranMap[$normalizedPath] = is_numeric($batch) ? (int) $batch : 0;
-            }
-        }
-
-        return $ranMap;
-    }
-
     private function normalizePath(string $path): string
     {
         return str_replace('\\', '/', trim($path, '/\\'));
-    }
-
-    /**
-     * @param list<string> $migrationFiles
-     * @param array<string, array<string, int>> $ranMigrationsByConnection
-     *
-     * @return list<array{0: string, 1: string, 2: string, 3: string}>
-     */
-    private function buildStatusRowsWithMultipleConnections(
-        array $migrationFiles,
-        array $ranMigrationsByConnection,
-        bool $pendingOnly,
-        bool $ranOnly
-    ): array {
-        $rows = [];
-
-        foreach ($migrationFiles as $file) {
-            $row = $this->buildStatusRow($file, $ranMigrationsByConnection, $pendingOnly, $ranOnly);
-
-            if ($row !== null) {
-                $rows[] = $row;
-            }
-        }
-
-        return $rows;
-    }
-
-    /**
-     * @param array<string, array<string, int>> $ranMigrationsByConnection
-     *
-     * @return array{0: string, 1: string, 2: string, 3: string}|null
-     */
-    private function buildStatusRow(
-        string $file,
-        array $ranMigrationsByConnection,
-        bool $pendingOnly,
-        bool $ranOnly
-    ): ?array {
-        $relativePath = $this->getRelativeMigrationPath($file, $this->connection);
-        $normalizedRelativePath = $this->normalizePath($relativePath);
-
-        $migrationConnection = $this->getMigrationConnection($file);
-        $connectionKey = $migrationConnection ?? 'default';
-        $connectionDisplay = $migrationConnection ?? '<comment>default</comment>';
-
-        $ranMap = $ranMigrationsByConnection[$connectionKey] ?? [];
-        $isRan = \array_key_exists($normalizedRelativePath, $ranMap);
-
-        if (! $this->shouldIncludeInResults($isRan, $pendingOnly, $ranOnly)) {
-            return null;
-        }
-
-        return $this->formatStatusRow($relativePath, $isRan, $ranMap, $normalizedRelativePath, $connectionDisplay);
-    }
-
-    private function shouldIncludeInResults(bool $isRan, bool $pendingOnly, bool $ranOnly): bool
-    {
-        if ($pendingOnly && $isRan) {
-            return false;
-        }
-
-        if ($ranOnly && ! $isRan) {
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * @param array<string, int> $ranMap
-     *
-     * @return array{0: string, 1: string, 2: string, 3: string}
-     */
-    private function formatStatusRow(
-        string $relativePath,
-        bool $isRan,
-        array $ranMap,
-        string $normalizedRelativePath,
-        string $connectionDisplay
-    ): array {
-        if ($isRan) {
-            $batch = $ranMap[$normalizedRelativePath];
-            $batchStr = $batch > 0 ? (string) $batch : 'N/A';
-
-            return [$relativePath, '<info>✓ Ran</info>', $batchStr, $connectionDisplay];
-        }
-
-        return [$relativePath, '<comment>Pending</comment>', '-', $connectionDisplay];
-    }
-
-    /**
-     * @param list<string> $migrationFiles
-     */
-    private function hasNestedStructure(array $migrationFiles): bool
-    {
-        foreach ($migrationFiles as $file) {
-            $relativePath = $this->getRelativeMigrationPath($file, $this->connection);
-            if (str_contains($relativePath, '/')) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**

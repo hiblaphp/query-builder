@@ -110,44 +110,6 @@ class InitCommand extends Command
         return 'copied';
     }
 
-    private function getHiblaDbStub(): string
-    {
-        return <<<'PHP'
-#!/usr/bin/env php
-<?php
-
-require_once __DIR__ . '/vendor/autoload.php';
-
-use Symfony\Component\Console\Application;
-use Hibla\QueryBuilder\Console\InitCommand;
-use Hibla\QueryBuilder\Console\PublishTemplatesCommand;
-use Hibla\QueryBuilder\Console\MakeMigrationCommand;
-use Hibla\QueryBuilder\Console\MigrateCommand;
-use Hibla\QueryBuilder\Console\MigrateRollbackCommand;
-use Hibla\QueryBuilder\Console\MigrateResetCommand;
-use Hibla\QueryBuilder\Console\MigrateRefreshCommand;
-use Hibla\QueryBuilder\Console\MigrateFreshCommand;
-use Hibla\QueryBuilder\Console\MigrateStatusCommand;
-use Hibla\QueryBuilder\Console\StatusCommand;
-
-$application = new Application('Hibla Database CLI', '1.0.0');
-
-$application->add(new InitCommand());
-$application->add(new PublishTemplatesCommand());
-$application->add(new MakeMigrationCommand());
-$application->add(new MigrateCommand());
-$application->add(new MigrateRollbackCommand());
-$application->add(new MigrateResetCommand());
-$application->add(new MigrateRefreshCommand());
-$application->add(new MigrateFreshCommand());
-$application->add(new MigrateStatusCommand());
-$application->add(new StatusCommand());
-
-$application->run();
-
-PHP;
-    }
-
     private function promptEnvFileCreation(): void
     {
         if ($this->projectRoot !== null && ! file_exists($this->projectRoot . '/.env')) {

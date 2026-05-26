@@ -48,6 +48,7 @@ class PostgresSchemaState extends SchemaState
      * Load a previously dumped SQL file into the PostgreSQL database.
      *
      * Pipes the contents of {@see $path} directly into `psql` via stdin.
+     * If the `psql` executable is not installed, it falls back to native PHP execution.
      *
      * @param array<string, mixed> $config Database connection configuration.
      * @param string $path Path to the SQL dump file to load.
@@ -60,10 +61,14 @@ class PostgresSchemaState extends SchemaState
         $db = $this->extractString($config, 'database', '');
         $env = $this->extractPasswordEnv($config, 'PGPASSWORD');
 
-        $this->executeCommandFromFile(
-            ['psql', '-h', $host, '-p', $port, '-U', $user, '-d', $db],
-            $path,
-            $env
-        );
+        try {
+            $this->executeCommandFromFile(
+                ['psql', '-h', $host, '-p', $port, '-U', $user, '-d', $db],
+                $path,
+                $env
+            );
+        } catch (\RuntimeException $e) {
+            $this->loadViaPhpFallback($config, $path);
+        }
     }
 }

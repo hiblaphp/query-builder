@@ -48,6 +48,7 @@ class MySQLSchemaState extends SchemaState
      * Load a previously dumped SQL file into the MySQL database.
      *
      * Pipes the contents of {@see $path} directly into `mysql` via stdin.
+     * If the `mysql` executable is not installed, it falls back to native PHP execution.
      *
      * @param array<string, mixed> $config Database connection configuration.
      * @param string $path Path to the SQL dump file to load.
@@ -60,10 +61,14 @@ class MySQLSchemaState extends SchemaState
         $db = $this->extractString($config, 'database', '');
         $env = $this->extractPasswordEnv($config, 'MYSQL_PWD');
 
-        $this->executeCommandFromFile(
-            ['mysql', '-u', $user, '-h', $host, '-P', $port, $db],
-            $path,
-            $env
-        );
+        try {
+            $this->executeCommandFromFile(
+                ['mysql', '-u', $user, '-h', $host, '-P', $port, $db],
+                $path,
+                $env
+            );
+        } catch (\RuntimeException $e) {
+            $this->loadViaPhpFallback($config, $path);
+        }
     }
 }

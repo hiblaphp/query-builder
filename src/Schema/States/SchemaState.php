@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Schema\States;
 
+use Hibla\QueryBuilder\DB;
 use Hibla\QueryBuilder\Exceptions\SchemaMigrationException;
 use Rcalicdan\ConfigLoader\Config;
+
+use function Hibla\await;
 
 abstract class SchemaState
 {
@@ -105,7 +108,7 @@ abstract class SchemaState
 
             throw new SchemaMigrationException(
                 "Executable '{$cmdName}' could not be found.\n\n" .
-                "Please check your System PATH and ensure '{$cmdName}' is installed and added to your System PATH.\n"
+                    "Please check your System PATH and ensure '{$cmdName}' is installed and added to your System PATH.\n"
             );
         }
 
@@ -142,14 +145,15 @@ abstract class SchemaState
      * Safely execute a command by streaming a file into its standard input (cross-platform).
      *
      * Spawns the given command via {@see proc_open} and pipes the contents of
-     * {@see $filePath} into the process stdin in chunks. Throws on a non-zero
-     * exit code or if the executable cannot be found.
+     * {@see $filePath} into the process stdin in chunks. Throws \RuntimeException
+     * if the executable is missing, enabling seamless fallback to pure PHP execution.
      *
      * @param list<string> $command The command and its arguments.
      * @param string $filePath Source file whose contents are piped to the process.
      * @param array<string, string> $env Additional environment variables to inject into the process.
      *
-     * @throws SchemaMigrationException On spawn failure or non-zero exit.
+     * @throws \RuntimeException If the executable is missing from the system PATH.
+     * @throws SchemaMigrationException On non-zero exit from an executed command.
      */
     protected function executeCommandFromFile(
         array $command,
@@ -170,10 +174,7 @@ abstract class SchemaState
         if (! \is_resource($process)) {
             $cmdName = $command[0];
 
-            throw new SchemaMigrationException(
-                "Executable '{$cmdName}' could not be found.\n\n" .
-                "Please check your System PATH and ensure '{$cmdName}' is installed and added to your System PATH.\n"
-            );
+            throw new \RuntimeException("Executable '{$cmdName}' could not be found.");
         }
 
         $inputFile = fopen($filePath, 'rb');
@@ -198,10 +199,53 @@ abstract class SchemaState
 
         if ($exitCode !== 0) {
             $cmdName = $command[0];
+            $errLower = strtolower(trim((string) $errorOutput));
+
+            // Catch Windows specific 'not recognized' errors to trigger the PHP Fallback
+            if (
+                str_contains($errLower, 'not recognized') ||
+                str_contains($errLower, 'not found') ||
+                str_contains($errLower, 'no such file')
+            ) {
+                throw new \RuntimeException("Executable '{$cmdName}' could not be found.");
+            }
 
             throw new SchemaMigrationException(
                 "Command '{$cmdName}' failed to load schema (Exit {$exitCode}). Error: " . trim((string) $errorOutput)
             );
+        }
+    }
+
+    /**
+     * Fallback to pure PHP execution if the CLI tools are missing.
+     *
+     * @param array<string, mixed> $config Database connection configuration.
+     * @param string $path Path to the SQL dump file to load.
+     *
+     * @throws SchemaMigrationException
+     */
+    protected function loadViaPhpFallback(array $config, string $path): void
+    {
+        $sql = file_get_contents($path);
+
+        if ($sql === false || trim($sql) === '') {
+            return;
+        }
+
+        // Enable multi-statements so the database executes the entire dump file at once,
+        // Note this option is ignored by other driver that dont have strict check for multiline statements
+        $config['multi_statements'] = true;
+
+        $client = DB::resolveClientFromConfig($config);
+
+        try {
+            await($client->execute($sql));
+        } catch (\Throwable $e) {
+            throw new SchemaMigrationException(
+                'Pure PHP Fallback failed to load schema: ' . $e->getMessage()
+            );
+        } finally {
+            $client->close();
         }
     }
 }

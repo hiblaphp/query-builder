@@ -39,6 +39,7 @@ class MigrateStatusCommand extends Command
             ->addOption('path', null, InputOption::VALUE_OPTIONAL, 'Only show migrations from this path')
             ->addOption('pending', null, InputOption::VALUE_NONE, 'Only show pending migrations')
             ->addOption('ran', null, InputOption::VALUE_NONE, 'Only show completed migrations')
+            ->addOption('all', null, InputOption::VALUE_NONE, 'Show the status of migrations for all configured connections')
         ;
     }
 
@@ -47,6 +48,14 @@ class MigrateStatusCommand extends Command
         $this->io = new SymfonyStyle($input, $output);
         $this->io->title('Migration Status');
 
+        if (! $this->initializeProjectRoot()) {
+            return Command::FAILURE;
+        }
+
+        if ($input->getOption('all') === true) {
+            return $this->handleAllConnections($input);
+        }
+
         $this->setConnectionFromInput($input);
 
         try {
@@ -54,10 +63,6 @@ class MigrateStatusCommand extends Command
         } catch (InvalidArgumentException $e) {
             $this->io->error($e->getMessage());
 
-            return Command::FAILURE;
-        }
-
-        if (! $this->initializeProjectRoot()) {
             return Command::FAILURE;
         }
 
@@ -76,6 +81,38 @@ class MigrateStatusCommand extends Command
 
             return Command::FAILURE;
         }
+    }
+
+    private function handleAllConnections(InputInterface $input): int
+    {
+        $connections = $this->getAvailableConnections();
+
+        if (\count($connections) === 0) {
+            $this->io->warning('No database connections configured.');
+
+            return Command::SUCCESS;
+        }
+
+        $path = $this->getPathFromInput($input);
+        $pendingOnly = (bool) $input->getOption('pending');
+        $ranOnly = (bool) $input->getOption('ran');
+
+        foreach ($connections as $conn) {
+            $this->io->section("Connection: {$conn}");
+            $this->connection = $conn;
+
+            try {
+                $this->validateConnection($this->connection);
+                $this->initializeDatabase();
+                $this->displayMigrationStatus($path, $pendingOnly, $ranOnly);
+            } catch (\Throwable $e) {
+                $this->handleError($e);
+
+                return Command::FAILURE;
+            }
+        }
+
+        return Command::SUCCESS;
     }
 
     private function initializeProjectRoot(): bool

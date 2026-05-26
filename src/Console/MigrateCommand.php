@@ -51,6 +51,7 @@ class MigrateCommand extends Command
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Force the operation to run without prompts')
             ->addOption('connection', null, InputOption::VALUE_OPTIONAL, 'The database connection to use')
             ->addOption('path', null, InputOption::VALUE_OPTIONAL, 'The path to migrations files (relative to migrations directory)')
+            ->addOption('all', null, InputOption::VALUE_NONE, 'Run migrations for all configured connections')
         ;
     }
 
@@ -58,6 +59,18 @@ class MigrateCommand extends Command
     {
         $this->initializeIo($input, $output);
         $this->io->title('Database Migrations');
+
+        $this->projectRoot = Config::getRootPath();
+
+        if ($this->projectRoot === null) {
+            $this->io->error('Could not find project root. Ensure a vendor directory exists.');
+
+            return Command::FAILURE;
+        }
+
+        if ($input->getOption('all') === true) {
+            return $this->handleAllConnections($input);
+        }
 
         $this->setConnectionFromInput($input);
 
@@ -69,14 +82,6 @@ class MigrateCommand extends Command
             return Command::FAILURE;
         }
 
-        $this->projectRoot = Config::getRootPath();
-
-        if ($this->projectRoot === null) {
-            $this->io->error('Could not find project root. Ensure a vendor directory exists.');
-
-            return Command::FAILURE;
-        }
-
         try {
             return $this->runMigrations($input);
         } catch (\Throwable $e) {
@@ -84,6 +89,37 @@ class MigrateCommand extends Command
 
             return Command::FAILURE;
         }
+    }
+
+    private function handleAllConnections(InputInterface $input): int
+    {
+        $connections = $this->getAvailableConnections();
+
+        if (\count($connections) === 0) {
+            $this->io->warning('No database connections configured.');
+
+            return Command::SUCCESS;
+        }
+
+        foreach ($connections as $conn) {
+            $this->io->section("Connection: {$conn}");
+            $this->connection = $conn;
+
+            try {
+                $this->validateConnection($this->connection);
+                $result = $this->runMigrations($input);
+
+                if ($result !== Command::SUCCESS) {
+                    return $result;
+                }
+            } catch (\Throwable $e) {
+                $this->handleCriticalError($e);
+
+                return Command::FAILURE;
+            }
+        }
+
+        return Command::SUCCESS;
     }
 
     private function initializeIo(InputInterface $input, OutputInterface $output): void

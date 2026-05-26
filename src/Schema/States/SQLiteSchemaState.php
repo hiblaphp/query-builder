@@ -42,6 +42,7 @@ class SQLiteSchemaState extends SchemaState
      * Load a previously dumped SQL file into the SQLite database.
      *
      * Pipes the contents of {@see $path} directly into `sqlite3` via stdin.
+     * If the `sqlite3` executable is not installed, it falls back to native PHP execution.
      *
      * @param array<string, mixed> $config Database connection configuration.
      * @param string $path Path to the SQL dump file to load.
@@ -50,9 +51,13 @@ class SQLiteSchemaState extends SchemaState
     {
         $db = $this->extractString($config, 'database', '');
 
-        $this->executeCommandFromFile(
-            ['sqlite3', $db],
-            $path
-        );
+        try {
+            $this->executeCommandFromFile(
+                ['sqlite3', $db],
+                $path
+            );
+        } catch (\RuntimeException $e) {
+            $this->loadViaPhpFallback($config, $path);
+        }
     }
 }

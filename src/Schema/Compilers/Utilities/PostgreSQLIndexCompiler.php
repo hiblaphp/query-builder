@@ -55,7 +55,7 @@ class PostgreSQLIndexCompiler extends IndexCompiler
             $algorithm = $indexDef->getAlgorithm();
             if ($algorithm !== null) {
                 $algo = strtoupper($algorithm);
-                if (in_array($algo, ['BTREE', 'HASH', 'GIST', 'GIN', 'BRIN'], true)) {
+                if (\in_array($algo, ['BTREE', 'HASH', 'GIST', 'GIN', 'BRIN'], true)) {
                     $sql .= " USING {$algo}";
                 }
             }
@@ -70,7 +70,7 @@ class PostgreSQLIndexCompiler extends IndexCompiler
      */
     protected function compileFulltextIndexStatements(string $table, IndexDefinition $indexDef): array
     {
-        $cols = implode(" || ' ' || ", array_map(fn($c) => "\"{$c}\"", $indexDef->getColumns()));
+        $cols = implode(" || ' ' || ", array_map(fn ($c) => "\"{$c}\"", $indexDef->getColumns()));
         $name = $indexDef->getName();
 
         return ["CREATE INDEX IF NOT EXISTS \"{$name}\" ON \"{$table}\" USING gin(to_tsvector('english', {$cols}))"];
@@ -154,6 +154,7 @@ class PostgreSQLIndexCompiler extends IndexCompiler
 
     /**
      * Add vector index support
+     *
      * @return list<string>
      */
     protected function compileVectorIndexStatements(string $table, IndexDefinition $indexDef): array

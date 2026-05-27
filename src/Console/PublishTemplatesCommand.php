@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Console;
 
-use Hibla\QueryBuilder\Console\Traits\FindProjectRoot;
 use Rcalicdan\ConfigLoader\Config;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -14,10 +13,10 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class PublishTemplatesCommand extends Command
 {
-    use FindProjectRoot;
-
     private SymfonyStyle $io;
+
     private ?string $projectRoot = null;
+
     private bool $force;
 
     protected function configure(): void
@@ -25,7 +24,7 @@ class PublishTemplatesCommand extends Command
         $this
             ->setName('publish:templates')
             ->setDescription('Publish pagination templates to the configured location')
-            ->setHelp('Publishes pagination templates to the path specified in config/pdo-query-builder.php')
+            ->setHelp('Publishes pagination templates to the path specified in hibla-database.php')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Overwrite existing templates')
             ->addOption('path', 'p', InputOption::VALUE_REQUIRED, 'Custom path to publish templates (overrides config)')
         ;
@@ -38,7 +37,11 @@ class PublishTemplatesCommand extends Command
 
         $this->io->title('Publish Pagination Templates');
 
-        if (! $this->initializeProjectRoot()) {
+        $this->projectRoot = Config::getRootPath();
+
+        if ($this->projectRoot === null) {
+            $this->io->error('Could not find project root. Ensure a vendor directory exists.');
+
             return Command::FAILURE;
         }
 
@@ -66,24 +69,11 @@ class PublishTemplatesCommand extends Command
         return Command::SUCCESS;
     }
 
-    private function initializeProjectRoot(): bool
-    {
-        $this->projectRoot = $this->findProjectRoot();
-
-        if ($this->projectRoot === null) {
-            $this->io->error('Could not find project root');
-
-            return false;
-        }
-
-        return true;
-    }
-
     private function determineTargetPath(InputInterface $input): ?string
     {
         $customPath = $input->getOption('path');
 
-        if (is_string($customPath) && $customPath !== '') {
+        if (\is_string($customPath) && $customPath !== '') {
             return $this->resolveCustomPath($customPath);
         }
 
@@ -92,16 +82,16 @@ class PublishTemplatesCommand extends Command
 
     private function displayConfigurationError(): void
     {
-        $this->io->error('No templates path configured. Please set pagination.templates_path in config/pdo-query-builder.php');
+        $this->io->error('No templates path configured. Please set pagination.templates_path in hibla-database.php');
         $this->io->note('Example: \'templates_path\' => __DIR__ . \'/../resources/views/pagination\'');
     }
 
     private function getConfiguredPath(): ?string
     {
         try {
-            $dbConfig = Config::get('async-database');
+            $dbConfig = Config::loadFromRoot('hibla-database');
 
-            if (! is_array($dbConfig)) {
+            if (! \is_array($dbConfig)) {
                 return null;
             }
 
@@ -125,7 +115,7 @@ class PublishTemplatesCommand extends Command
     {
         $paginationConfig = $dbConfig['pagination'] ?? [];
 
-        if (! is_array($paginationConfig)) {
+        if (! \is_array($paginationConfig)) {
             return null;
         }
 
@@ -134,7 +124,7 @@ class PublishTemplatesCommand extends Command
 
     private function validateTemplatesPath(mixed $templatesPath): ?string
     {
-        if (! is_string($templatesPath)) {
+        if (! \is_string($templatesPath)) {
             return null;
         }
 
@@ -329,7 +319,7 @@ class PublishTemplatesCommand extends Command
         $this->io->text([
             '',
             'Usage in your code:',
-            '  $paginator = await($builder->paginate(15));',
+            '  $paginator = await(DB::table(\'users\')->paginate(15));',
             '  echo $paginator->render(\'bootstrap\'); // Uses your custom template',
         ]);
     }
@@ -359,16 +349,16 @@ class PublishTemplatesCommand extends Command
     {
         return [
             $this->buildVendorPath(),
-            $this->buildRelativePath(dirname(__DIR__)),
-            $this->buildRelativePath(dirname(__DIR__, 2)),
+            $this->buildRelativePath(\dirname(__DIR__)),
+            $this->buildRelativePath(\dirname(__DIR__, 2)),
             $this->buildRelativePath(__DIR__ . DIRECTORY_SEPARATOR . '..'),
         ];
     }
 
     private function buildVendorPath(): string
     {
-        return $this->projectRoot . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'hibla'
-            . DIRECTORY_SEPARATOR . 'async-database' . DIRECTORY_SEPARATOR . 'src'
+        return $this->projectRoot . DIRECTORY_SEPARATOR . 'vendor' . DIRECTORY_SEPARATOR . 'hiblaphp'
+            . DIRECTORY_SEPARATOR . 'query-builder' . DIRECTORY_SEPARATOR . 'src'
             . DIRECTORY_SEPARATOR . 'Pagination' . DIRECTORY_SEPARATOR . 'templates';
     }
 
@@ -401,8 +391,8 @@ class PublishTemplatesCommand extends Command
     {
         return [
             'Project vendor' => $this->buildVendorPath(),
-            'Package development' => $this->buildRelativePath(dirname(__DIR__)),
-            'Alternative location' => $this->buildRelativePath(dirname(__DIR__, 2)),
+            'Package development' => $this->buildRelativePath(\dirname(__DIR__)),
+            'Alternative location' => $this->buildRelativePath(\dirname(__DIR__, 2)),
             'Relative path' => $this->buildRelativePath(__DIR__ . DIRECTORY_SEPARATOR . '..'),
         ];
     }

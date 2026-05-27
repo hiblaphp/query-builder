@@ -12,8 +12,11 @@ use Hibla\QueryBuilder\Schema\IndexDefinition;
 class IndexCompiler
 {
     protected string $columnDelimiter = '`, `';
+
     protected string $indexTypeDelimiter = '';
+
     protected string $openQuote = '`';
+
     protected string $closeQuote = '`';
 
     public function compileIndexDefinition(IndexDefinition $indexDef): string

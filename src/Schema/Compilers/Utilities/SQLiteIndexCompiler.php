@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Schema\Compilers\Utilities;
 
+use Hibla\QueryBuilder\Exceptions\SchemaCompilerException;
 use Hibla\QueryBuilder\Schema\Blueprint;
 use Hibla\QueryBuilder\Schema\Column;
 use Hibla\QueryBuilder\Schema\ForeignKey;
@@ -21,6 +22,7 @@ class SQLiteIndexCompiler extends IndexCompiler
 
     /**
      * @param array<int, IndexDefinition> $indexDefs
+     *
      * @return array<int, string>
      */
     public function compileAddIndexDefinition(string $table, array $indexDefs): array
@@ -36,7 +38,7 @@ class SQLiteIndexCompiler extends IndexCompiler
 
             if ($type === 'UNIQUE') {
                 $statements[] = "CREATE UNIQUE INDEX IF NOT EXISTS `{$indexDef->getName()}` ON `{$table}` (`{$cols}`)";
-            } elseif (in_array($type, ['INDEX', 'FULLTEXT', 'SPATIAL'], true)) {
+            } elseif (\in_array($type, ['INDEX', 'FULLTEXT', 'SPATIAL'], true)) {
                 $statements[] = "CREATE INDEX IF NOT EXISTS `{$indexDef->getName()}` ON `{$table}` (`{$cols}`)";
             }
         }
@@ -46,6 +48,7 @@ class SQLiteIndexCompiler extends IndexCompiler
 
     /**
      * @param array<int, array<string, mixed>> $existingTableColumns
+     *
      * @return array<int, string>
      */
     public function compileTableRecreation(Blueprint $blueprint, array $existingTableColumns, SchemaCompiler $compiler): array
@@ -69,10 +72,10 @@ class SQLiteIndexCompiler extends IndexCompiler
         $statements[] = "DROP TABLE `{$table}`";
         $statements[] = "ALTER TABLE `{$tempTable}` RENAME TO `{$table}`";
 
-        $dropIndexNames = array_map(fn ($idx) => $idx[0], $blueprint->getDropIndexes());
+        $dropIndexNames = array_map(fn($idx) => $idx[0], $blueprint->getDropIndexes());
         foreach ($blueprint->getIndexDefinitions() as $indexDef) {
             $indexName = $indexDef->getName();
-            if ($indexDef->getType() !== 'PRIMARY' && ! in_array($indexName, $dropIndexNames, true)) {
+            if ($indexDef->getType() !== 'PRIMARY' && ! \in_array($indexName, $dropIndexNames, true)) {
                 $indexStatements = $this->compileAddIndexDefinition($table, [$indexDef]);
                 $statements = array_merge($statements, $indexStatements);
             }
@@ -96,13 +99,13 @@ class SQLiteIndexCompiler extends IndexCompiler
         $modifyMap = $this->getModifyMap($originalBlueprint->getModifyColumns());
 
         foreach ($existingTableColumns as $existingCol) {
-            if (! isset($existingCol['name']) || ! is_string($existingCol['name'])) {
+            if (! isset($existingCol['name']) || ! \is_string($existingCol['name'])) {
                 continue;
             }
 
             $columnName = $existingCol['name'];
 
-            if (in_array($columnName, $dropColumns, true)) {
+            if (\in_array($columnName, $dropColumns, true)) {
                 continue;
             }
 
@@ -134,17 +137,17 @@ class SQLiteIndexCompiler extends IndexCompiler
             $this->addColumnToBlueprint($newBlueprint, $clonedColumn);
         }
 
-        $dropIndexNames = array_map(fn ($idx) => $idx[0], $originalBlueprint->getDropIndexes());
+        $dropIndexNames = array_map(fn($idx) => $idx[0], $originalBlueprint->getDropIndexes());
         foreach ($originalBlueprint->getIndexDefinitions() as $indexDef) {
             $indexName = $indexDef->getName() ?? 'PRIMARY';
-            if (! in_array($indexName, $dropIndexNames, true)) {
+            if (! \in_array($indexName, $dropIndexNames, true)) {
                 $this->addIndexDefinitionToBlueprint($newBlueprint, $indexDef);
             }
         }
 
         $dropForeignKeys = $originalBlueprint->getDropForeignKeys();
         foreach ($originalBlueprint->getForeignKeys() as $foreignKey) {
-            if (! in_array($foreignKey->getName(), $dropForeignKeys, true)) {
+            if (! \in_array($foreignKey->getName(), $dropForeignKeys, true)) {
                 $this->addForeignKeyToBlueprint($newBlueprint, $foreignKey);
             }
         }
@@ -160,23 +163,23 @@ class SQLiteIndexCompiler extends IndexCompiler
         $name = $pragmaRow['name'] ?? '';
         $type = $pragmaRow['type'] ?? 'TEXT';
 
-        if (! is_string($name) || ! is_string($type)) {
-            throw new \InvalidArgumentException('Invalid pragma row data');
+        if (! \is_string($name) || ! \is_string($type)) {
+            throw new SchemaCompilerException('Invalid pragma row data from SQLite');
         }
 
         $column = new Column($name, $this->mapSqliteTypeToGeneric($type));
 
         $notnull = $pragmaRow['notnull'] ?? 1;
-        if (is_int($notnull) && $notnull === 0) {
+        if (\is_int($notnull) && $notnull === 0) {
             $column->nullable();
         }
 
-        if (isset($pragmaRow['dflt_value']) && is_string($pragmaRow['dflt_value'])) {
+        if (isset($pragmaRow['dflt_value']) && \is_string($pragmaRow['dflt_value'])) {
             $column->default($this->parseDefaultValue($pragmaRow['dflt_value']));
         }
 
         $pk = $pragmaRow['pk'] ?? 0;
-        if (is_int($pk) && $pk === 1) {
+        if (\is_int($pk) && $pk === 1) {
             $column->primary();
             if (stripos($type, 'INTEGER') !== false) {
                 $column->autoIncrement();
@@ -203,7 +206,7 @@ class SQLiteIndexCompiler extends IndexCompiler
 
     private function parseDefaultValue(string $value): mixed
     {
-        if (preg_match("/^'(.*)'$/", $value, $matches) !== 0) {
+        if (preg_match("/^'(.*)'$/", $value, $matches) === 1) {
             return $matches[1];
         }
 
@@ -222,6 +225,7 @@ class SQLiteIndexCompiler extends IndexCompiler
 
     /**
      * @param array<int, array<string, mixed>> $existingTableColumns
+     *
      * @return array<string, array<int, string>>
      */
     private function getTransferColumns(Blueprint $blueprint, array $existingTableColumns): array
@@ -232,13 +236,13 @@ class SQLiteIndexCompiler extends IndexCompiler
         $renameMap = $this->getRenameMap($blueprint->getRenameColumns());
 
         foreach ($existingTableColumns as $existingCol) {
-            if (! isset($existingCol['name']) || ! is_string($existingCol['name'])) {
+            if (! isset($existingCol['name']) || ! \is_string($existingCol['name'])) {
                 continue;
             }
 
             $columnName = $existingCol['name'];
 
-            if (in_array($columnName, $dropColumns, true)) {
+            if (\in_array($columnName, $dropColumns, true)) {
                 continue;
             }
 
@@ -251,13 +255,14 @@ class SQLiteIndexCompiler extends IndexCompiler
 
     /**
      * @param array<int, array<string, string>> $renameColumns
+     *
      * @return array<string, string>
      */
     private function getRenameMap(array $renameColumns): array
     {
         $map = [];
         foreach ($renameColumns as $rename) {
-            if (isset($rename['from'], $rename['to']) && is_string($rename['from']) && is_string($rename['to'])) {
+            if (isset($rename['from'], $rename['to']) && \is_string($rename['from']) && \is_string($rename['to'])) {
                 $map[$rename['from']] = $rename['to'];
             }
         }
@@ -267,6 +272,7 @@ class SQLiteIndexCompiler extends IndexCompiler
 
     /**
      * @param array<int, Column> $modifyColumns
+     *
      * @return array<string, Column>
      */
     private function getModifyMap(array $modifyColumns): array

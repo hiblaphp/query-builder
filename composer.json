@@ -1,5 +1,5 @@
 {
-    "name": "hiblaphp/pdo-query-builder",
+    "name": "hiblaphp/query-builder",
     "description": "Framework Agnostic Asynchonous Query Builder",
     "type": "library",
     "license": "MIT",
@@ -13,38 +13,38 @@
             "Tests\\": "tests/"
         }
     },
+    "minimum-stability": "beta",
+    "prefer-stable": true,
     "require": {
-        "php": "^8.2",
-        "hiblaphp/event-loop": "dev-main",
-        "hiblaphp/promise": "dev-main",
-        "hiblaphp/async": "dev-main",
-        "hiblaphp/async-pdo": "dev-main",
-        "hiblaphp/postgres": "dev-main",
-        "rcalicdan/query-builder-primitives": "dev-main",
-        "ext-pdo": "*",
+        "php": "^8.4",
+        "hiblaphp/event-loop": "^1.0",
+        "hiblaphp/promise": "^1.0",
+        "hiblaphp/cancellation": "^1.0",
+        "hiblaphp/async": "^1.0",
+        "hiblaphp/mysql": "^1.0",
+        "hiblaphp/postgres": "^1.0",
         "symfony/console": "^7.3",
         "doctrine/inflector": "^2.1",
         "nesbot/carbon": "^3.10",
         "rcalicdan/config-loader": "^1.0",
-        "hiblaphp/mysql": "dev-main"
+        "rcalicdan/query-builder-primitives": "dev-main"
     },
     "require-dev": {
         "laravel/pint": "^1.10",
         "pestphp/pest": "^3.0",
         "mockery/mockery": "^1.6",
         "phpstan/phpstan": "^2.1",
-        "phpstan/phpstan-strict-rules": "^2.0",
-        "hiblaphp/task": "dev-main"
+        "phpstan/phpstan-strict-rules": "^2.0"
     },
     "bin": [
-        "bin/pdo-query-builder"
+        "bin/hibla-db"
     ],
     "scripts": {
         "post-install-cmd": [
-            "@php -r \"if (!is_dir('config')) { echo '\\nRun: ./vendor/bin/pdo-query-builder init\\n\\n'; }\""
+            "@php -r \"if (!is_dir('config')) { echo '\\nRun: ./vendor/bin/hibla-db init\\n\\n'; }\""
         ],
         "post-update-cmd": [
-            "@php -r \"if (!is_dir('config')) { echo '\\nRun: ./vendor/bin/pdo-query-builder init\\n\\n'; }\""
+            "@php -r \"if (!is_dir('config')) { echo '\\nRun: ./vendor/bin/hibla-db init\\n\\n'; }\""
         ],
         "test": "./vendor/bin/pest",
         "test:unit": "./vendor/bin/pest tests/Unit",

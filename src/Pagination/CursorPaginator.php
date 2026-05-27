@@ -105,14 +105,14 @@ class CursorPaginator
     /**
      * Render cursor pagination using a template
      *
-     * @param  string  $template  Template name (cursor-simple, cursor-bootstrap, cursor-tailwind)
-     * @param  string|null  $basePath  Base path for pagination links. If null, uses current path
+     * @param string $template Template name (cursor-simple, cursor-bootstrap, cursor-tailwind)
+     * @param string|null $basePath Base path for pagination links. If null, uses current path
      */
     public function render(?string $template = null, ?string $basePath = null): string
     {
         if ($template === null) {
             /** @var string $template */
-            $template = Config::get('pdo-schema.pagination.default_cursor_template') ?? 'cursor-simple';
+            $template = Config::loadFromRoot('pdo-schema.pagination.default_cursor_template') ?? 'cursor-simple';
         }
 
         if (! $this->hasMore()) {
@@ -131,8 +131,8 @@ class CursorPaginator
     /**
      * Render cursor pagination links (alias for render, Laravel-style convenience method)
      *
-     * @param  string|null  $view  Template name (cursor-simple, cursor-bootstrap, cursor-tailwind). If null, uses 'cursor-simple'
-     * @param  string|null  $basePath  Base path for pagination links. If null, uses current path
+     * @param string|null $view Template name (cursor-simple, cursor-bootstrap, cursor-tailwind). If null, uses 'cursor-simple'
+     * @param string|null $basePath Base path for pagination links. If null, uses current path
      */
     public function links(?string $view = null, ?string $basePath = null): string
     {
@@ -141,8 +141,9 @@ class CursorPaginator
 
     /**
      * Return cursor pagination metadata as JSON
-     * @param  bool  $includeItems  Include items in JSON response
-     * @param  string|null  $basePath  Base path for next page URL
+     *
+     * @param bool $includeItems Include items in JSON response
+     * @param string|null $basePath Base path for next page URL
      */
     public function toJson(bool $includeItems = true, ?string $basePath = null): string
     {
@@ -168,8 +169,10 @@ class CursorPaginator
 
     /**
      * Return cursor pagination metadata as array
-     * @param  bool  $includeItems  Include items in array response
-     * @param  string|null  $basePath  Base path for next page URL
+     *
+     * @param bool $includeItems Include items in array response
+     * @param string|null $basePath Base path for next page URL
+     *
      * @return array<string, mixed>
      */
     public function toArray(bool $includeItems = true, ?string $basePath = null): array

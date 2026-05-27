@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Console\Traits;
 
-use InvalidArgumentException;
+use Hibla\QueryBuilder\Exceptions\DatabaseConfigurationException;
+use Hibla\QueryBuilder\Exceptions\InvalidConnectionConfigException;
 use Rcalicdan\ConfigLoader\Config;
 
 trait ValidateConnection
@@ -12,7 +13,8 @@ trait ValidateConnection
     /**
      * Validate that a connection exists in the configuration.
      *
-     * @throws InvalidArgumentException
+     * @throws DatabaseConfigurationException
+     * @throws InvalidConnectionConfigException
      */
     private function validateConnection(?string $connection): void
     {
@@ -23,15 +25,15 @@ trait ValidateConnection
         $availableConnections = $this->getAvailableConnections();
 
         if ($availableConnections === []) {
-            throw new InvalidArgumentException(
-                'No database connections configured in pdo-query-builder config file'
+            throw new DatabaseConfigurationException(
+                'No database connections configured in migrations config file'
             );
         }
 
-        if (! in_array($connection, $availableConnections, true)) {
+        if (! \in_array($connection, $availableConnections, true)) {
             $availableList = implode(', ', $availableConnections);
 
-            throw new InvalidArgumentException(
+            throw new InvalidConnectionConfigException(
                 "Connection '{$connection}' is not defined in config. " .
                     "Available connections: {$availableList}"
             );
@@ -46,15 +48,15 @@ trait ValidateConnection
     private function getAvailableConnections(): array
     {
         try {
-            $dbConfig = Config::get('async-database');
+            $dbConfig = Config::loadFromRoot('hibla-database');
 
-            if (! is_array($dbConfig)) {
+            if (! \is_array($dbConfig)) {
                 return [];
             }
 
             $connections = $dbConfig['connections'] ?? [];
 
-            if (! is_array($connections)) {
+            if (! \is_array($connections)) {
                 return [];
             }
 

@@ -5,446 +5,158 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
-use Hibla\QueryBuilder\Adapters\MySQLiAdapter;
-use Hibla\QueryBuilder\Adapters\PdoAdapter;
-use Hibla\QueryBuilder\Adapters\PostgresNativeAdapter;
-use Hibla\QueryBuilder\Exceptions\DatabaseConfigNotFoundException;
-use Hibla\QueryBuilder\Exceptions\InvalidConnectionConfigException;
-use Hibla\QueryBuilder\Exceptions\InvalidPoolSizeException;
-use Hibla\QueryBuilder\Interfaces\ConnectionInterface;
-use Hibla\QueryBuilder\Utilities\Builder;
-use Rcalicdan\ConfigLoader\Config;
+use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
+use Hibla\QueryBuilder\Interfaces\DatabaseTransactionInterface;
+use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
+use Hibla\Sql\SqlClientInterface;
 
 /**
- * DB API - Main entry point for async database operations with multi-database support.
+ * Static Facade for the DatabaseManager.
  */
 class DB
 {
-    /** @var array<string, ConnectionInterface> Named connection instances */
-    private static array $connections = [];
+    private static ?DatabaseManager $manager = null;
 
-    /** @var string|null The default connection name */
-    private static ?string $defaultConnectionName = null;
-
-    /**
-     * Private constructor to prevent direct instantiation.
-     */
     private function __construct()
     {
     }
 
     /**
-     * Get or create a connection proxy.
-     *
-     * @param string|null $name Connection name from config, or null for default
-     * @return ConnectionProxy Returns a ConnectionProxy bound to the specified connection
-     *
-     * @throws DatabaseConfigNotFoundException
-     * @throws InvalidConnectionConfigException
-     * @throws InvalidPoolSizeException
+     * Get the singleton DatabaseManager instance internally.
      */
-    public static function connection(?string $name = null): ConnectionProxy
+    private static function getManager(): DatabaseManager
     {
-        $connectionName = $name ?? self::getDefaultConnectionName();
-
-        if (isset(self::$connections[$connectionName])) {
-            return new ConnectionProxy(self::$connections[$connectionName], $connectionName);
+        if (self::$manager === null) {
+            self::$manager = new DatabaseManager();
         }
 
-        $dbConfigAll = Config::get('async-database');
-
-        if (! is_array($dbConfigAll)) {
-            throw new DatabaseConfigNotFoundException();
-        }
-
-        $connections = $dbConfigAll['connections'] ?? null;
-        if (! is_array($connections)) {
-            throw new InvalidConnectionConfigException('Database connections configuration must be an array.');
-        }
-
-        if (! isset($connections[$connectionName]) || ! is_array($connections[$connectionName])) {
-            throw new InvalidConnectionConfigException("Connection '{$connectionName}' not found in configuration.");
-        }
-
-        /** @var array<string, mixed> $connectionConfig */
-        $connectionConfig = $connections[$connectionName];
-        $driver = $connectionConfig['driver'] ?? 'mysql';
-        if (! is_string($driver)) {
-            throw new InvalidConnectionConfigException('Driver must be a string.');
-        }
-
-        $poolSize = $connectionConfig['pool_size'] ?? 10;
-
-        if (! is_int($poolSize) || $poolSize < 1) {
-            throw new InvalidPoolSizeException();
-        }
-
-        $connection = self::createAdapter($driver, $connectionConfig, $poolSize);
-        self::$connections[$connectionName] = $connection;
-
-        return new ConnectionProxy($connection, $connectionName);
+        return self::$manager;
     }
 
     /**
-     * Create the appropriate connection adapter based on driver.
-     *
-     * @param string $driver Database driver name
-     * @param array<string, mixed> $config Connection configuration
-     * @param int $poolSize Connection pool size
-     * @return ConnectionInterface
-     *
-     * @throws InvalidPoolSizeException
+     * Register a new database connection dynamically.
      */
-    private static function createAdapter(string $driver, array $config, int $poolSize): ConnectionInterface
+    public static function addConnection(string $name, DatabaseConnectionInterface $connection): void
     {
-        return match ($driver) {
-            'pgsql_native' => new PostgresNativeAdapter($config, $poolSize),
-            'mysqli' => new MySQLiAdapter($config, $poolSize),
-            default => new PdoAdapter($config, $poolSize),
-        };
+        self::getManager()->addConnection($name, $connection);
     }
 
     /**
-     * Initialize the default database connection manually.
-     * This is useful when you want to set up the connection without a config file or for testing purposes.
-     *
-     * @param array<string, mixed> $config Database connection configuration
-     * @param int $poolSize Connection pool size (default: 10)
-     * @param string $name Connection name (default: 'default')
-     * @return ConnectionProxy
-     *
-     * @throws InvalidPoolSizeException
+     * Remove an existing database connection.
      */
-    public static function init(array $config, int $poolSize = 10, string $name = 'default'): ConnectionProxy
+    public static function removeConnection(string $name): void
     {
-        if ($poolSize < 1) {
-            throw new InvalidPoolSizeException();
-        }
-
-        $driver = $config['driver'] ?? 'mysql';
-        if (! is_string($driver)) {
-            throw new InvalidConnectionConfigException('Driver must be a string.');
-        }
-
-        $connection = self::createAdapter($driver, $config, $poolSize);
-        self::$connections[$name] = $connection;
-
-        if ($name === 'default' || self::$defaultConnectionName === null) {
-            self::$defaultConnectionName = $name;
-        }
-
-        return new ConnectionProxy($connection, $name);
+        self::getManager()->removeConnection($name);
     }
 
     /**
-     * Initialize multiple database connections at once.
+     * Resolve a raw SQL client from a configuration array.
+     * Useful for dynamic connections or schema builders.
      *
-     * @param array<string, array{config: array<string, mixed>, pool_size?: int}> $connections
-     * @param string|null $defaultConnection The name of the default connection
-     * @return void
-     *
-     * @throws InvalidPoolSizeException
-     * @throws InvalidConnectionConfigException
+     * @param array<string, mixed> $config
      */
-    public static function initMultiple(array $connections, ?string $defaultConnection = null): void
+    public static function resolveClientFromConfig(array $config): SqlClientInterface
     {
-        foreach ($connections as $name => $connectionData) {
-            if (! is_string($name)) {
-                throw new InvalidConnectionConfigException('Connection names must be strings.');
-            }
-
-            if (! isset($connectionData['config']) || ! is_array($connectionData['config'])) {
-                throw new InvalidConnectionConfigException("Connection '{$name}' must have a 'config' array.");
-            }
-
-            $config = $connectionData['config'];
-            $poolSize = $connectionData['pool_size'] ?? 10;
-
-            if (! is_int($poolSize) || $poolSize < 1) {
-                throw new InvalidPoolSizeException();
-            }
-
-            $driver = $config['driver'] ?? 'mysql';
-            if (! is_string($driver)) {
-                throw new InvalidConnectionConfigException("Driver for connection '{$name}' must be a string.");
-            }
-
-            $connection = self::createAdapter($driver, $config, $poolSize);
-            self::$connections[$name] = $connection;
-        }
-
-        if ($defaultConnection !== null) {
-            if (! isset(self::$connections[$defaultConnection])) {
-                throw new InvalidConnectionConfigException("Default connection '{$defaultConnection}' does not exist.");
-            }
-            self::$defaultConnectionName = $defaultConnection;
-        } elseif (self::$defaultConnectionName === null && self::$connections !== []) {
-            self::$defaultConnectionName = array_key_first(self::$connections);
-        }
+        return self::getManager()->resolveClientFromConfig($config);
     }
 
     /**
-     * Set the default connection name.
-     *
-     * @param string $name Connection name
-     * @return void
-     *
-     * @throws InvalidConnectionConfigException
+     * Get a specific connection instance.
      */
-    public static function setDefaultConnection(string $name): void
+    public static function connection(?string $name = null): DatabaseConnectionInterface
     {
-        if (! isset(self::$connections[$name])) {
-            throw new InvalidConnectionConfigException("Connection '{$name}' does not exist.");
-        }
-
-        self::$defaultConnectionName = $name;
+        return self::getManager()->connection($name);
     }
 
     /**
-     * Get the default connection name.
-     *
-     * @return string|null
+     * Start a new query builder on the default connection.
      */
-    public static function getDefaultConnection(): ?string
+    public static function table(string $table): QueryBuilderInterface
     {
-        return self::$defaultConnectionName;
+        return self::getManager()->table($table);
     }
 
     /**
-     * Get the default connection name from config.
+     * Execute a raw query and return all rows.
      *
-     * @return string
+     * @param string $sql
+     * @param array<int, mixed> $bindings
      *
-     * @throws DatabaseConfigNotFoundException
-     * @throws InvalidConnectionConfigException
-     */
-    private static function getDefaultConnectionName(): string
-    {
-        if (self::$defaultConnectionName !== null) {
-            return self::$defaultConnectionName;
-        }
-
-        $dbConfigAll = Config::get('async-database');
-
-        if (! is_array($dbConfigAll)) {
-            throw new DatabaseConfigNotFoundException();
-        }
-
-        $defaultConnection = $dbConfigAll['default'] ?? null;
-        if (! is_string($defaultConnection)) {
-            throw new InvalidConnectionConfigException('Default connection name must be a string in your database config.');
-        }
-
-        self::$defaultConnectionName = $defaultConnection;
-
-        return $defaultConnection;
-    }
-
-    /**
-     * Start a new query builder instance for the given table using the default connection.
-     *
-     * @param string $table Table name
-     * @return Builder
-     */
-    public static function table(string $table): Builder
-    {
-        $proxy = self::connection();
-
-        return $proxy->table($table);
-    }
-
-    /**
-     * Execute a raw query on the default connection.
-     *
-     * @param string $sql SQL query
-     * @param array<int|string, mixed> $bindings Query bindings
-     * @return PromiseInterface<array<int, array<string, mixed>>>
+     * @return PromiseInterface<array<int, array<string, mixed>>|array<int, object>>
      */
     public static function raw(string $sql, array $bindings = []): PromiseInterface
     {
-        $proxy = self::connection();
-
-        return $proxy->raw($sql, $bindings);
+        return self::getManager()->raw($sql, $bindings);
     }
 
     /**
-     * Execute a raw query and return the first result on the default connection.
+     * Execute a raw query and return the first result.
      *
-     * @param string $sql SQL query
-     * @param array<int|string, mixed> $bindings Query bindings
-     * @return PromiseInterface<array<string, mixed>|false>
+     * @param string $sql
+     * @param array<int, mixed> $bindings
+     *
+     * @return PromiseInterface<array<string, mixed>|object|null>
      */
     public static function rawFirst(string $sql, array $bindings = []): PromiseInterface
     {
-        $proxy = self::connection();
-
-        return $proxy->rawFirst($sql, $bindings);
+        return self::getManager()->rawFirst($sql, $bindings);
     }
 
     /**
-     * Execute a raw query and return a single scalar value on the default connection.
+     * Execute a raw query and return a single scalar value.
      *
-     * @param string $sql SQL query
-     * @param array<int|string, mixed> $bindings Query bindings
+     * @param string $sql
+     * @param array<int, mixed> $bindings
+     *
      * @return PromiseInterface<mixed>
      */
     public static function rawValue(string $sql, array $bindings = []): PromiseInterface
     {
-        $proxy = self::connection();
-
-        return $proxy->rawValue($sql, $bindings);
+        return self::getManager()->rawValue($sql, $bindings);
     }
 
     /**
-     * Execute a raw statement (INSERT, UPDATE, DELETE) on the default connection.
+     * Execute a raw statement (INSERT, UPDATE, DELETE).
      *
-     * @param string $sql SQL statement
-     * @param array<int|string, mixed> $bindings Query bindings
-     * @return PromiseInterface<int>
+     * @param string $sql
+     * @param array<int, mixed> $bindings
+     *
+     * @return PromiseInterface<int> The number of affected rows.
      */
     public static function rawExecute(string $sql, array $bindings = []): PromiseInterface
     {
-        $proxy = self::connection();
-
-        return $proxy->rawExecute($sql, $bindings);
+        return self::getManager()->rawExecute($sql, $bindings);
     }
 
     /**
-     * Run a database transaction on the default connection.
-     *
-     * @param callable $callback Transaction callback
-     * @param int $attempts Number of times to attempt the transaction (default: 1)
-     * @return PromiseInterface<mixed>
-     *
-     * @throws DatabaseConfigNotFoundException
-     * @throws InvalidConnectionConfigException
-     * @throws InvalidPoolSizeException
-     */
-    public static function transaction(callable $callback, int $attempts = 1): PromiseInterface
-    {
-        $proxy = self::connection();
-
-        return $proxy->transaction($callback, $attempts);
-    }
-
-    /**
-     * Register a callback to execute when the current transaction rolls back.
-     *
-     * @param callable $callback
-     * @return void
-     */
-    public static function onRollback(callable $callback): void
-    {
-        $proxy = self::connection();
-        $proxy->onRollback($callback);
-    }
-
-    /**
-     * Register a callback to execute when the current transaction commits.
-     *
-     * @param callable $callback
-     * @return void
-     */
-    public static function onCommit(callable $callback): void
-    {
-        $proxy = self::connection();
-        $proxy->onCommit($callback);
-    }
-
-    /**
-     * Execute a callback with a connection on the default connection.
+     * Execute an auto-managed transaction on the default connection.
      *
      * @template TResult
-     * @param callable(): TResult $callback Callback that receives connection instance
+     *
+     * @param callable(DatabaseTransactionInterface): TResult $callback
+     *
      * @return PromiseInterface<TResult>
      */
-    public static function run(callable $callback): PromiseInterface
+    public static function transaction(callable $callback): PromiseInterface
     {
-        $proxy = self::connection();
-
-        return $proxy->run($callback);
+        return self::getManager()->transaction($callback);
     }
 
     /**
-     * Manually create a connection with custom configuration.
+     * Begin a manual transaction on the default connection.
      *
-     * @param string $name Connection name
-     * @param array<string, mixed> $connectionConfig Database connection configuration
-     * @param int $poolSize Connection pool size (default: 10)
-     * @return ConnectionProxy
-     *
-     * @throws InvalidPoolSizeException
+     * @return PromiseInterface<DatabaseTransactionInterface>
      */
-    public static function addConnection(string $name, array $connectionConfig, int $poolSize = 10): ConnectionProxy
+    public static function beginTransaction(): PromiseInterface
     {
-        if ($poolSize < 1) {
-            throw new InvalidPoolSizeException();
-        }
-
-        $driver = $connectionConfig['driver'] ?? 'mysql';
-        if (! is_string($driver)) {
-            throw new InvalidConnectionConfigException('Driver must be a string.');
-        }
-
-        $connection = self::createAdapter($driver, $connectionConfig, $poolSize);
-        self::$connections[$name] = $connection;
-
-        return new ConnectionProxy($connection, $name);
+        return self::getManager()->beginTransaction();
     }
 
     /**
-     * Remove a connection by name.
-     *
-     * @param string $name Connection name
-     * @return void
-     */
-    public static function removeConnection(string $name): void
-    {
-        if (isset(self::$connections[$name])) {
-            self::$connections[$name]->reset();
-            unset(self::$connections[$name]);
-        }
-
-        if (self::$defaultConnectionName === $name) {
-            self::$defaultConnectionName = null;
-        }
-    }
-
-    /**
-     * Get all registered connection names.
-     *
-     * @return array<string>
-     */
-    public static function getConnectionNames(): array
-    {
-        return array_keys(self::$connections);
-    }
-
-    /**
-     * Check if a connection exists.
-     *
-     * @param string $name Connection name
-     * @return bool
-     */
-    public static function hasConnection(string $name): bool
-    {
-        return isset(self::$connections[$name]);
-    }
-
-    /**
-     * Resets the entire database system. Crucial for isolated testing.
-     *
-     * @return void
+     * Reset the DatabaseManager (useful for tests).
      */
     public static function reset(): void
     {
-        foreach (self::$connections as $connection) {
-            $connection->reset();
-        }
-
-        self::$connections = [];
-        self::$defaultConnectionName = null;
-        Config::reset();
-        Builder::resetDriverCache();
+        self::$manager = null;
     }
 }

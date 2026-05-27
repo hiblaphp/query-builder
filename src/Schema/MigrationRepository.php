@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Schema;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
-use Hibla\QueryBuilder\ConnectionProxy;
 use Hibla\QueryBuilder\DB;
-use Rcalicdan\ConfigLoader\Config;
+use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
+use Hibla\QueryBuilder\Interfaces\DatabaseTransactionInterface;
 
 class MigrationRepository
 {
     private string $table;
+
     private string $driver;
+
     private ?string $connection = null;
 
     /**
@@ -25,45 +27,13 @@ class MigrationRepository
     {
         $this->table = $table;
         $this->connection = $connection;
-        $this->driver = $this->detectDriver();
-    }
-
-    private function detectDriver(): string
-    {
-        try {
-            $dbConfig = Config::get('async-database');
-
-            if (! is_array($dbConfig)) {
-                return 'mysql';
-            }
-
-            $connectionName = $this->connection ?? ($dbConfig['default'] ?? 'mysql');
-            if (! is_string($connectionName)) {
-                return 'mysql';
-            }
-
-            $connections = $dbConfig['connections'] ?? [];
-            if (! is_array($connections)) {
-                return 'mysql';
-            }
-
-            $connectionConfig = $connections[$connectionName] ?? [];
-            if (! is_array($connectionConfig)) {
-                return 'mysql';
-            }
-
-            $driver = $connectionConfig['driver'] ?? 'mysql';
-
-            return is_string($driver) ? strtolower($driver) : 'mysql';
-        } catch (\Throwable $e) {
-            return 'mysql';
-        }
+        $this->driver = $this->getConnection()->getDriverName();
     }
 
     /**
      * Get the database connection to use.
      */
-    private function getConnection(): ConnectionProxy
+    private function getConnection(): DatabaseConnectionInterface
     {
         return DB::connection($this->connection);
     }
@@ -72,7 +42,6 @@ class MigrationRepository
     {
         return match ($this->driver) {
             'pgsql', 'pgsql_native' => "\"{$identifier}\"",
-            'sqlsrv' => "[{$identifier}]",
             'sqlite', 'mysql', 'mysqli' => "`{$identifier}`",
             default => "`{$identifier}`",
         };
@@ -93,13 +62,6 @@ class MigrationRepository
                 migration VARCHAR(255) NOT NULL,
                 batch INTEGER NOT NULL,
                 executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )",
-            'sqlsrv' => "IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = '{$this->table}')
-            CREATE TABLE {$table} (
-                id INT IDENTITY(1,1) PRIMARY KEY,
-                migration VARCHAR(255) NOT NULL,
-                batch INT NOT NULL,
-                executed_at DATETIME2 DEFAULT CURRENT_TIMESTAMP
             )",
             'sqlite' => "CREATE TABLE IF NOT EXISTS {$table} (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -127,28 +89,40 @@ class MigrationRepository
     {
         $table = $this->quoteIdentifier($this->table);
 
-        return $this->getConnection()->raw(
-            "SELECT id, migration, batch, executed_at FROM {$table} ORDER BY batch DESC, id DESC",
-            []
-        );
+        /** @var PromiseInterface<array<int, array<string, mixed>>> $result */
+        $result = $this->getConnection()
+            ->table($this->table)
+            ->toArray()
+            ->raw(
+                "SELECT id, migration, batch, executed_at FROM {$table} ORDER BY batch DESC, id DESC",
+                []
+            )
+        ;
+
+        return $result;
     }
 
     /**
      * Get the list of migrations that were part of the last batch.
      *
      * @param int $steps The number of batches to roll back.
+     *
      * @return PromiseInterface<array<int, array<string, mixed>>> Resolves with a list of migration records.
      */
     public function getMigrations(int $steps): PromiseInterface
     {
         $table = $this->quoteIdentifier($this->table);
 
-        $sql = match ($this->driver) {
-            'sqlsrv' => "SELECT TOP (?) migration FROM {$table} ORDER BY batch DESC, migration DESC",
-            default => "SELECT migration FROM {$table} ORDER BY batch DESC, migration DESC LIMIT ?",
-        };
+        $sql = "SELECT migration FROM {$table} ORDER BY batch DESC, migration DESC LIMIT ?";
 
-        return $this->getConnection()->raw($sql, [$steps]);
+        /** @var PromiseInterface<array<int, array<string, mixed>>> $result */
+        $result = $this->getConnection()
+            ->table($this->table)
+            ->toArray()
+            ->raw($sql, [$steps])
+        ;
+
+        return $result;
     }
 
     /**
@@ -160,10 +134,17 @@ class MigrationRepository
     {
         $table = $this->quoteIdentifier($this->table);
 
-        return $this->getConnection()->raw(
-            "SELECT id, migration, batch, executed_at FROM {$table} WHERE batch = (SELECT MAX(batch) FROM {$table}) ORDER BY id DESC",
-            []
-        );
+        /** @var PromiseInterface<array<int, array<string, mixed>>> $result */
+        $result = $this->getConnection()
+            ->table($this->table)
+            ->toArray()
+            ->raw(
+                "SELECT id, migration, batch, executed_at FROM {$table} WHERE batch = (SELECT MAX(batch) FROM {$table}) ORDER BY id DESC",
+                []
+            )
+        ;
+
+        return $result;
     }
 
     /**
@@ -171,13 +152,16 @@ class MigrationRepository
      *
      * @param string $file The migration file name.
      * @param int $batch The batch number.
+     * @param DatabaseTransactionInterface|null $tx The active transaction, if any.
+     *
      * @return PromiseInterface<int> Resolves with the number of affected rows.
      */
-    public function log(string $file, int $batch): PromiseInterface
+    public function log(string $file, int $batch, ?DatabaseTransactionInterface $tx = null): PromiseInterface
     {
         $table = $this->quoteIdentifier($this->table);
+        $client = $tx ?? $this->getConnection();
 
-        return $this->getConnection()->rawExecute(
+        return $client->rawExecute(
             "INSERT INTO {$table} (migration, batch) VALUES (?, ?)",
             [$file, $batch]
         );
@@ -187,13 +171,16 @@ class MigrationRepository
      * Remove a migration from the log.
      *
      * @param string $migration The migration file name.
+     * @param DatabaseTransactionInterface|null $tx The active transaction, if any.
+     *
      * @return PromiseInterface<int> Resolves with the number of affected rows.
      */
-    public function delete(string $migration): PromiseInterface
+    public function delete(string $migration, ?DatabaseTransactionInterface $tx = null): PromiseInterface
     {
         $table = $this->quoteIdentifier($this->table);
+        $client = $tx ?? $this->getConnection();
 
-        return $this->getConnection()->rawExecute(
+        return $client->rawExecute(
             "DELETE FROM {$table} WHERE migration = ?",
             [$migration]
         );
@@ -224,8 +211,6 @@ class MigrationRepository
         $sql = match ($this->driver) {
             'pgsql', 'pgsql_native' => "SELECT COUNT(*) FROM information_schema.tables 
                        WHERE table_schema = 'public' AND table_name = ?",
-            'sqlsrv' => 'SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES 
-                        WHERE TABLE_NAME = ?',
             'sqlite' => "SELECT COUNT(*) FROM sqlite_master 
                         WHERE type='table' AND name=?",
             default => 'SELECT COUNT(*) FROM information_schema.tables 

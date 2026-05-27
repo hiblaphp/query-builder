@@ -16,12 +16,12 @@ describe('Edge Cases', function () {
     it('handles empty table creation', function () {
         schema()->create('empty_table', function (Blueprint $table) {
             $table->id();
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('empty_table')->await();
+        $exists = schema()->hasTable('empty_table')->wait();
         expect($exists)->toBeTruthy();
 
-        schema()->dropIfExists('empty_table')->await();
+        schema()->dropIfExists('empty_table')->wait();
     });
 
     it('handles table with many columns', function () {
@@ -30,16 +30,16 @@ describe('Edge Cases', function () {
             for ($i = 1; $i <= 20; $i++) {
                 $table->string("column_{$i}")->nullable();
             }
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('wide_table')->await();
+        $exists = schema()->hasTable('wide_table')->wait();
         expect($exists)->toBeTruthy();
 
-        schema()->dropIfExists('wide_table')->await();
+        schema()->dropIfExists('wide_table')->wait();
     });
 
     it('handles dropping non-existent table gracefully', function () {
-        $result = schema()->dropIfExists('this_table_does_not_exist')->await();
+        $result = schema()->dropIfExists('this_table_does_not_exist')->wait();
         expect($result)->not->toThrow(Exception::class);
     });
 });

@@ -21,14 +21,14 @@ describe('Complex Scenarios', function () {
             $table->string('password');
             $table->timestamps();
             $table->softDeletes();
-        })->await();
+        })->wait();
 
         schema('pgsql')->create('categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('slug')->unique();
             $table->timestamps();
-        })->await();
+        })->wait();
 
         schema('pgsql')->create('posts', function (Blueprint $table) {
             $table->id();
@@ -45,7 +45,7 @@ describe('Complex Scenarios', function () {
 
             $table->index(['user_id', 'is_published']);
             $table->fullText(['title', 'content']);
-        })->await();
+        })->wait();
 
         schema('pgsql')->create('comments', function (Blueprint $table) {
             $table->id();
@@ -53,12 +53,12 @@ describe('Complex Scenarios', function () {
             $table->foreignId('post_id')->constrained()->cascadeOnDelete();
             $table->text('content');
             $table->timestamps();
-        })->await();
+        })->wait();
 
-        $usersExists = schema('pgsql')->hasTable('users')->await();
-        $categoriesExists = schema('pgsql')->hasTable('categories')->await();
-        $postsExists = schema('pgsql')->hasTable('posts')->await();
-        $commentsExists = schema('pgsql')->hasTable('comments')->await();
+        $usersExists = schema('pgsql')->hasTable('users')->wait();
+        $categoriesExists = schema('pgsql')->hasTable('categories')->wait();
+        $postsExists = schema('pgsql')->hasTable('posts')->wait();
+        $commentsExists = schema('pgsql')->hasTable('comments')->wait();
 
         expect($usersExists)->toBeTruthy();
         expect($categoriesExists)->toBeTruthy();
@@ -67,14 +67,14 @@ describe('Complex Scenarios', function () {
     });
 
     it('performs multiple alterations on a table', function () {
-        schema('pgsql')->dropIfExists('users')->await();
+        schema('pgsql')->dropIfExists('users')->wait();
 
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->string('old_email');
             $table->integer('age');
-        })->await();
+        })->wait();
 
         schema('pgsql')->table('users', function (Blueprint $table) {
             $table->renameColumn('old_email', 'email');
@@ -82,9 +82,9 @@ describe('Complex Scenarios', function () {
             $table->string('phone')->nullable();
             $table->boolean('is_active')->default(true);
             $table->unique('email');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('users')->await();
+        $exists = schema('pgsql')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 });

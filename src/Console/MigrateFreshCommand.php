@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Console;
 
-use Hibla\QueryBuilder\Console\Traits\FindProjectRoot;
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
+use Hibla\QueryBuilder\Console\Traits\ProhibitsDestructiveCommands;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
 use Hibla\QueryBuilder\DB;
-use InvalidArgumentException;
+use Hibla\QueryBuilder\Exceptions\DatabaseConfigurationException;
+use Hibla\QueryBuilder\Schema\States\SchemaState;
 use Rcalicdan\ConfigLoader\Config;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -17,16 +18,22 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+use function Hibla\await;
+
 class MigrateFreshCommand extends Command
 {
     use LoadsSchemaConfiguration;
-    use FindProjectRoot;
     use ValidateConnection;
+    use ProhibitsDestructiveCommands;
 
     private SymfonyStyle $io;
+
     private OutputInterface $output;
+
     private ?string $projectRoot = null;
+
     private string $driver;
+
     private ?string $connection = null;
 
     protected function configure(): void
@@ -43,13 +50,18 @@ class MigrateFreshCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->initializeIo($input, $output);
+
+        if ($this->isDestructiveCommandProhibited($this->io)) {
+            return Command::FAILURE;
+        }
+
         $this->io->title('Fresh Migration');
 
         $this->setConnectionFromInput($input);
 
         try {
             $this->validateConnection($this->connection);
-        } catch (InvalidArgumentException $e) {
+        } catch (DatabaseConfigurationException $e) {
             $this->io->error($e->getMessage());
 
             return Command::FAILURE;
@@ -61,7 +73,11 @@ class MigrateFreshCommand extends Command
             return Command::SUCCESS;
         }
 
-        if (! $this->initializeProjectRoot()) {
+        $this->projectRoot = Config::getRootPath();
+
+        if ($this->projectRoot === null) {
+            $this->io->error('Could not find project root. Ensure a vendor directory exists.');
+
             return Command::FAILURE;
         }
 
@@ -83,7 +99,7 @@ class MigrateFreshCommand extends Command
     private function setConnectionFromInput(InputInterface $input): void
     {
         $connectionOption = $input->getOption('connection');
-        $this->connection = (is_string($connectionOption) && $connectionOption !== '') ? $connectionOption : null;
+        $this->connection = (\is_string($connectionOption) && $connectionOption !== '') ? $connectionOption : null;
 
         if ($this->connection !== null) {
             $this->io->note("Using database connection: {$this->connection}");
@@ -110,6 +126,8 @@ class MigrateFreshCommand extends Command
             return Command::FAILURE;
         }
 
+        $this->loadSchemaStateIfNeeded();
+
         $path = $this->getPathOption($input);
 
         if (! $this->runMigrationsWithFeedback($path)) {
@@ -121,11 +139,42 @@ class MigrateFreshCommand extends Command
         return Command::SUCCESS;
     }
 
+    /**
+     * Load the schema state file if it exists.
+     */
+    private function loadSchemaStateIfNeeded(): void
+    {
+        $schemaConfig = $this->getSchemaConfig($this->connection);
+        $connectionName = $this->connection ?? 'mysql';
+        $schemaPath = $schemaConfig['schema_path'] . DIRECTORY_SEPARATOR . $connectionName . '-schema.sql';
+
+        if (file_exists($schemaPath)) {
+            $this->io->write("Loading schema state from <comment>{$schemaPath}</comment>... ");
+
+            try {
+                $state = SchemaState::make($this->connection);
+
+                $dbConfig = $this->getDatabaseConfig();
+                $connName = $dbConfig !== null ? $this->getConnectionName($dbConfig) : 'mysql';
+                $connections = $dbConfig !== null ? $this->getConnections($dbConfig) : [];
+                $config = $this->getConnectionConfig($connections, $connName) ?? [];
+
+                $state->load($config, $schemaPath);
+                $this->io->writeln('<info>✓</info>');
+            } catch (\Throwable $e) {
+                $this->io->newLine();
+                $this->io->error('Failed to load schema: ' . $e->getMessage());
+
+                throw $e;
+            }
+        }
+    }
+
     private function getPathOption(InputInterface $input): ?string
     {
         $pathOption = $input->getOption('path');
 
-        return is_string($pathOption) && $pathOption !== '' ? $pathOption : null;
+        return \is_string($pathOption) && $pathOption !== '' ? $pathOption : null;
     }
 
     private function dropAllTablesWithFeedback(): bool
@@ -202,7 +251,7 @@ class MigrateFreshCommand extends Command
      */
     private function noTablesToDrop(array $tables): bool
     {
-        if (count($tables) === 0) {
+        if (\count($tables) === 0) {
             $connectionName = $this->getConnectionDisplayName();
             $this->io->note("No migrated tables found for connection '{$connectionName}'");
 
@@ -218,9 +267,9 @@ class MigrateFreshCommand extends Command
     private function displayTablesCount(array $tables): void
     {
         $connectionName = $this->getConnectionDisplayName();
-        $this->io->writeln(sprintf(
+        $this->io->writeln(\sprintf(
             'Found %d migrated table(s) to drop for connection: %s',
-            count($tables),
+            \count($tables),
             $connectionName
         ));
     }
@@ -264,109 +313,43 @@ class MigrateFreshCommand extends Command
      */
     private function getMigratedTables(): array
     {
-        $migrationFiles = $this->getAllMigrationFiles($this->connection);
-        $targetConnection = $this->getTargetConnection();
-
-        $tables = $this->extractTablesFromMigrations($migrationFiles, $targetConnection);
-
-        sort($tables);
-
-        return $tables;
-    }
-
-    private function getTargetConnection(): string
-    {
-        $defaultConnection = $this->getDefaultConnection();
-
-        return $this->connection ?? $defaultConnection;
-    }
-
-    /**
-     * @param list<string> $migrationFiles
-     * @return list<string>
-     */
-    private function extractTablesFromMigrations(array $migrationFiles, string $targetConnection): array
-    {
-        $tables = [];
-        $defaultConnection = $this->getDefaultConnection();
-
-        foreach ($migrationFiles as $file) {
-            $tablesInFile = $this->extractTablesFromMigrationFile($file, $targetConnection, $defaultConnection);
-            $tables = array_merge($tables, $tablesInFile);
-        }
-
-        return array_values(array_unique($tables));
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function extractTablesFromMigrationFile(
-        string $file,
-        string $targetConnection,
-        string $defaultConnection
-    ): array {
-        $content = file_get_contents($file);
-
-        if ($content === false) {
-            return [];
-        }
-
-        if (! $this->isMigrationForTargetConnection($content, $targetConnection, $defaultConnection)) {
-            return [];
-        }
-
-        return $this->parseTableNamesFromContent($content);
-    }
-
-    private function isMigrationForTargetConnection(
-        string $content,
-        string $targetConnection,
-        string $defaultConnection
-    ): bool {
-        $migrationConnection = $this->extractMigrationConnection($content);
-
-        if ($migrationConnection === null) {
-            $migrationConnection = $defaultConnection;
-        }
-
-        return $migrationConnection === $targetConnection;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function parseTableNamesFromContent(string $content): array
-    {
         $tables = [];
 
-        $matchResult = preg_match_all('/->create\([\'"]([^\'"]+)[\'"]\s*,/i', $content, $matches);
+        switch ($this->driver) {
+            case 'mysql':
+            case 'mysqli':
+                $results = await(DB::connection($this->connection)->raw('SHOW TABLES'));
+                foreach ($results as $row) {
+                    $tables[] = array_values((array) $row)[0];
+                }
 
-        if ($matchResult !== false && $matchResult > 0) {
-            return $matches[1];
+                break;
+
+            case 'pgsql':
+            case 'pgsql_native':
+                $sql = "SELECT tablename FROM pg_tables WHERE schemaname = 'public'";
+                $results = await(DB::connection($this->connection)->raw($sql));
+                foreach ($results as $row) {
+                    $tables[] = ((array) $row)['tablename'];
+                }
+
+                break;
+
+            case 'sqlite':
+                $sql = "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'";
+                $results = await(DB::connection($this->connection)->raw($sql));
+                foreach ($results as $row) {
+                    $tables[] = ((array) $row)['name'];
+                }
+
+                break;
         }
 
-        return $tables;
-    }
+        $migrationsTable = $this->getMigrationsTable($this->connection);
+        $tables = array_filter($tables, fn ($table) => $table !== $migrationsTable);
 
-    /**
-     * Extract the connection property from a migration file content
-     */
-    private function extractMigrationConnection(string $content): ?string
-    {
-        $matchResult = preg_match('/protected\s+\??string\s+\$connection\s*=\s*[\'"]([^\'"]+)[\'"]/', $content, $matches);
-
-        if ($matchResult !== false && $matchResult > 0) {
-            return $matches[1];
-        }
-
-        $matchResult = preg_match('/protected\s+\$connection\s*=\s*[\'"]([^\'"]+)[\'"]/', $content, $matches);
-
-        if ($matchResult !== false && $matchResult > 0) {
-            return $matches[1];
-        }
-
-        return null;
+        /** @var list<string> */
+        return array_values($tables);
     }
 
     /**
@@ -383,7 +366,7 @@ class MigrateFreshCommand extends Command
 
             $default = $dbConfig['default'] ?? 'mysql';
 
-            return is_string($default) ? $default : 'mysql';
+            return \is_string($default) ? $default : 'mysql';
         } catch (\Throwable $e) {
             return 'mysql';
         }
@@ -402,7 +385,6 @@ class MigrateFreshCommand extends Command
             'pgsql' => "DROP TABLE IF EXISTS \"{$table}\" CASCADE",
             'mysql' => "DROP TABLE IF EXISTS `{$table}`",
             'sqlite' => "DROP TABLE IF EXISTS `{$table}`",
-            'sqlsrv' => "IF OBJECT_ID('{$table}', 'U') IS NOT NULL DROP TABLE [{$table}]",
             default => "DROP TABLE IF EXISTS `{$table}`",
         };
     }
@@ -412,9 +394,9 @@ class MigrateFreshCommand extends Command
      */
     private function getDatabaseConfig(): ?array
     {
-        $dbConfig = Config::get('async-database');
+        $dbConfig = Config::loadFromRoot('hibla-database');
 
-        if (! is_array($dbConfig)) {
+        if (! \is_array($dbConfig)) {
             return null;
         }
 
@@ -429,18 +411,19 @@ class MigrateFreshCommand extends Command
     {
         $connectionName = $this->connection ?? ($dbConfig['default'] ?? 'mysql');
 
-        return is_string($connectionName) ? $connectionName : 'mysql';
+        return \is_string($connectionName) ? $connectionName : 'mysql';
     }
 
     /**
      * @param array<string, mixed> $dbConfig
+     *
      * @return array<string, mixed>
      */
     private function getConnections(array $dbConfig): array
     {
         $connections = $dbConfig['connections'] ?? [];
 
-        if (! is_array($connections)) {
+        if (! \is_array($connections)) {
             return [];
         }
 
@@ -450,13 +433,14 @@ class MigrateFreshCommand extends Command
 
     /**
      * @param array<string, mixed> $connections
+     *
      * @return array<string, mixed>|null
      */
     private function getConnectionConfig(array $connections, string $connectionName): ?array
     {
         $connectionConfig = $connections[$connectionName] ?? [];
 
-        if (! is_array($connectionConfig)) {
+        if (! \is_array($connectionConfig)) {
             return null;
         }
 
@@ -488,7 +472,6 @@ class MigrateFreshCommand extends Command
             'mysql' => 'SET FOREIGN_KEY_CHECKS=0',
             'pgsql' => 'SET CONSTRAINTS ALL DEFERRED',
             'sqlite' => 'PRAGMA foreign_keys = OFF',
-            'sqlsrv' => 'EXEC sp_MSforeachtable "ALTER TABLE ? NOCHECK CONSTRAINT all"',
             default => null,
         };
     }
@@ -499,7 +482,6 @@ class MigrateFreshCommand extends Command
             'mysql' => 'SET FOREIGN_KEY_CHECKS=1',
             'pgsql' => 'SET CONSTRAINTS ALL IMMEDIATE',
             'sqlite' => 'PRAGMA foreign_keys = ON',
-            'sqlsrv' => 'EXEC sp_MSforeachtable "ALTER TABLE ? WITH CHECK CHECK CONSTRAINT all"',
             default => null,
         };
     }
@@ -575,7 +557,7 @@ class MigrateFreshCommand extends Command
 
             $driver = $connectionConfig['driver'] ?? 'mysql';
 
-            return is_string($driver) ? strtolower($driver) : 'mysql';
+            return \is_string($driver) ? strtolower($driver) : 'mysql';
         } catch (\Throwable $e) {
             return 'mysql';
         }

@@ -1,0 +1,33 @@
+#!/usr/bin/env php
+<?php
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+use Symfony\Component\Console\Application;
+use Hibla\QueryBuilder\Console\InitCommand;
+use Hibla\QueryBuilder\Console\PublishTemplatesCommand;
+use Hibla\QueryBuilder\Console\MakeMigrationCommand;
+use Hibla\QueryBuilder\Console\MigrateCommand;
+use Hibla\QueryBuilder\Console\MigrateRollbackCommand;
+use Hibla\QueryBuilder\Console\MigrateResetCommand;
+use Hibla\QueryBuilder\Console\MigrateRefreshCommand;
+use Hibla\QueryBuilder\Console\MigrateFreshCommand;
+use Hibla\QueryBuilder\Console\MigrateStatusCommand;
+use Hibla\QueryBuilder\Console\SchemaDumpCommand; 
+use Hibla\QueryBuilder\Console\StatusCommand;
+
+$application = new Application('Hibla Database', '1.0.0');
+
+$application->addCommand(new InitCommand());
+$application->addCommand(new PublishTemplatesCommand());
+$application->addCommand(new MakeMigrationCommand());
+$application->addCommand(new MigrateCommand());
+$application->addCommand(new MigrateRollbackCommand());
+$application->addCommand(new MigrateResetCommand());
+$application->addCommand(new MigrateRefreshCommand());
+$application->addCommand(new MigrateFreshCommand());
+$application->addCommand(new MigrateStatusCommand());
+$application->addCommand(new SchemaDumpCommand());  
+$application->addCommand(new StatusCommand());
+
+$application->run();

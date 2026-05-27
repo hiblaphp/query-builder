@@ -17,14 +17,14 @@ describe('Column Helper Methods', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('pgsql')->create('posts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained();
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('posts')->await();
+        $exists = schema('pgsql')->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -33,14 +33,14 @@ describe('Column Helper Methods', function () {
             $table->id();
             $table->string('name');
             $table->timestamps();
-        })->await();
+        })->wait();
 
         Hibla\QueryBuilder\DB::rawExecute(
             'INSERT INTO users (name) VALUES (?)',
             ['Test User']
-        )->await();
+        )->wait();
 
-        $user = Hibla\QueryBuilder\DB::rawFirst('SELECT * FROM users WHERE name = ?', ['Test User'])->await();
+        $user = Hibla\QueryBuilder\DB::rawFirst('SELECT * FROM users WHERE name = ?', ['Test User'])->wait();
 
         expect($user['created_at'])->not->toBeNull();
         expect($user['updated_at'])->not->toBeNull();
@@ -52,9 +52,9 @@ describe('Column Helper Methods', function () {
             $table->string('name');
             $table->timestamps();
             $table->softDeletes();
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('users')->await();
+        $exists = schema('pgsql')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 });

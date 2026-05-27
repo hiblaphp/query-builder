@@ -17,15 +17,15 @@ describe('Foreign Keys', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('pgsql')->create('posts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained();
             $table->string('title');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('posts')->await();
+        $exists = schema('pgsql')->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -33,15 +33,15 @@ describe('Foreign Keys', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('pgsql')->create('posts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('title');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('posts')->await();
+        $exists = schema('pgsql')->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -49,15 +49,15 @@ describe('Foreign Keys', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('pgsql')->create('posts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnUpdate();
             $table->string('title');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('posts')->await();
+        $exists = schema('pgsql')->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -66,15 +66,15 @@ describe('Foreign Keys', function () {
             $table->id();
             $table->string('slug')->unique();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('pgsql')->create('posts', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('category_id');
             $table->foreign('category_id')->references('id')->on('categories');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('posts')->await();
+        $exists = schema('pgsql')->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -82,7 +82,7 @@ describe('Foreign Keys', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('pgsql')->create('profiles', function (Blueprint $table) {
             $table->id();
@@ -91,9 +91,9 @@ describe('Foreign Keys', function () {
                 ->cascadeOnDelete()
                 ->cascadeOnUpdate()
             ;
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('profiles')->await();
+        $exists = schema('pgsql')->hasTable('profiles')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -101,15 +101,15 @@ describe('Foreign Keys', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('pgsql')->create('posts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             $table->string('title');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('posts')->await();
+        $exists = schema('pgsql')->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -117,15 +117,15 @@ describe('Foreign Keys', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('pgsql')->create('posts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->restrictOnDelete()->restrictOnUpdate();
             $table->string('title');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('posts')->await();
+        $exists = schema('pgsql')->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -133,15 +133,15 @@ describe('Foreign Keys', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('pgsql')->create('posts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->noActionOnDelete()->noActionOnUpdate();
             $table->string('title');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('posts')->await();
+        $exists = schema('pgsql')->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 });

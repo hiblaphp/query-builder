@@ -6,7 +6,8 @@ namespace Hibla\QueryBuilder\Schema;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\DB;
-use Hibla\QueryBuilder\Utilities\Builder;
+use Hibla\QueryBuilder\Interfaces\DatabaseTransactionInterface;
+use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
 
 /**
  * Base migration class that provides helper methods and configuration for migrations.
@@ -25,23 +26,24 @@ abstract class Migration
     protected bool $withinTransaction = true;
 
     /**
+     * The active database transaction instance, if running within one.
+     */
+    protected ?DatabaseTransactionInterface $transaction = null;
+
+    /**
      * The schema builder instance.
      */
     protected ?SchemaBuilder $schema = null;
 
     /**
      * Run the migration.
-     *
-     * @return PromiseInterface<mixed>
      */
-    abstract public function up(): PromiseInterface;
+    abstract public function up(): void;
 
     /**
      * Reverse the migration.
-     *
-     * @return PromiseInterface<mixed>
      */
-    abstract public function down(): PromiseInterface;
+    abstract public function down(): void;
 
     /**
      * Get the database connection for this migration.
@@ -80,12 +82,26 @@ abstract class Migration
     }
 
     /**
+     * Set the active transaction for this migration.
+     */
+    public function setTransaction(?DatabaseTransactionInterface $transaction): self
+    {
+        $this->transaction = $transaction;
+
+        return $this;
+    }
+
+    /**
      * Get the schema builder for the configured connection.
      */
     protected function getSchema(): SchemaBuilder
     {
         if ($this->schema === null) {
             $this->schema = new SchemaBuilder(null, $this->connection);
+
+            if ($this->transaction !== null) {
+                $this->schema->setTransaction($this->transaction);
+            }
         }
 
         return $this->schema;
@@ -155,6 +171,7 @@ abstract class Migration
      * Drop a column from a table.
      *
      * @param string|list<string> $columns
+     *
      * @return PromiseInterface<int|list<int>|null>
      */
     protected function dropColumn(string $table, string|array $columns): PromiseInterface
@@ -176,6 +193,7 @@ abstract class Migration
      * Drop an index from a table.
      *
      * @param string|list<string> $index
+     *
      * @return PromiseInterface<int|list<int>|null>
      */
     protected function dropIndex(string $table, string|array $index): PromiseInterface
@@ -187,6 +205,7 @@ abstract class Migration
      * Drop a foreign key from a table.
      *
      * @param string|list<string> $foreignKey
+     *
      * @return PromiseInterface<int|list<int>|null>
      */
     protected function dropForeign(string $table, string|array $foreignKey): PromiseInterface
@@ -197,32 +216,45 @@ abstract class Migration
     /**
      * Execute raw SQL.
      *
-     * @param array<int|string, mixed> $bindings
+     * @param array<int, mixed> $bindings
+     *
      * @return PromiseInterface<array<int, array<string, mixed>>>
      */
     protected function raw(string $sql, array $bindings = []): PromiseInterface
     {
-        return DB::connection($this->connection)->raw($sql, $bindings);
+        $client = $this->transaction ?? DB::connection($this->connection);
+
+        /** @var PromiseInterface<array<int, array<string, mixed>>> $result */
+        $result = $client->raw($sql, $bindings);
+
+        return $result;
     }
 
     /**
      * Execute a raw statement.
      *
-     * @param array<int|string, mixed> $bindings
+     * @param array<int, mixed> $bindings
+     *
      * @return PromiseInterface<int>
      */
     protected function rawExecute(string $sql, array $bindings = []): PromiseInterface
     {
-        return DB::connection($this->connection)->rawExecute($sql, $bindings);
+        $client = $this->transaction ?? DB::connection($this->connection);
+
+        return $client->rawExecute($sql, $bindings);
     }
 
     /**
      * Get a query builder for a table.
      *
-     * @return Builder
+     * @return QueryBuilderInterface
      */
-    protected function db(string $table): Builder
+    protected function db(string $table): QueryBuilderInterface
     {
+        if ($this->transaction !== null) {
+            return $this->transaction->table($table);
+        }
+
         return DB::connection($this->connection)->table($table);
     }
 }

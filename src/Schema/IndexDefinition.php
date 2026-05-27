@@ -18,13 +18,23 @@ namespace Hibla\QueryBuilder\Schema;
 class IndexDefinition
 {
     private string $type;
-    /** @var list<string> */
+
+    /**
+     * @var list<string>
+     */
     private array $columns;
+
     private ?string $name;
+
     private ?string $algorithm = null;
+
     private ?string $operatorClass = null;
+
     private ?string $with = null;
-    /** @var array<string, mixed> */
+
+    /**
+     * @var array<string, mixed>
+     */
     private array $using = [];
 
     /**

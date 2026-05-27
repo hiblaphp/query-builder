@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Console;
 
+use Hibla\QueryBuilder\Console\Traits\ProhibitsDestructiveCommands;
 use Hibla\QueryBuilder\Console\Traits\ValidateConnection;
-use InvalidArgumentException;
+use Hibla\QueryBuilder\Exceptions\DatabaseConfigurationException;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,11 +18,16 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class MigrateRefreshCommand extends Command
 {
     use ValidateConnection;
+    use ProhibitsDestructiveCommands;
 
     private SymfonyStyle $io;
+
     private OutputInterface $output;
+
     private ?string $connection = null;
+
     private ?string $path = null;
+
     private ?int $step = null;
 
     protected function configure(): void
@@ -39,6 +45,11 @@ class MigrateRefreshCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->initializeCommand($input, $output);
+
+        if ($this->isDestructiveCommandProhibited($this->io)) {
+            return Command::FAILURE;
+        }
+
         $this->io->title('Refresh Migrations');
 
         $this->extractOptions($input);
@@ -46,7 +57,7 @@ class MigrateRefreshCommand extends Command
 
         try {
             $this->validateConnection($this->connection);
-        } catch (InvalidArgumentException $e) {
+        } catch (DatabaseConfigurationException $e) {
             $this->io->error($e->getMessage());
 
             return Command::FAILURE;
@@ -78,7 +89,7 @@ class MigrateRefreshCommand extends Command
     {
         $option = $input->getOption($optionName);
 
-        return (is_string($option) && $option !== '') ? $option : null;
+        return (\is_string($option) && $option !== '') ? $option : null;
     }
 
     private function extractStepOption(InputInterface $input): ?int
@@ -270,6 +281,7 @@ class MigrateRefreshCommand extends Command
      * Display filtered output based on keywords
      *
      * @param list<string> $keywords
+     *
      * @return int Number of lines displayed
      */
     private function displayFilteredOutput(string $content, array $keywords): int

@@ -17,9 +17,9 @@ describe('Indexes', function () {
         schema()->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('users')->await();
+        $exists = schema()->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -29,9 +29,9 @@ describe('Indexes', function () {
             $table->string('email')->unique();
             $table->string('username');
             $table->unique('username');
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('users')->await();
+        $exists = schema()->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -41,9 +41,9 @@ describe('Indexes', function () {
             $table->string('title')->index();
             $table->string('slug');
             $table->index('slug');
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('posts')->await();
+        $exists = schema()->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -53,9 +53,9 @@ describe('Indexes', function () {
             $table->unsignedBigInteger('user_id');
             $table->string('slug');
             $table->index(['user_id', 'slug']);
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('posts')->await();
+        $exists = schema()->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -65,9 +65,9 @@ describe('Indexes', function () {
             $table->string('title');
             $table->text('content')->fullText();
             $table->fullText(['title', 'content']);
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('articles')->await();
+        $exists = schema()->hasTable('articles')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -78,12 +78,12 @@ describe('Indexes', function () {
             $table->lineString('route')->nullable();
             $table->polygon('area')->spatialIndex();
             $table->geometry('shape')->nullable();
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('geo_test')->await();
+        $exists = schema()->hasTable('geo_test')->wait();
         expect($exists)->toBeTruthy();
 
-        schema()->dropIfExists('geo_test')->await();
+        schema()->dropIfExists('geo_test')->wait();
     });
 
     it('creates table with SRID specification', function () {
@@ -92,12 +92,12 @@ describe('Indexes', function () {
             $table->string('name');
             $table->point('location');
             $table->spatialIndex('location');
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('stores')->await();
+        $exists = schema()->hasTable('stores')->wait();
         expect($exists)->toBeTruthy();
 
-        schema()->dropIfExists('stores')->await();
+        schema()->dropIfExists('stores')->wait();
     });
 
     it('creates a table with named indexes', function () {
@@ -106,9 +106,9 @@ describe('Indexes', function () {
             $table->string('slug');
             $table->index('slug', 'custom_slug_index');
             $table->unique('slug', 'custom_slug_unique');
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('posts')->await();
+        $exists = schema()->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -117,9 +117,9 @@ describe('Indexes', function () {
             $table->id();
             $table->string('slug');
             $table->index('slug', null, 'BTREE');
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('posts')->await();
+        $exists = schema()->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 });

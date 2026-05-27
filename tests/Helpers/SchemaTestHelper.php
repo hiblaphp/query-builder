@@ -39,8 +39,8 @@ class SchemaTestHelper
     /**
      * Initialize database with specific driver configuration from environment variables
      *
-     * @param  string  $driver  The database driver (mysql, pgsql, sqlite, sqlsrv)
-     * @param  int  $poolSize  Connection pool size (default: 10)
+     * @param string $driver The database driver (mysql, pgsql, sqlite, sqlsrv)
+     * @param int $poolSize Connection pool size (default: 10)
      */
     public static function initializeDatabaseForDriver(string $driver, int $poolSize = 10): void
     {
@@ -48,13 +48,14 @@ class SchemaTestHelper
         $config = self::getDriverConfig($driver);
         DB::init($config, $poolSize);
 
-        DB::rawExecute('SELECT 1')->await();
+        DB::rawExecute('SELECT 1')->wait();
     }
 
     /**
      * Get configuration array for specific driver from environment variables
      *
-     * @param  string  $driver  The database driver
+     * @param string $driver The database driver
+     *
      * @return array<string, mixed>
      */
     private static function getDriverConfig(string $driver): array
@@ -114,7 +115,7 @@ class SchemaTestHelper
 
     public static function initializeDatabase(): void
     {
-        DB::rawExecute('SELECT 1')->await();
+        DB::rawExecute('SELECT 1')->wait();
     }
 
     public static function createSchemaBuilder(?string $driver = null): SchemaBuilder
@@ -126,7 +127,7 @@ class SchemaTestHelper
     {
         foreach (self::$testTables as $table) {
             try {
-                $schema->dropIfExists($table)->await();
+                $schema->dropIfExists($table)->wait();
             } catch (\Exception $e) {
                 // Ignore if table doesn't exist
             }

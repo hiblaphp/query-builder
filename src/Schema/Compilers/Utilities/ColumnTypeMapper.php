@@ -33,6 +33,6 @@ class ColumnTypeMapper
 
     protected function isAutoIncrementType(string $type, Column $column): bool
     {
-        return $column->isAutoIncrement() && in_array($type, ['BIGINT', 'INT', 'MEDIUMINT', 'SMALLINT'], true);
+        return $column->isAutoIncrement() && \in_array($type, ['BIGINT', 'INT', 'MEDIUMINT', 'SMALLINT'], true);
     }
 }

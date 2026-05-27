@@ -17,21 +17,21 @@ describe('Complex Foreign Key Relationships', function () {
         schema('sqlite')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('sqlite')->create('categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('sqlite')->create('posts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('category_id')->constrained()->restrictOnDelete();
             $table->string('title');
-        })->await();
+        })->wait();
 
-        $exists = schema('sqlite')->hasTable('posts')->await();
+        $exists = schema('sqlite')->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -41,9 +41,9 @@ describe('Complex Foreign Key Relationships', function () {
             $table->unsignedBigInteger('parent_id')->nullable();
             $table->string('name');
             $table->foreign('parent_id')->references('id')->on('categories')->nullOnDelete();
-        })->await();
+        })->wait();
 
-        $exists = schema('sqlite')->hasTable('categories')->await();
+        $exists = schema('sqlite')->hasTable('categories')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -52,16 +52,16 @@ describe('Complex Foreign Key Relationships', function () {
             $table->id();
             $table->string('email')->unique();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('sqlite')->create('user_profiles', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
             $table->string('bio');
             $table->foreign('user_id')->references('id')->on('users')->cascadeOnDelete();
-        })->await();
+        })->wait();
 
-        $exists = schema('sqlite')->hasTable('user_profiles')->await();
+        $exists = schema('sqlite')->hasTable('user_profiles')->wait();
         expect($exists)->toBeTruthy();
     });
 });

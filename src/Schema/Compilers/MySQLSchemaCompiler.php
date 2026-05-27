@@ -20,11 +20,17 @@ use PDO;
 class MySQLSchemaCompiler implements SchemaCompiler
 {
     private const MINIMUM_VERSION = '8.0';
+
     private ?PDO $connection = null;
+
     private MySQLTypeMapper $typeMapper;
+
     private MySQLDefaultValueCompiler $defaultCompiler;
+
     private MySQLIndexCompiler $indexCompiler;
+
     private MySQLForeignKeyCompiler $foreignKeyCompiler;
+
     private ValueQuoter $quoter;
 
     public function __construct()
@@ -57,7 +63,7 @@ class MySQLSchemaCompiler implements SchemaCompiler
 
             $version = $stmt->fetchColumn();
 
-            if (! is_string($version)) {
+            if (! \is_string($version)) {
                 return;
             }
 
@@ -172,15 +178,16 @@ class MySQLSchemaCompiler implements SchemaCompiler
         $statements = array_merge($statements, $this->compileAddIndexes($table, $blueprint->getIndexDefinitions()));
         $statements = array_merge($statements, $this->compileAddForeignKeys($table, $blueprint->getForeignKeys()));
 
-        if (count($statements) === 0) {
+        if (\count($statements) === 0) {
             return '';
         }
 
-        return count($statements) === 1 ? $statements[0] : $statements;
+        return \count($statements) === 1 ? $statements[0] : $statements;
     }
 
     /**
      * @param array<int, array{from: string, to: string}> $renames
+     *
      * @return list<string>
      */
     private function compileRenameColumns(string $table, array $renames): array
@@ -195,6 +202,7 @@ class MySQLSchemaCompiler implements SchemaCompiler
 
     /**
      * @param array<int, string> $foreignKeys
+     *
      * @return list<string>
      */
     private function compileDropForeignKeys(string $table, array $foreignKeys): array
@@ -209,6 +217,7 @@ class MySQLSchemaCompiler implements SchemaCompiler
 
     /**
      * @param list<list<string>> $indexes
+     *
      * @return list<string>
      */
     private function compileDropIndexes(string $table, array $indexes): array
@@ -227,6 +236,7 @@ class MySQLSchemaCompiler implements SchemaCompiler
 
     /**
      * @param array<int, string> $columns
+     *
      * @return list<string>
      */
     private function compileDropColumns(string $table, array $columns): array
@@ -241,11 +251,12 @@ class MySQLSchemaCompiler implements SchemaCompiler
 
     /**
      * @param array<int, Column> $columns
+     *
      * @return list<string>
      */
     private function compileModifyColumns(string $table, array $columns): array
     {
-        if (count($columns) === 0) {
+        if (\count($columns) === 0) {
             return [];
         }
 
@@ -259,11 +270,12 @@ class MySQLSchemaCompiler implements SchemaCompiler
 
     /**
      * @param array<int, Column> $columns
+     *
      * @return list<string>
      */
     private function compileAddColumns(string $table, array $columns): array
     {
-        if (count($columns) === 0) {
+        if (\count($columns) === 0) {
             return [];
         }
 
@@ -277,6 +289,7 @@ class MySQLSchemaCompiler implements SchemaCompiler
 
     /**
      * @param array<int, IndexDefinition> $indexes
+     *
      * @return list<string>
      */
     private function compileAddIndexes(string $table, array $indexes): array
@@ -291,6 +304,7 @@ class MySQLSchemaCompiler implements SchemaCompiler
 
     /**
      * @param array<int, ForeignKey> $foreignKeys
+     *
      * @return list<string>
      */
     private function compileAddForeignKeys(string $table, array $foreignKeys): array

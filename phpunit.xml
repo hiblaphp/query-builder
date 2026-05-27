@@ -24,15 +24,5 @@
         <env name="PGSQL_DATABASE" value="test_db" force="true"/>
         <env name="PGSQL_USERNAME" value="postgres" force="true"/>
         <env name="PGSQL_PASSWORD" value="postgres" force="true"/>
-
-        <!-- SQLite -->
-        <env name="SQLITE_DATABASE" value="file::memory:?cache=shared" force="true"/>
-
-        <!-- SQL Server -->
-        <env name="SQLSRV_HOST" value="127.0.0.1" force="true"/>
-        <env name="SQLSRV_PORT" value="1433" force="true"/>
-        <env name="SQLSRV_DATABASE" value="test_db" force="true"/>
-        <env name="SQLSRV_USERNAME" value="sa" force="true"/>
-        <env name="SQLSRV_PASSWORD" value="Testpassword123@" force="true"/>
     </php>
 </phpunit>

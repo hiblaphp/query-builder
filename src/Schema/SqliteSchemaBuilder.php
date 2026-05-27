@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Schema;
 
-use function Hibla\async;
-
-use function Hibla\await;
-
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\DB;
+
+use function Hibla\async;
+use function Hibla\await;
 
 class SQLiteSchemaBuilder
 {
@@ -24,11 +23,11 @@ class SQLiteSchemaBuilder
      * Handle CREATE TABLE for SQLite.
      *
      * @param string $sql
+     *
      * @return PromiseInterface<int|null>
      */
     public function handleCreate(string $sql): PromiseInterface
     {
-        /** @phpstan-ignore-next-line */
         return async(function () use ($sql) {
             await(DB::rawExecute('PRAGMA foreign_keys = ON', []));
 
@@ -41,21 +40,20 @@ class SQLiteSchemaBuilder
      *
      * @param string $table
      * @param Blueprint $blueprint
+     *
      * @return PromiseInterface<int|list<int>|null|bool>
      */
     public function handleTable(string $table, Blueprint $blueprint): PromiseInterface
     {
-        $needsRecreation = count($blueprint->getDropColumns()) > 0 ||
-            count($blueprint->getModifyColumns()) > 0 ||
-            count($blueprint->getDropForeignKeys()) > 0 ||
-            count($blueprint->getDropIndexes()) > 0;
+        $needsRecreation = \count($blueprint->getDropColumns()) > 0 ||
+            \count($blueprint->getModifyColumns()) > 0 ||
+            \count($blueprint->getDropForeignKeys()) > 0 ||
+            \count($blueprint->getDropIndexes()) > 0;
 
         if (! $needsRecreation) {
-            /** @phpstan-ignore-next-line */
             return $this->executeAlter($blueprint);
         }
 
-        /** @phpstan-ignore-next-line */
         return $this->handleTableRecreation($table, $blueprint);
     }
 
@@ -64,6 +62,7 @@ class SQLiteSchemaBuilder
      *
      * @param string $table
      * @param Blueprint $blueprint
+     *
      * @return PromiseInterface<int|list<int>|bool>
      */
     public function handleDropColumn(string $table, Blueprint $blueprint): PromiseInterface
@@ -76,6 +75,7 @@ class SQLiteSchemaBuilder
      *
      * @param string $table
      * @param Blueprint $blueprint
+     *
      * @return PromiseInterface<int|list<int>|bool>
      */
     public function handleDropIndex(string $table, Blueprint $blueprint): PromiseInterface
@@ -88,6 +88,7 @@ class SQLiteSchemaBuilder
      *
      * @param string $table
      * @param Blueprint $blueprint
+     *
      * @return PromiseInterface<int|list<int>|bool>
      */
     public function handleDropForeign(string $table, Blueprint $blueprint): PromiseInterface
@@ -100,11 +101,11 @@ class SQLiteSchemaBuilder
      *
      * @param string $table
      * @param Blueprint $blueprint
+     *
      * @return PromiseInterface<int|list<int>|bool>
      */
     private function handleTableRecreation(string $table, Blueprint $blueprint): PromiseInterface
     {
-        /** @phpstan-ignore-next-line */
         return async(function () use ($table, $blueprint) {
             $existingColumns = await(DB::raw("PRAGMA table_info(`{$table}`)", []));
 
@@ -116,8 +117,8 @@ class SQLiteSchemaBuilder
 
             $sql = $this->compiler->compileAlter($blueprint);
 
-            if (is_array($sql)) {
-                return $this->executeStatements($sql);
+            if (\is_array($sql)) {
+                return await($this->executeStatements($sql));
             }
 
             return await(DB::rawExecute($sql, []));
@@ -129,6 +130,7 @@ class SQLiteSchemaBuilder
      *
      * @param string $table
      * @param Blueprint $blueprint
+     *
      * @return PromiseInterface<int|list<int>|bool>
      */
     private function executeTableRecreation(string $table, Blueprint $blueprint): PromiseInterface
@@ -145,8 +147,8 @@ class SQLiteSchemaBuilder
 
             $sql = $this->compiler->compileAlter($blueprint);
 
-            if (is_array($sql)) {
-                return count($sql) === 0 ? true : $this->executeStatements($sql);
+            if (\is_array($sql)) {
+                return \count($sql) === 0 ? true : $this->executeStatements($sql);
             }
 
             return await(DB::rawExecute($sql, []));
@@ -157,16 +159,16 @@ class SQLiteSchemaBuilder
      * Execute ALTER TABLE statements.
      *
      * @param Blueprint $blueprint
+     *
      * @return PromiseInterface<int|list<int>|bool>
      */
     private function executeAlter(Blueprint $blueprint): PromiseInterface
     {
-        /** @phpstan-ignore-next-line */
         return async(function () use ($blueprint) {
             $sql = $this->compiler->compileAlter($blueprint);
 
-            if (is_array($sql)) {
-                return count($sql) === 0 ? true : $this->executeMultiple($sql);
+            if (\is_array($sql)) {
+                return \count($sql) === 0 ? true : await($this->executeMultiple($sql));
             }
 
             return await(DB::rawExecute($sql, []));
@@ -177,6 +179,7 @@ class SQLiteSchemaBuilder
      * Execute a list of SQL statements.
      *
      * @param list<string> $statements
+     *
      * @return PromiseInterface<bool>
      */
     private function executeStatements(array $statements): PromiseInterface
@@ -203,6 +206,7 @@ class SQLiteSchemaBuilder
      * Execute multiple SQL statements and return results.
      *
      * @param list<string> $statements
+     *
      * @return PromiseInterface<list<int>>
      */
     private function executeMultiple(array $statements): PromiseInterface
@@ -213,6 +217,7 @@ class SQLiteSchemaBuilder
                 $results[] = await(DB::rawExecute($sql, []));
             }
 
+            /** @var list<int> */
             return $results;
         });
     }

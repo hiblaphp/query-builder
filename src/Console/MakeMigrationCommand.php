@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Console;
 
 use Carbon\Carbon;
-use Hibla\QueryBuilder\Console\Traits\FindProjectRoot;
 use Hibla\QueryBuilder\Console\Traits\LoadsSchemaConfiguration;
+use Rcalicdan\ConfigLoader\Config;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -17,15 +17,21 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class MakeMigrationCommand extends Command
 {
     use LoadsSchemaConfiguration;
-    use FindProjectRoot;
 
     private SymfonyStyle $io;
+
     private ?string $projectRoot = null;
+
     private string $migrationsPath;
+
     private string $migrationName;
+
     private ?string $table;
+
     private ?string $alter;
+
     private ?string $connection = null;
+
     private ?string $subdirectory = null;
 
     protected function configure(): void
@@ -48,14 +54,14 @@ class MakeMigrationCommand extends Command
         $this->io->title('Create Migration');
 
         $connectionOption = $input->getOption('connection');
-        $this->connection = (is_string($connectionOption) && $connectionOption !== '') ? $connectionOption : null;
+        $this->connection = (\is_string($connectionOption) && $connectionOption !== '') ? $connectionOption : null;
 
         if ($this->connection !== null) {
             $this->io->note("Using database connection: {$this->connection}");
         }
 
         $migrationNameValue = $input->getArgument('name');
-        if (! is_string($migrationNameValue) || trim($migrationNameValue) === '') {
+        if (! \is_string($migrationNameValue) || trim($migrationNameValue) === '') {
             $this->io->error('The migration name must be a non-empty string.');
 
             return Command::FAILURE;
@@ -65,17 +71,17 @@ class MakeMigrationCommand extends Command
 
         $tableOption = $input->getOption('table');
         $createOption = $input->getOption('create');
-        $this->table = is_string($tableOption) ? $tableOption : (is_string($createOption) ? $createOption : null);
+        $this->table = \is_string($tableOption) ? $tableOption : (\is_string($createOption) ? $createOption : null);
 
         $alterOption = $input->getOption('alter');
-        $this->alter = is_string($alterOption) ? $alterOption : null;
+        $this->alter = \is_string($alterOption) ? $alterOption : null;
 
         if ($this->table === null && $this->alter === null) {
             $this->autoDetectTableOperation($migrationNameValue);
         }
 
         $pathOption = $input->getOption('path');
-        if (is_string($pathOption) && $pathOption !== '') {
+        if (\is_string($pathOption) && $pathOption !== '') {
             $this->subdirectory = trim($pathOption, '/\\');
         }
 
@@ -92,6 +98,19 @@ class MakeMigrationCommand extends Command
         }
 
         return Command::SUCCESS;
+    }
+
+    private function initializeProjectRoot(): bool
+    {
+        $this->projectRoot = Config::getRootPath();
+
+        if ($this->projectRoot === null) {
+            $this->io->error('Could not find project root. Ensure a vendor directory exists.');
+
+            return false;
+        }
+
+        return true;
     }
 
     private function parseMigrationName(string $input): void
@@ -242,7 +261,7 @@ class MakeMigrationCommand extends Command
         if ($files === false) {
             $files = [];
         }
-        $nextNumber = count($files) + 1;
+        $nextNumber = \count($files) + 1;
         $paddedNumber = str_pad((string) $nextNumber, 4, '0', STR_PAD_LEFT);
 
         return "{$paddedNumber}_{$this->migrationName}.php";
@@ -271,38 +290,28 @@ class MakeMigrationCommand extends Command
 
 use Hibla\QueryBuilder\Schema\Blueprint;
 use Hibla\QueryBuilder\Schema\Migration;
-use Hibla\Promise\Interfaces\PromiseInterface;
 
-use function Hibla\async;
 use function Hibla\await;
 
 return new class extends Migration
 {
 {$connectionLine}    /**
      * Run the migration.
-     *
-     * @return PromiseInterface<int|null>
      */
-    public function up(): PromiseInterface
+    public function up(): void
     {
-        return async(function () {
-            await(\$this->create('{$this->table}', function (Blueprint \$table) {
-                \$table->id();
-                \$table->timestamps();
-            }));
-        });
+        await(\$this->create('{$this->table}', function (Blueprint \$table) {
+            \$table->id();
+            \$table->timestamps();
+        }));
     }
     
     /**
      * Reverse the migration.
-     *
-     * @return PromiseInterface<int>
      */
-    public function down(): PromiseInterface
+    public function down(): void
     {
-        return async(function () {
-            await(\$this->dropIfExists('{$this->table}'));
-        });
+        await(\$this->dropIfExists('{$this->table}'));
     }
 };
 ";
@@ -318,39 +327,29 @@ return new class extends Migration
 
 use Hibla\QueryBuilder\Schema\Blueprint;
 use Hibla\QueryBuilder\Schema\Migration;
-use Hibla\Promise\Interfaces\PromiseInterface;
 
-use function Hibla\async;
 use function Hibla\await;
 
 return new class extends Migration
 {
 {$connectionLine}    /**
      * Run the migration.
-     *
-     * @return PromiseInterface<int|null>
      */
-    public function up(): PromiseInterface
+    public function up(): void
     {
-        return async(function () {
-            await(\$this->table('{$this->alter}', function (Blueprint \$table) {
-                // Add columns, indexes, etc.
-            }));
-        });
+        await(\$this->table('{$this->alter}', function (Blueprint \$table) {
+            // Add columns, indexes, etc.
+        }));
     }
 
     /**
      * Reverse the migration.
-     *
-     * @return PromiseInterface<int|null>
      */
-    public function down(): PromiseInterface
+    public function down(): void
     {
-        return async(function () {
-            await(\$this->table('{$this->alter}', function (Blueprint \$table) {
-                // Reverse the changes
-            }));
-        });
+        await(\$this->table('{$this->alter}', function (Blueprint \$table) {
+            // Reverse the changes
+        }));
     }
 };
 ";
@@ -364,39 +363,28 @@ return new class extends Migration
 
         return "<?php
 
-use Hibla\QueryBuilder\Schema\Blueprint;
 use Hibla\QueryBuilder\Schema\Migration;
-use Hibla\Promise\Interfaces\PromiseInterface;
 
-use function Hibla\async;
 use function Hibla\await;
 
 return new class extends Migration
 {
 {$connectionLine}    /**
      * Run the migration.
-     *
-     * @return PromiseInterface<mixed>
      */
-    public function up(): PromiseInterface
+    public function up(): void
     {
-        return async(function () {
-            // Write your migration here
-            await(\$this->raw('-- Add your SQL here'));
-        });
+        // Write your migration here
+        await(\$this->raw('-- Add your SQL here'));
     }
 
     /**
      * Reverse the migration.
-     *
-     * @return PromiseInterface<mixed>
      */
-    public function down(): PromiseInterface
+    public function down(): void
     {
-        return async(function () {
-            // Reverse your migration here
-            await(\$this->raw('-- Add your rollback SQL here'));
-        });
+        // Reverse your migration here
+        await(\$this->raw('-- Add your rollback SQL here'));
     }
 };
 ";

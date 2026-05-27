@@ -19,9 +19,9 @@ describe('Advanced Index Scenarios', function () {
             $table->string('title')->index();
             $table->text('content');
             $table->index('title', 'custom_title_index');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('posts')->await();
+        $exists = schema('pgsql')->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -31,12 +31,12 @@ describe('Advanced Index Scenarios', function () {
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('role_id');
             $table->unique(['user_id', 'role_id']);
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('user_roles')->await();
+        $exists = schema('pgsql')->hasTable('user_roles')->wait();
         expect($exists)->toBeTruthy();
 
-        schema('pgsql')->dropIfExists('user_roles')->await();
+        schema('pgsql')->dropIfExists('user_roles')->wait();
     });
 
     it('creates indexes with custom names', function () {
@@ -44,11 +44,11 @@ describe('Advanced Index Scenarios', function () {
             $table->id();
             $table->string('sku')->index('idx_product_sku');
             $table->string('name')->unique('unq_product_name');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('products')->await();
+        $exists = schema('pgsql')->hasTable('products')->wait();
         expect($exists)->toBeTruthy();
 
-        schema('pgsql')->dropIfExists('products')->await();
+        schema('pgsql')->dropIfExists('products')->wait();
     });
 });

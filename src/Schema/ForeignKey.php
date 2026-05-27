@@ -7,13 +7,23 @@ namespace Hibla\QueryBuilder\Schema;
 class ForeignKey
 {
     private string $name;
-    /** @var list<string> */
+
+    /**
+     * @var list<string>
+     */
     private array $columns;
+
     private ?string $referenceTable = null;
-    /** @var list<string> */
+
+    /**
+     * @var list<string>
+     */
     private array $referenceColumns = [];
+
     private string $onDelete = 'RESTRICT';
+
     private string $onUpdate = 'RESTRICT';
+
     private string $blueprintTable;
 
     /**
@@ -97,7 +107,7 @@ class ForeignKey
      */
     public function references(string|array $columns): self
     {
-        $this->referenceColumns = is_array($columns) ? $columns : [$columns];
+        $this->referenceColumns = \is_array($columns) ? $columns : [$columns];
 
         return $this;
     }

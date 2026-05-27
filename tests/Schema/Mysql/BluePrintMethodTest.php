@@ -27,9 +27,9 @@ describe('Blueprint Methods', function () {
             $table->id();
             $table->string('name');
             $table->engine('MyISAM');
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('users')->await();
+        $exists = schema()->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -39,9 +39,9 @@ describe('Blueprint Methods', function () {
             $table->string('name');
             $table->charset('utf8');
             $table->collation('utf8_general_ci');
-        })->await();
+        })->wait();
 
-        $exists = schema()->hasTable('users')->await();
+        $exists = schema()->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 });

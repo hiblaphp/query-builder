@@ -17,14 +17,14 @@ describe('Table Modification', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('pgsql')->table('users', function (Blueprint $table) {
             $table->string('email')->nullable();
             $table->integer('age')->default(0);
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('users')->await();
+        $exists = schema('pgsql')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -34,13 +34,13 @@ describe('Table Modification', function () {
             $table->string('name');
             $table->string('email');
             $table->integer('age');
-        })->await();
+        })->wait();
 
         schema('pgsql')->table('users', function (Blueprint $table) {
             $table->dropColumn(['email', 'age']);
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('users')->await();
+        $exists = schema('pgsql')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -49,13 +49,13 @@ describe('Table Modification', function () {
             $table->id();
             $table->string('name');
             $table->string('email');
-        })->await();
+        })->wait();
 
         schema('pgsql')->table('users', function (Blueprint $table) {
             $table->dropColumn('email');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('users')->await();
+        $exists = schema('pgsql')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -63,13 +63,13 @@ describe('Table Modification', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('pgsql')->table('users', function (Blueprint $table) {
             $table->renameColumn('name', 'full_name');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('users')->await();
+        $exists = schema('pgsql')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -77,13 +77,13 @@ describe('Table Modification', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name', 100);
-        })->await();
+        })->wait();
 
         schema('pgsql')->table('users', function (Blueprint $table) {
             $table->modifyString('name', 200)->nullable();
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('users')->await();
+        $exists = schema('pgsql')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -91,13 +91,13 @@ describe('Table Modification', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->integer('age');
-        })->await();
+        })->wait();
 
         schema('pgsql')->table('users', function (Blueprint $table) {
             $table->modifyInteger('age', true)->nullable();
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('users')->await();
+        $exists = schema('pgsql')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -107,15 +107,15 @@ describe('Table Modification', function () {
             $table->bigInteger('count');
             $table->text('bio');
             $table->boolean('active');
-        })->await();
+        })->wait();
 
         schema('pgsql')->table('users', function (Blueprint $table) {
             $table->modifyBigInteger('count', true);
             $table->modifyText('bio');
             $table->modifyBoolean('active');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('users')->await();
+        $exists = schema('pgsql')->hasTable('users')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -124,14 +124,14 @@ describe('Table Modification', function () {
             $table->id();
             $table->string('title');
             $table->string('slug');
-        })->await();
+        })->wait();
 
         schema('pgsql')->table('posts', function (Blueprint $table) {
             $table->index('slug');
             $table->unique('title');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('posts')->await();
+        $exists = schema('pgsql')->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -139,13 +139,13 @@ describe('Table Modification', function () {
         schema('pgsql')->create('posts', function (Blueprint $table) {
             $table->id();
             $table->string('title')->index();
-        })->await();
+        })->wait();
 
         schema('pgsql')->table('posts', function (Blueprint $table) {
             $table->dropIndex('posts_title_index');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('posts')->await();
+        $exists = schema('pgsql')->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -153,13 +153,13 @@ describe('Table Modification', function () {
         schema('pgsql')->create('posts', function (Blueprint $table) {
             $table->id();
             $table->string('slug')->unique();
-        })->await();
+        })->wait();
 
         schema('pgsql')->table('posts', function (Blueprint $table) {
             $table->dropUnique('posts_slug_unique');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('posts')->await();
+        $exists = schema('pgsql')->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -167,13 +167,13 @@ describe('Table Modification', function () {
         schema('pgsql')->create('posts', function (Blueprint $table) {
             $table->string('slug');
             $table->primary('slug');
-        })->await();
+        })->wait();
 
         schema('pgsql')->table('posts', function (Blueprint $table) {
             $table->dropPrimary();
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('posts')->await();
+        $exists = schema('pgsql')->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 
@@ -181,19 +181,19 @@ describe('Table Modification', function () {
         schema('pgsql')->create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-        })->await();
+        })->wait();
 
         schema('pgsql')->create('posts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained();
             $table->string('title');
-        })->await();
+        })->wait();
 
         schema('pgsql')->table('posts', function (Blueprint $table) {
             $table->dropForeign('posts_user_id_foreign');
-        })->await();
+        })->wait();
 
-        $exists = schema('pgsql')->hasTable('posts')->await();
+        $exists = schema('pgsql')->hasTable('posts')->wait();
         expect($exists)->toBeTruthy();
     });
 });

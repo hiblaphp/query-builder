@@ -24,15 +24,15 @@ use Hibla\Sql\TransactionOptions;
 class TransactionalQueryBuilder extends QueryBuilder implements TransactionalQueryBuilderInterface
 {
     public function __construct(
-        private readonly Transaction $transactionClient,
+        private ?Transaction $transactionClient = null,
         ?string $driver = null
     ) {
         parent::__construct($transactionClient, $driver);
     }
 
     /**
-    * {@inheritdoc}
-    */
+     * {@inheritdoc}
+     */
     public function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface
     {
         return Promise::rejected(
@@ -55,7 +55,7 @@ class TransactionalQueryBuilder extends QueryBuilder implements TransactionalQue
      */
     public function commit(): PromiseInterface
     {
-        return $this->transactionClient->commit();
+        return $this->getTransaction()->commit();
     }
 
     /**
@@ -63,7 +63,7 @@ class TransactionalQueryBuilder extends QueryBuilder implements TransactionalQue
      */
     public function rollback(): PromiseInterface
     {
-        return $this->transactionClient->rollback();
+        return $this->getTransaction()->rollback();
     }
 
     /**
@@ -71,7 +71,7 @@ class TransactionalQueryBuilder extends QueryBuilder implements TransactionalQue
      */
     public function savepoint(string $identifier): PromiseInterface
     {
-        return $this->transactionClient->savepoint($identifier);
+        return $this->getTransaction()->savepoint($identifier);
     }
 
     /**
@@ -79,7 +79,7 @@ class TransactionalQueryBuilder extends QueryBuilder implements TransactionalQue
      */
     public function rollbackTo(string $identifier): PromiseInterface
     {
-        return $this->transactionClient->rollbackTo($identifier);
+        return $this->getTransaction()->rollbackTo($identifier);
     }
 
     /**
@@ -87,7 +87,7 @@ class TransactionalQueryBuilder extends QueryBuilder implements TransactionalQue
      */
     public function onCommit(callable $callback): void
     {
-        $this->transactionClient->onCommit($callback);
+        $this->getTransaction()->onCommit($callback);
     }
 
     /**
@@ -95,7 +95,7 @@ class TransactionalQueryBuilder extends QueryBuilder implements TransactionalQue
      */
     public function onRollback(callable $callback): void
     {
-        $this->transactionClient->onRollback($callback);
+        $this->getTransaction()->onRollback($callback);
     }
 
     /**
@@ -103,6 +103,14 @@ class TransactionalQueryBuilder extends QueryBuilder implements TransactionalQue
      */
     public function getTransaction(): Transaction
     {
-        return $this->transactionClient;
+        $client = $this->transactionClient;
+
+        if ($client === null) {
+            throw new QueryBuilderException(
+                'TransactionalQueryBuilder was not initialized with an active transaction client.'
+            );
+        }
+
+        return $client;
     }
 }

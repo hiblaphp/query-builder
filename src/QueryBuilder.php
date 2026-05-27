@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder;
 
+use Hibla\Promise\Exceptions\CancelledException;
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\Promise\Promise;
 use Hibla\QueryBuilder\Exceptions\QueryBuilderException;
@@ -124,27 +125,44 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     public function transaction(callable $callback, ?TransactionOptions $options = null): PromiseInterface
     {
         if ($this->client instanceof SqlClientInterface) {
-            return $this->client->transaction(function (Transaction $tx) use ($callback) {
+            /** @var SqlClientInterface $sqlClient */
+            $sqlClient = $this->client;
+
+            return $sqlClient->transaction(function (Transaction $tx) use ($callback) {
                 $txBuilder = new TransactionalQueryBuilder($tx, $this->driver);
 
                 return $callback($txBuilder);
             }, $options);
         }
 
-        // Simulate nested transactions via savepoints if already in a transaction
         if ($this->client instanceof Transaction) {
+            /** @var Transaction $transaction */
+            $transaction = $this->client;
+
             $savepointId = 'sp_' . bin2hex(random_bytes(4));
 
-            return $this->client->savepoint($savepointId)->then(function () use ($callback, $savepointId) {
-                $txBuilder = new TransactionalQueryBuilder($this->client, $this->driver);
+            $innerWorkPromise = null;
 
-                return async(fn () => $callback($txBuilder))->catch(function (\Throwable $e) use ($savepointId) {
-                    return $this->client->rollbackTo($savepointId)->then(fn () => throw $e);
+            $promise = $transaction->savepoint($savepointId)->then(function () use ($callback, $savepointId, &$innerWorkPromise, $transaction) {
+                $txBuilder = new TransactionalQueryBuilder($transaction, $this->driver);
+
+                $innerWorkPromise = async(fn() => $callback($txBuilder));
+
+                return $innerWorkPromise->catch(function (\Throwable $e) use ($savepointId, &$innerWorkPromise, $transaction) {
+                    if ($e instanceof CancelledException && ! $innerWorkPromise->isSettled()) {
+                        $innerWorkPromise->cancel();
+                    }
+
+                    return $transaction->rollbackTo($savepointId)->then(fn() => throw $e);
                 });
             });
+
+            Promise::forwardCancellation($promise, $innerWorkPromise);
+
+            return Promise::propagateCancellation($promise);
         }
 
-        throw new QueryBuilderException('The underlying client does not support transactions.');
+        return Promise::rejected(new QueryBuilderException('The underlying client does not support transactions.'));
     }
 
     /**
@@ -153,12 +171,14 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     public function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface
     {
         if ($this->client instanceof SqlClientInterface) {
-            return $this->client->beginTransaction($isolationLevel)->then(function (Transaction $tx) {
+            $promise = $this->client->beginTransaction($isolationLevel)->then(function (Transaction $tx) {
                 return new TransactionalQueryBuilder($tx, $this->driver);
             });
+
+            return Promise::propagateCancellation($promise);
         }
 
-        throw new QueryBuilderException('Cannot begin a transaction. Client is not a root SqlClient, or a transaction is already active.');
+        return Promise::rejected(new QueryBuilderException('Cannot begin a transaction. Client is not a root SqlClient, or a transaction is already active.'));
     }
 
     /**
@@ -166,13 +186,14 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function raw(string $sql, array $bindings = []): PromiseInterface
     {
-        return $this->client->query($sql, array_values($bindings))
+        $promise = $this->client->query($sql, array_values($bindings))
             ->then(function (Result $result) {
                 $rows = $result->fetchAll();
 
                 return $this->returnAsObject ? $this->convertToObjects($rows) : $rows;
-            })
-        ;
+            });
+
+        return Promise::propagateCancellation($promise);
     }
 
     /**
@@ -180,15 +201,16 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function rawFirst(string $sql, array $bindings = []): PromiseInterface
     {
-        return $this->client->fetchOne($sql, array_values($bindings))
+        $promise = $this->client->fetchOne($sql, array_values($bindings))
             ->then(function (?array $result) {
                 if ($result === null) {
                     return null;
                 }
 
                 return $this->returnAsObject ? (object) $result : $result;
-            })
-        ;
+            });
+
+        return Promise::propagateCancellation($promise);
     }
 
     /**
@@ -216,7 +238,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     private function convertToObjects(array $results): array
     {
-        return array_map(static fn (array $row): object => (object) $row, $results);
+        return array_map(static fn(array $row): object => (object) $row, $results);
     }
 
     /**
@@ -226,13 +248,14 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     {
         $sql = $this->buildSelectQuery();
 
-        return $this->client->query($sql, array_values($this->getCompiledBindings()))
+        $promise = $this->client->query($sql, array_values($this->getCompiledBindings()))
             ->then(function (Result $result) {
                 $rows = $result->fetchAll();
 
                 return $this->returnAsObject ? $this->convertToObjects($rows) : $rows;
-            })
-        ;
+            });
+
+        return Promise::propagateCancellation($promise);
     }
 
     /**
@@ -243,15 +266,16 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         $instanceWithLimit = $this->limit(1);
         $sql = $instanceWithLimit->buildSelectQuery();
 
-        return $instanceWithLimit->client->fetchOne($sql, array_values($instanceWithLimit->getCompiledBindings()))
+        $promise = $instanceWithLimit->client->fetchOne($sql, array_values($instanceWithLimit->getCompiledBindings()))
             ->then(function (?array $result) {
                 if ($result === null) {
                     return null;
                 }
 
                 return $this->returnAsObject ? (object) $result : $result;
-            })
-        ;
+            });
+
+        return Promise::propagateCancellation($promise);
     }
 
     /**
@@ -259,7 +283,9 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function find(mixed $id, string $column = 'id'): PromiseInterface
     {
-        return $this->where($column, $id)->first();
+        $promise = $this->where($column, $id)->first();
+
+        return Promise::propagateCancellation($promise);
     }
 
     /**
@@ -267,7 +293,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function findOrFail(mixed $id, string $column = 'id'): PromiseInterface
     {
-        return $this->find($id, $column)->then(function (array|object|null $result) use ($id, $column) {
+        $promise = $this->find($id, $column)->then(function (array|object|null $result) use ($id, $column) {
             if ($result === null) {
                 $idString = \is_scalar($id) ? (string) $id : 'complex_type';
 
@@ -276,6 +302,8 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
 
             return $result;
         });
+
+        return Promise::propagateCancellation($promise);
     }
 
     /**
@@ -283,7 +311,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function value(string $column): PromiseInterface
     {
-        return $this->select($column)->first()->then(function (array|object|null $result) use ($column) {
+        $promise = $this->select($column)->first()->then(function (array|object|null $result) use ($column) {
             if ($result === null) {
                 return null;
             }
@@ -293,6 +321,8 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
 
             return $row[$column] ?? null;
         });
+
+        return Promise::propagateCancellation($promise);
     }
 
     /**
@@ -302,9 +332,10 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     {
         $sql = $this->buildCountQuery($column);
 
-        return $this->client->fetchValue($sql, null, array_values($this->getCompiledBindings()))
-            ->then(fn (mixed $value) => is_numeric($value) ? (int) $value : 0)
-        ;
+        $promise = $this->client->fetchValue($sql, null, array_values($this->getCompiledBindings()))
+            ->then(fn(mixed $value) => is_numeric($value) ? (int) $value : 0);
+
+        return Promise::propagateCancellation($promise);
     }
 
     /**
@@ -312,7 +343,9 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function exists(): PromiseInterface
     {
-        return $this->count()->then(fn (int $count) => $count > 0);
+        $promise = $this->count()->then(fn(int $count) => $count > 0);
+
+        return Promise::propagateCancellation($promise);
     }
 
     /**
@@ -392,13 +425,20 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         $page = RequestHelper::getCurrentPage();
         $path ??= RequestHelper::getCurrentPath();
 
-        return $this->count()->then(function (int $total) use ($perPage, $page, $path) {
-            return $this->forPage($page, $perPage)->get()
+        $innerPromise = null;
+
+        $promise = $this->count()->then(function (int $total) use ($perPage, $page, $path, &$innerPromise) {
+            $innerPromise = $this->forPage($page, $perPage)->get()
                 ->then(function (array $items) use ($total, $perPage, $page, $path) {
                     return new Paginator($items, $total, $perPage, $page, $path);
-                })
-            ;
+                });
+
+            return $innerPromise;
         });
+
+        Promise::forwardCancellation($promise, $innerPromise);
+
+        return Promise::propagateCancellation($promise);
     }
 
     /**
@@ -411,7 +451,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
 
         $query = CursorPaginationHelper::applyCursor($this, $cursor, $cursorColumn);
 
-        return $query->limit($perPage + 1)->get()->then(function (array $results) use ($perPage, $cursorColumn, $path) {
+        $promise = $query->limit($perPage + 1)->get()->then(function (array $results) use ($perPage, $cursorColumn, $path) {
             $hasMore = \count($results) > $perPage;
             if ($hasMore) {
                 array_pop($results);
@@ -421,5 +461,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
 
             return new CursorPaginator($results, $perPage, $nextCursor, $cursorColumn, $path);
         });
+
+        return Promise::propagateCancellation($promise);
     }
 }

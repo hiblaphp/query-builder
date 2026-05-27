@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Internals;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
+use Hibla\Promise\Promise;
 use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
 use Hibla\QueryBuilder\QueryBuilder;
@@ -81,9 +82,11 @@ class DatabaseConnection implements DatabaseConnectionInterface
      */
     public function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface
     {
-        return $this->client->beginTransaction($isolationLevel)->then(
+        $promise = $this->client->beginTransaction($isolationLevel)->then(
             fn (Transaction $rawTx) => new TransactionalQueryBuilder($rawTx, $this->driverName)
         );
+
+        return Promise::propagateCancellation($promise);
     }
 
     /**

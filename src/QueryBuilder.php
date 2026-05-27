@@ -10,17 +10,24 @@ use Hibla\QueryBuilder\Exceptions\QueryBuilderException;
 use Hibla\QueryBuilder\Exceptions\RecordNotFoundException;
 use Hibla\QueryBuilder\Interfaces\ConnectionResolverInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
+use Hibla\QueryBuilder\Interfaces\TransactionalQueryBuilderInterface;
 use Hibla\QueryBuilder\Pagination\CursorPaginator;
 use Hibla\QueryBuilder\Pagination\Paginator;
 use Hibla\QueryBuilder\Utilities\CursorPaginationHelper;
 use Hibla\QueryBuilder\Utilities\RequestHelper;
+use Hibla\Sql\IsolationLevelInterface;
 use Hibla\Sql\QueryInterface;
 use Hibla\Sql\Result;
+use Hibla\Sql\SqlClientInterface;
+use Hibla\Sql\Transaction;
+use Hibla\Sql\TransactionOptions;
 use Rcalicdan\QueryBuilderPrimitives\QueryBuilderBase;
+
+use function Hibla\async;
 
 class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
 {
-    private readonly QueryInterface $client;
+    private QueryInterface $client;
 
     private bool $returnAsObject = true;
 
@@ -97,6 +104,60 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         $clone->returnAsObject = false;
 
         return $clone;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function transacting(TransactionalQueryBuilderInterface $trx): static
+    {
+        $clone = clone $this;
+        $clone->client = $trx->getTransaction();
+        
+        return $clone;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function transaction(callable $callback, ?TransactionOptions $options = null): PromiseInterface
+    {
+        if ($this->client instanceof SqlClientInterface) {
+            return $this->client->transaction(function (Transaction $tx) use ($callback) {
+                $txBuilder = new TransactionalQueryBuilder($tx, $this->driver);
+                
+                return $callback($txBuilder);
+            }, $options);
+        }
+
+        // Simulate nested transactions via savepoints if already in a transaction
+        if ($this->client instanceof Transaction) {
+            $savepointId = 'sp_' . bin2hex(random_bytes(4));
+            
+            return $this->client->savepoint($savepointId)->then(function() use ($callback, $savepointId) {
+                $txBuilder = new TransactionalQueryBuilder($this->client, $this->driver);
+                
+                return async(fn() => $callback($txBuilder))->catch(function(\Throwable $e) use ($savepointId) {
+                    return $this->client->rollbackTo($savepointId)->then(fn() => throw $e);
+                });
+            });
+        }
+
+        throw new QueryBuilderException('The underlying client does not support transactions.');
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface
+    {
+        if ($this->client instanceof SqlClientInterface) {
+            return $this->client->beginTransaction($isolationLevel)->then(function (Transaction $tx) {
+                return new TransactionalQueryBuilder($tx, $this->driver);
+            });
+        }
+        
+        throw new QueryBuilderException('Cannot begin a transaction. Client is not a root SqlClient, or a transaction is already active.');
     }
 
     /**

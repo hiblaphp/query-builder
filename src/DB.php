@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
+use Hibla\QueryBuilder\Interfaces\ConnectionQueryBuilderInterface;
 use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
-use Hibla\QueryBuilder\Interfaces\DatabaseTransactionInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
+use Hibla\QueryBuilder\Interfaces\TransactionalQueryBuilderInterface;
 use Hibla\QueryBuilder\Internals\DatabaseManager;
+use Hibla\Sql\IsolationLevelInterface;
 use Hibla\Sql\SqlClientInterface;
 
 /**
@@ -134,7 +136,7 @@ class DB
      *
      * @template TResult
      *
-     * @param callable(DatabaseTransactionInterface): TResult $callback
+     * @param callable(TransactionalQueryBuilderInterface): TResult $callback
      *
      * @return PromiseInterface<TResult>
      */
@@ -146,11 +148,12 @@ class DB
     /**
      * Begin a manual transaction on the default connection.
      *
-     * @return PromiseInterface<DatabaseTransactionInterface>
+     * @param IsolationLevelInterface|null $isolationLevel
+     * @return PromiseInterface<TransactionalQueryBuilderInterface>
      */
-    public static function beginTransaction(): PromiseInterface
+    public static function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface
     {
-        return self::getManager()->beginTransaction();
+        return self::getManager()->beginTransaction($isolationLevel);
     }
 
     /**

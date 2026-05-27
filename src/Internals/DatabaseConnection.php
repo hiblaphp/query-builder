@@ -8,6 +8,8 @@ use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
 use Hibla\QueryBuilder\QueryBuilder;
+use Hibla\QueryBuilder\TransactionalQueryBuilder;
+use Hibla\Sql\IsolationLevelInterface;
 use Hibla\Sql\SqlClientInterface;
 use Hibla\Sql\Transaction;
 use Hibla\Sql\TransactionOptions;
@@ -24,8 +26,8 @@ class DatabaseConnection implements DatabaseConnectionInterface
     }
 
     /**
-      * {@inheritdoc}
-      */
+     * {@inheritdoc}
+     */
     public function table(string $table): QueryBuilderInterface
     {
         return new QueryBuilder($this->client, $this->driverName)->from($table);
@@ -69,19 +71,19 @@ class DatabaseConnection implements DatabaseConnectionInterface
     public function transaction(callable $callback, ?TransactionOptions $options = null): PromiseInterface
     {
         return $this->client->transaction(function (Transaction $rawTx) use ($callback) {
-            $wrappedTx = new DatabaseTransaction($rawTx, $this->driverName);
+            $txBuilder = new TransactionalQueryBuilder($rawTx, $this->driverName);
 
-            return $callback($wrappedTx);
+            return $callback($txBuilder);
         }, $options);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function beginTransaction(): PromiseInterface
+    public function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface
     {
-        return $this->client->beginTransaction()->then(
-            fn (Transaction $rawTx) => new DatabaseTransaction($rawTx, $this->driverName)
+        return $this->client->beginTransaction($isolationLevel)->then(
+            fn (Transaction $rawTx) => new TransactionalQueryBuilder($rawTx, $this->driverName)
         );
     }
 

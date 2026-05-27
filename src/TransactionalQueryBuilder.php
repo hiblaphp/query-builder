@@ -1,0 +1,99 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Hibla\QueryBuilder;
+
+use Hibla\Promise\Interfaces\PromiseInterface;
+use Hibla\Promise\Promise;
+use Hibla\QueryBuilder\Exceptions\QueryBuilderException;
+use Hibla\QueryBuilder\Interfaces\TransactionalQueryBuilderInterface;
+use Hibla\Sql\IsolationLevelInterface;
+use Hibla\Sql\Transaction;
+use Hibla\Sql\TransactionOptions;
+
+class TransactionalQueryBuilder extends QueryBuilder implements TransactionalQueryBuilderInterface
+{
+    public function __construct(
+        private readonly Transaction $transactionClient,
+        ?string $driver = null
+    ) {
+        parent::__construct($transactionClient, $driver);
+    }
+
+     /**
+     * {@inheritdoc}
+     */
+    public function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface
+    {
+        return Promise::rejected(
+            new QueryBuilderException('Cannot begin a transaction. You are already inside an active transaction. Use savepoints manually.')
+        );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function transaction(callable $callback, ?TransactionOptions $options = null): PromiseInterface
+    {
+        return Promise::rejected(
+            new QueryBuilderException('Nested auto-transactions are not supported on the transactional builder. Use savepoints manually.')
+        );
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function commit(): PromiseInterface
+    {
+        return $this->transactionClient->commit();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function rollback(): PromiseInterface
+    {
+        return $this->transactionClient->rollback();
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function savepoint(string $identifier): PromiseInterface
+    {
+        return $this->transactionClient->savepoint($identifier);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function rollbackTo(string $identifier): PromiseInterface
+    {
+        return $this->transactionClient->rollbackTo($identifier);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function onCommit(callable $callback): void
+    {
+        $this->transactionClient->onCommit($callback);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function onRollback(callable $callback): void
+    {
+        $this->transactionClient->onRollback($callback);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getTransaction(): Transaction
+    {
+        return $this->transactionClient;
+    }
+}

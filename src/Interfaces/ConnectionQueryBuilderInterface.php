@@ -6,24 +6,20 @@ namespace Hibla\QueryBuilder\Interfaces;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\Sql\IsolationLevelInterface;
-use Hibla\Sql\SqlClientInterface;
 use Hibla\Sql\TransactionOptions;
 
-interface DatabaseConnectionInterface extends RawQueryInterface
+/**
+ * A Query Builder that is attached to a root database connection.
+ * It has the capability to initiate new transactions.
+ */
+interface ConnectionQueryBuilderInterface extends QueryBuilderInterface
 {
-    /**
-     * Start a new query builder instance for the given table.
-     */
-    public function table(string $table): QueryBuilderInterface;
-
     /**
      * Execute a callback within an automatically managed transaction.
      *
      * @template TResult
-     *
      * @param callable(TransactionalQueryBuilderInterface): TResult $callback
      * @param TransactionOptions|null $options
-     *
      * @return PromiseInterface<TResult>
      */
     public function transaction(callable $callback, ?TransactionOptions $options = null): PromiseInterface;
@@ -35,14 +31,4 @@ interface DatabaseConnectionInterface extends RawQueryInterface
      * @return PromiseInterface<TransactionalQueryBuilderInterface>
      */
     public function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface;
-
-    /**
-     * Get the underlying raw client instance.
-     */
-    public function getClient(): SqlClientInterface;
-
-    /**
-     * Get the driver name (e.g., 'mysql', 'pgsql').
-     */
-    public function getDriverName(): string;
 }

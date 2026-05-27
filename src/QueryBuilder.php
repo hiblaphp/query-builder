@@ -291,10 +291,10 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
 
         $bindings = [];
         foreach ($data as $row) {
-            $bindings = array_merge($bindings, array_values($row));
+            array_push($bindings, ...array_values($row));
         }
 
-        return $this->client->execute($sql, array_values($bindings));
+        return $this->client->execute($sql, $bindings);
     }
 
     /**
@@ -306,7 +306,8 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
             return Promise::resolved(0);
         }
         $sql = $this->buildUpdateQuery($data);
-        $bindings = array_values(array_merge(array_values($data), $this->getCompiledBindings()));
+        
+        $bindings = [...array_values($data), ...array_values($this->getCompiledBindings())];
 
         return $this->client->execute($sql, $bindings);
     }

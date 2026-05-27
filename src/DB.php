@@ -8,6 +8,7 @@ use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
 use Hibla\QueryBuilder\Interfaces\DatabaseTransactionInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
+use Hibla\QueryBuilder\Internals\DatabaseManager;
 use Hibla\Sql\SqlClientInterface;
 
 /**

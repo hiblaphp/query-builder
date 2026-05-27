@@ -2,11 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Hibla\QueryBuilder;
+namespace Hibla\QueryBuilder\Internals;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
+use Hibla\QueryBuilder\QueryBuilder;
 use Hibla\Sql\SqlClientInterface;
 use Hibla\Sql\Transaction;
 use Hibla\Sql\TransactionOptions;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hibla\QueryBuilder;
+namespace Hibla\QueryBuilder\Internals;
 
 use Hibla\Mysql\MysqlClient;
 use Hibla\Promise\Interfaces\PromiseInterface;
@@ -11,8 +11,10 @@ use Hibla\QueryBuilder\Exceptions\InvalidConnectionConfigException;
 use Hibla\QueryBuilder\Interfaces\ConnectionResolverInterface;
 use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
+use Hibla\QueryBuilder\Interfaces\DatabaseTransactionInterface;
 use Hibla\QueryBuilder\Pagination\CursorPaginator;
 use Hibla\QueryBuilder\Pagination\Paginator;
+use Hibla\QueryBuilder\QueryBuilder;
 use Hibla\Sql\SqlClientInterface;
 use Rcalicdan\ConfigLoader\Config;
 
@@ -297,7 +299,7 @@ class DatabaseManager implements ConnectionResolverInterface
      *
      * @template TResult
      *
-     * @param callable(Interfaces\DatabaseTransactionInterface): TResult $callback
+     * @param callable(DatabaseTransactionInterface): TResult $callback
      *
      * @return PromiseInterface<TResult>
      */
@@ -309,7 +311,7 @@ class DatabaseManager implements ConnectionResolverInterface
     /**
      * Begin a manual transaction.
      *
-     * @return PromiseInterface<Interfaces\DatabaseTransactionInterface>
+     * @return PromiseInterface<DatabaseTransactionInterface>
      */
     public function beginTransaction(): PromiseInterface
     {

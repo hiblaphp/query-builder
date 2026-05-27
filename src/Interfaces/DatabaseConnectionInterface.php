@@ -32,6 +32,7 @@ interface DatabaseConnectionInterface extends RawQueryInterface
      * Manually begin a transaction.
      *
      * @param IsolationLevelInterface|null $isolationLevel
+     *
      * @return PromiseInterface<TransactionalQueryBuilderInterface>
      */
     public function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface;

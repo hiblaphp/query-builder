@@ -32,6 +32,7 @@ class TemplateEngine
      * @param array<string, mixed> $data Variables to pass to template
      *
      * @return string Rendered HTML
+     *
      * @throws TemplateNotFoundException
      */
     public function render(string $template, array $data = []): string
@@ -55,7 +56,6 @@ class TemplateEngine
 
         return $content !== false ? $content : '';
     }
-
 
     /**
      * Get full path to template file

@@ -8,7 +8,6 @@ use Hibla\Mysql\MysqlClient;
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\Exceptions\DatabaseConfigNotFoundException;
 use Hibla\QueryBuilder\Exceptions\InvalidConnectionConfigException;
-use Hibla\QueryBuilder\Interfaces\ConnectionQueryBuilderInterface;
 use Hibla\QueryBuilder\Interfaces\ConnectionResolverInterface;
 use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
@@ -314,6 +313,7 @@ class DatabaseManager implements ConnectionResolverInterface
      * Begin a manual transaction.
      *
      * @param IsolationLevelInterface|null $isolationLevel
+     *
      * @return PromiseInterface<TransactionalQueryBuilderInterface>
      */
     public function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface

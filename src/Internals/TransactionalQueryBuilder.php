@@ -2,16 +2,25 @@
 
 declare(strict_types=1);
 
-namespace Hibla\QueryBuilder;
+namespace Hibla\QueryBuilder\Internals;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\Promise\Promise;
 use Hibla\QueryBuilder\Exceptions\QueryBuilderException;
 use Hibla\QueryBuilder\Interfaces\TransactionalQueryBuilderInterface;
+use Hibla\QueryBuilder\QueryBuilder;
 use Hibla\Sql\IsolationLevelInterface;
 use Hibla\Sql\Transaction;
 use Hibla\Sql\TransactionOptions;
 
+/**
+ * @internal Do not use this directly type hinting. Use TransactionalQueryBuilderInterface.
+ *
+ * A specialized Query Builder that operates within an active transaction.
+ *
+ * Provides manual transaction controls (commit, rollback, savepoints) while
+ * retaining all standard query building capabilities.
+ */
 class TransactionalQueryBuilder extends QueryBuilder implements TransactionalQueryBuilderInterface
 {
     public function __construct(
@@ -21,9 +30,9 @@ class TransactionalQueryBuilder extends QueryBuilder implements TransactionalQue
         parent::__construct($transactionClient, $driver);
     }
 
-     /**
-     * {@inheritdoc}
-     */
+    /**
+    * {@inheritdoc}
+    */
     public function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface
     {
         return Promise::rejected(

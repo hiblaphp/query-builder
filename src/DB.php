@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
-use Hibla\QueryBuilder\Interfaces\ConnectionQueryBuilderInterface;
 use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
 use Hibla\QueryBuilder\Interfaces\TransactionalQueryBuilderInterface;
@@ -149,6 +148,7 @@ class DB
      * Begin a manual transaction on the default connection.
      *
      * @param IsolationLevelInterface|null $isolationLevel
+     *
      * @return PromiseInterface<TransactionalQueryBuilderInterface>
      */
     public static function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface

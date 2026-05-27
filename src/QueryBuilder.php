@@ -11,6 +11,7 @@ use Hibla\QueryBuilder\Exceptions\RecordNotFoundException;
 use Hibla\QueryBuilder\Interfaces\ConnectionResolverInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
 use Hibla\QueryBuilder\Interfaces\TransactionalQueryBuilderInterface;
+use Hibla\QueryBuilder\Internals\TransactionalQueryBuilder;
 use Hibla\QueryBuilder\Pagination\CursorPaginator;
 use Hibla\QueryBuilder\Pagination\Paginator;
 use Hibla\QueryBuilder\Utilities\CursorPaginationHelper;
@@ -113,7 +114,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     {
         $clone = clone $this;
         $clone->client = $trx->getTransaction();
-        
+
         return $clone;
     }
 
@@ -125,7 +126,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         if ($this->client instanceof SqlClientInterface) {
             return $this->client->transaction(function (Transaction $tx) use ($callback) {
                 $txBuilder = new TransactionalQueryBuilder($tx, $this->driver);
-                
+
                 return $callback($txBuilder);
             }, $options);
         }
@@ -133,12 +134,12 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         // Simulate nested transactions via savepoints if already in a transaction
         if ($this->client instanceof Transaction) {
             $savepointId = 'sp_' . bin2hex(random_bytes(4));
-            
-            return $this->client->savepoint($savepointId)->then(function() use ($callback, $savepointId) {
+
+            return $this->client->savepoint($savepointId)->then(function () use ($callback, $savepointId) {
                 $txBuilder = new TransactionalQueryBuilder($this->client, $this->driver);
-                
-                return async(fn() => $callback($txBuilder))->catch(function(\Throwable $e) use ($savepointId) {
-                    return $this->client->rollbackTo($savepointId)->then(fn() => throw $e);
+
+                return async(fn () => $callback($txBuilder))->catch(function (\Throwable $e) use ($savepointId) {
+                    return $this->client->rollbackTo($savepointId)->then(fn () => throw $e);
                 });
             });
         }
@@ -156,7 +157,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
                 return new TransactionalQueryBuilder($tx, $this->driver);
             });
         }
-        
+
         throw new QueryBuilderException('Cannot begin a transaction. Client is not a root SqlClient, or a transaction is already active.');
     }
 
@@ -215,7 +216,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     private function convertToObjects(array $results): array
     {
-        return array_map(static fn(array $row): object => (object) $row, $results);
+        return array_map(static fn (array $row): object => (object) $row, $results);
     }
 
     /**
@@ -302,7 +303,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         $sql = $this->buildCountQuery($column);
 
         return $this->client->fetchValue($sql, null, array_values($this->getCompiledBindings()))
-            ->then(fn(mixed $value) => is_numeric($value) ? (int) $value : 0)
+            ->then(fn (mixed $value) => is_numeric($value) ? (int) $value : 0)
         ;
     }
 
@@ -311,7 +312,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function exists(): PromiseInterface
     {
-        return $this->count()->then(fn(int $count) => $count > 0);
+        return $this->count()->then(fn (int $count) => $count > 0);
     }
 
     /**
@@ -367,7 +368,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
             return Promise::resolved(0);
         }
         $sql = $this->buildUpdateQuery($data);
-        
+
         $bindings = [...array_values($data), ...array_values($this->getCompiledBindings())];
 
         return $this->client->execute($sql, $bindings);

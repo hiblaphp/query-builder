@@ -29,6 +29,7 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
      * Returns a cloned builder that will execute on the provided transaction.
      *
      * @param TransactionalQueryBuilderInterface $trx The active transaction builder.
+     *
      * @return static
      */
     public function transacting(TransactionalQueryBuilderInterface $trx): static;

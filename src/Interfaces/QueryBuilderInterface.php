@@ -19,8 +19,10 @@ interface QueryBuilderInterface extends BaseQueryBuilderInterface
      * The callback receives a clean, fresh TransactionalQueryBuilderInterface.
      *
      * @template TResult
+     *
      * @param callable(TransactionalQueryBuilderInterface): TResult $callback
      * @param TransactionOptions|null $options
+     *
      * @return PromiseInterface<TResult>
      */
     public function transaction(callable $callback, ?TransactionOptions $options = null): PromiseInterface;
@@ -30,6 +32,7 @@ interface QueryBuilderInterface extends BaseQueryBuilderInterface
      * Returns a clean, fresh TransactionalQueryBuilderInterface.
      *
      * @param IsolationLevelInterface|null $isolationLevel
+     *
      * @return PromiseInterface<TransactionalQueryBuilderInterface>
      */
     public function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface;

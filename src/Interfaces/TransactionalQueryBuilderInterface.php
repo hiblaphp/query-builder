@@ -9,7 +9,7 @@ use Hibla\Sql\Transaction;
 
 /**
  * A specialized Query Builder that operates within an active transaction.
- * 
+ *
  * Provides manual transaction controls (commit, rollback, savepoints) while
  * retaining all standard query building capabilities.
  */
@@ -33,6 +33,7 @@ interface TransactionalQueryBuilderInterface extends BaseQueryBuilderInterface
      * Creates a named savepoint within the transaction.
      *
      * @param string $identifier The name of the savepoint.
+     *
      * @return PromiseInterface<void>
      */
     public function savepoint(string $identifier): PromiseInterface;
@@ -41,6 +42,7 @@ interface TransactionalQueryBuilderInterface extends BaseQueryBuilderInterface
      * Rolls back the transaction to a previously created named savepoint.
      *
      * @param string $identifier The name of the savepoint to roll back to.
+     *
      * @return PromiseInterface<void>
      */
     public function rollbackTo(string $identifier): PromiseInterface;

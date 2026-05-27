@@ -18,8 +18,10 @@ interface ConnectionQueryBuilderInterface extends QueryBuilderInterface
      * Execute a callback within an automatically managed transaction.
      *
      * @template TResult
+     *
      * @param callable(TransactionalQueryBuilderInterface): TResult $callback
      * @param TransactionOptions|null $options
+     *
      * @return PromiseInterface<TResult>
      */
     public function transaction(callable $callback, ?TransactionOptions $options = null): PromiseInterface;
@@ -28,6 +30,7 @@ interface ConnectionQueryBuilderInterface extends QueryBuilderInterface
      * Manually begin a transaction.
      *
      * @param IsolationLevelInterface|null $isolationLevel
+     *
      * @return PromiseInterface<TransactionalQueryBuilderInterface>
      */
     public function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface;

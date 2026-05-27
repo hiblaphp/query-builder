@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder;
 
-use Hibla\Dns\Exceptions\RecordNotFoundException;
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\Promise\Promise;
 use Hibla\QueryBuilder\Exceptions\QueryBuilderException;
+use Hibla\QueryBuilder\Exceptions\RecordNotFoundException;
 use Hibla\QueryBuilder\Interfaces\ConnectionResolverInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
 use Hibla\QueryBuilder\Pagination\CursorPaginator;

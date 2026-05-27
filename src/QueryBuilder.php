@@ -146,14 +146,14 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
             $promise = $transaction->savepoint($savepointId)->then(function () use ($callback, $savepointId, &$innerWorkPromise, $transaction) {
                 $txBuilder = new TransactionalQueryBuilder($transaction, $this->driver);
 
-                $innerWorkPromise = async(fn() => $callback($txBuilder));
+                $innerWorkPromise = async(fn () => $callback($txBuilder));
 
                 return $innerWorkPromise->catch(function (\Throwable $e) use ($savepointId, &$innerWorkPromise, $transaction) {
                     if ($e instanceof CancelledException && ! $innerWorkPromise->isSettled()) {
                         $innerWorkPromise->cancel();
                     }
 
-                    return $transaction->rollbackTo($savepointId)->then(fn() => throw $e);
+                    return $transaction->rollbackTo($savepointId)->then(fn () => throw $e);
                 });
             });
 
@@ -191,7 +191,8 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
                 $rows = $result->fetchAll();
 
                 return $this->returnAsObject ? $this->convertToObjects($rows) : $rows;
-            });
+            })
+        ;
 
         return Promise::propagateCancellation($promise);
     }
@@ -208,7 +209,8 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
                 }
 
                 return $this->returnAsObject ? (object) $result : $result;
-            });
+            })
+        ;
 
         return Promise::propagateCancellation($promise);
     }
@@ -238,7 +240,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     private function convertToObjects(array $results): array
     {
-        return array_map(static fn(array $row): object => (object) $row, $results);
+        return array_map(static fn (array $row): object => (object) $row, $results);
     }
 
     /**
@@ -253,7 +255,8 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
                 $rows = $result->fetchAll();
 
                 return $this->returnAsObject ? $this->convertToObjects($rows) : $rows;
-            });
+            })
+        ;
 
         return Promise::propagateCancellation($promise);
     }
@@ -273,7 +276,8 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
                 }
 
                 return $this->returnAsObject ? (object) $result : $result;
-            });
+            })
+        ;
 
         return Promise::propagateCancellation($promise);
     }
@@ -333,7 +337,8 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         $sql = $this->buildCountQuery($column);
 
         $promise = $this->client->fetchValue($sql, null, array_values($this->getCompiledBindings()))
-            ->then(fn(mixed $value) => is_numeric($value) ? (int) $value : 0);
+            ->then(fn (mixed $value) => is_numeric($value) ? (int) $value : 0)
+        ;
 
         return Promise::propagateCancellation($promise);
     }
@@ -343,7 +348,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function exists(): PromiseInterface
     {
-        $promise = $this->count()->then(fn(int $count) => $count > 0);
+        $promise = $this->count()->then(fn (int $count) => $count > 0);
 
         return Promise::propagateCancellation($promise);
     }
@@ -431,7 +436,8 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
             $innerPromise = $this->forPage($page, $perPage)->get()
                 ->then(function (array $items) use ($total, $perPage, $page, $path) {
                     return new Paginator($items, $total, $perPage, $page, $path);
-                });
+                })
+            ;
 
             return $innerPromise;
         });

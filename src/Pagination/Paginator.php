@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Pagination;
 
+use Hibla\QueryBuilder\Interfaces\PaginatorInterface;
 use Rcalicdan\ConfigLoader\Config;
 
-class Paginator
+class Paginator implements PaginatorInterface
 {
     private static ?TemplateEngine $templateEngine = null;
 

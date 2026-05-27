@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Interfaces;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
-use Hibla\QueryBuilder\Pagination\CursorPaginator;
-use Hibla\QueryBuilder\Pagination\Paginator;
 use Rcalicdan\QueryBuilderPrimitives\Interfaces\QueryBuilderPrimitiveInterface;
 
 /**
@@ -131,14 +129,14 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
     /**
      * Paginate the results with automatic request handling.
      *
-     * @return PromiseInterface<Paginator>
+     * @return PromiseInterface<PaginatorInterface>
      */
     public function paginate(int $perPage = 15, ?string $path = null): PromiseInterface;
 
     /**
      * Paginate with cursor-based pagination.
      *
-     * @return PromiseInterface<CursorPaginator>
+     * @return PromiseInterface<CursorPaginatorInterface>
      */
     public function cursorPaginate(int $perPage = 15, string $cursorColumn = 'id', ?string $path = null): PromiseInterface;
 }

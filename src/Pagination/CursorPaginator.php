@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Pagination;
 
+use Hibla\QueryBuilder\Interfaces\CursorPaginatorInterface;
 use Rcalicdan\ConfigLoader\Config;
 
-class CursorPaginator
+class CursorPaginator implements CursorPaginatorInterface
 {
     private static ?TemplateEngine $templateEngine = null;
 

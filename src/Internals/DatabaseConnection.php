@@ -6,6 +6,7 @@ namespace Hibla\QueryBuilder\Internals;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\Promise\Promise;
+use Hibla\QueryBuilder\Enums\DatabaseDriver;
 use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
 use Hibla\QueryBuilder\QueryBuilder;
@@ -22,15 +23,14 @@ class DatabaseConnection implements DatabaseConnectionInterface
     public function __construct(
         private readonly SqlClientInterface $client,
         private readonly string $driverName = 'mysql'
-    ) {
-    }
+    ) {}
 
     /**
      * {@inheritdoc}
      */
     public function table(string $table): QueryBuilderInterface
     {
-        return new QueryBuilder($this->client, $this->driverName)->from($table);
+        return new QueryBuilder($this->client, $this->getDriverEnum())->from($table);
     }
 
     /**
@@ -38,7 +38,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
      */
     public function raw(string $sql, array $bindings = []): PromiseInterface
     {
-        return new QueryBuilder($this->client, $this->driverName)->raw($sql, $bindings);
+        return new QueryBuilder($this->client, $this->getDriverEnum())->raw($sql, $bindings);
     }
 
     /**
@@ -46,7 +46,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
      */
     public function rawFirst(string $sql, array $bindings = []): PromiseInterface
     {
-        return new QueryBuilder($this->client, $this->driverName)->rawFirst($sql, $bindings);
+        return new QueryBuilder($this->client, $this->getDriverEnum())->rawFirst($sql, $bindings);
     }
 
     /**
@@ -54,7 +54,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
      */
     public function rawValue(string $sql, array $bindings = []): PromiseInterface
     {
-        return new QueryBuilder($this->client, $this->driverName)->rawValue($sql, $bindings);
+        return new QueryBuilder($this->client, $this->getDriverEnum())->rawValue($sql, $bindings);
     }
 
     /**
@@ -62,7 +62,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
      */
     public function rawExecute(string $sql, array $bindings = []): PromiseInterface
     {
-        return new QueryBuilder($this->client, $this->driverName)->rawExecute($sql, $bindings);
+        return new QueryBuilder($this->client, $this->getDriverEnum())->rawExecute($sql, $bindings);
     }
 
     /**
@@ -71,7 +71,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
     public function transaction(callable $callback, ?TransactionOptions $options = null): PromiseInterface
     {
         return $this->client->transaction(function (Transaction $rawTx) use ($callback) {
-            $txBuilder = new TransactionalQueryBuilder($rawTx, $this->driverName);
+            $txBuilder = new TransactionalQueryBuilder($rawTx, $this->getDriverEnum());
 
             return $callback($txBuilder);
         }, $options);
@@ -83,7 +83,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
     public function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface
     {
         $promise = $this->client->beginTransaction($isolationLevel)->then(
-            fn (Transaction $rawTx) => new TransactionalQueryBuilder($rawTx, $this->driverName)
+            fn(Transaction $rawTx) => new TransactionalQueryBuilder($rawTx, $this->getDriverEnum())
         );
 
         return Promise::propagateCancellation($promise);
@@ -103,5 +103,10 @@ class DatabaseConnection implements DatabaseConnectionInterface
     public function getDriverName(): string
     {
         return $this->driverName;
+    }
+
+    private function getDriverEnum(): DatabaseDriver
+    {
+        return DatabaseDriver::tryFrom($this->driverName) ?? DatabaseDriver::Mysql;
     }
 }

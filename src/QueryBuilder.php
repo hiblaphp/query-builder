@@ -7,6 +7,7 @@ namespace Hibla\QueryBuilder;
 use Hibla\Promise\Exceptions\CancelledException;
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\Promise\Promise;
+use Hibla\QueryBuilder\Enums\DatabaseDriver;
 use Hibla\QueryBuilder\Exceptions\QueryBuilderException;
 use Hibla\QueryBuilder\Exceptions\RecordNotFoundException;
 use Hibla\QueryBuilder\Interfaces\ConnectionResolverInterface;
@@ -48,32 +49,24 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function __construct(
         QueryInterface|array|string|null $connection = null,
-        string|null $driver = null
+        ?DatabaseDriver $driver = null
     ) {
         if ($connection instanceof QueryInterface) {
             $this->client = $connection;
-            $this->driver = $driver ?? 'mysql';
+            $this->driver = $driver?->value ?? DatabaseDriver::Mysql->value;
         } elseif (\is_array($connection)) {
             $this->ensureResolverIsSet();
             \assert(self::$resolver !== null);
             $this->client = self::$resolver->resolveClientFromConfig($connection);
-            $this->driver = $driver ?? (\is_string($connection['driver'] ?? null) ? $connection['driver'] : 'mysql');
+
+            $configDriver = \is_string($connection['driver'] ?? null) ? $connection['driver'] : DatabaseDriver::Mysql->value;
+            $this->driver = $driver?->value ?? $configDriver;
         } else {
             $this->ensureResolverIsSet();
             \assert(self::$resolver !== null);
             $conn = self::$resolver->connection($connection);
             $this->client = $conn->getClient();
-            $this->driver = $driver ?? $conn->getDriverName();
-        }
-    }
-
-    private function ensureResolverIsSet(): void
-    {
-        if (self::$resolver === null) {
-            throw new QueryBuilderException(
-                'A ConnectionResolver has not been set. Either initialize the DatabaseManager first (e.g., DB::getManager()), ' .
-                    'or pass a valid QueryInterface directly into the QueryBuilder constructor.'
-            );
+            $this->driver = $driver?->value ?? $conn->getDriverName();
         }
     }
 
@@ -83,7 +76,8 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     protected function newQuery(): static
     {
-        return new static($this->client, $this->driver);
+        $currentDriver = DatabaseDriver::tryFrom((string) $this->driver) ?? DatabaseDriver::Mysql;
+        return new static($this->client, $currentDriver);
     }
 
     /**
@@ -146,14 +140,14 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
             $promise = $transaction->savepoint($savepointId)->then(function () use ($callback, $savepointId, &$innerWorkPromise, $transaction) {
                 $txBuilder = new TransactionalQueryBuilder($transaction, $this->driver);
 
-                $innerWorkPromise = async(fn () => $callback($txBuilder));
+                $innerWorkPromise = async(fn() => $callback($txBuilder));
 
                 return $innerWorkPromise->catch(function (\Throwable $e) use ($savepointId, &$innerWorkPromise, $transaction) {
                     if ($e instanceof CancelledException && ! $innerWorkPromise->isSettled()) {
                         $innerWorkPromise->cancel();
                     }
 
-                    return $transaction->rollbackTo($savepointId)->then(fn () => throw $e);
+                    return $transaction->rollbackTo($savepointId)->then(fn() => throw $e);
                 });
             });
 
@@ -191,8 +185,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
                 $rows = $result->fetchAll();
 
                 return $this->returnAsObject ? $this->convertToObjects($rows) : $rows;
-            })
-        ;
+            });
 
         return Promise::propagateCancellation($promise);
     }
@@ -209,8 +202,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
                 }
 
                 return $this->returnAsObject ? (object) $result : $result;
-            })
-        ;
+            });
 
         return Promise::propagateCancellation($promise);
     }
@@ -240,7 +232,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     private function convertToObjects(array $results): array
     {
-        return array_map(static fn (array $row): object => (object) $row, $results);
+        return array_map(static fn(array $row): object => (object) $row, $results);
     }
 
     /**
@@ -255,8 +247,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
                 $rows = $result->fetchAll();
 
                 return $this->returnAsObject ? $this->convertToObjects($rows) : $rows;
-            })
-        ;
+            });
 
         return Promise::propagateCancellation($promise);
     }
@@ -276,8 +267,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
                 }
 
                 return $this->returnAsObject ? (object) $result : $result;
-            })
-        ;
+            });
 
         return Promise::propagateCancellation($promise);
     }
@@ -337,8 +327,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         $sql = $this->buildCountQuery($column);
 
         $promise = $this->client->fetchValue($sql, null, array_values($this->getCompiledBindings()))
-            ->then(fn (mixed $value) => is_numeric($value) ? (int) $value : 0)
-        ;
+            ->then(fn(mixed $value) => is_numeric($value) ? (int) $value : 0);
 
         return Promise::propagateCancellation($promise);
     }
@@ -348,7 +337,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function exists(): PromiseInterface
     {
-        $promise = $this->count()->then(fn (int $count) => $count > 0);
+        $promise = $this->count()->then(fn(int $count) => $count > 0);
 
         return Promise::propagateCancellation($promise);
     }
@@ -436,8 +425,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
             $innerPromise = $this->forPage($page, $perPage)->get()
                 ->then(function (array $items) use ($total, $perPage, $page, $path) {
                     return new Paginator($items, $total, $perPage, $page, $path);
-                })
-            ;
+                });
 
             return $innerPromise;
         });
@@ -469,5 +457,15 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         });
 
         return Promise::propagateCancellation($promise);
+    }
+
+    private function ensureResolverIsSet(): void
+    {
+        if (self::$resolver === null) {
+            throw new QueryBuilderException(
+                'A ConnectionResolver has not been set. Either initialize the DatabaseManager first (e.g., DB::getManager()), ' .
+                    'or pass a valid QueryInterface directly into the QueryBuilder constructor.'
+            );
+        }
     }
 }

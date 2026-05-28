@@ -6,6 +6,7 @@ namespace Hibla\QueryBuilder\Internals;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\Promise\Promise;
+use Hibla\QueryBuilder\Enums\DatabaseDriver;
 use Hibla\QueryBuilder\Exceptions\QueryBuilderException;
 use Hibla\QueryBuilder\Interfaces\TransactionalQueryBuilderInterface;
 use Hibla\QueryBuilder\QueryBuilder;
@@ -25,7 +26,7 @@ class TransactionalQueryBuilder extends QueryBuilder implements TransactionalQue
 {
     public function __construct(
         private ?Transaction $transactionClient = null,
-        ?string $driver = null
+        ?DatabaseDriver $driver = null
     ) {
         parent::__construct($transactionClient, $driver);
     }

@@ -23,7 +23,8 @@ class DatabaseConnection implements DatabaseConnectionInterface
     public function __construct(
         private readonly SqlClientInterface $client,
         private readonly string $driverName = 'mysql'
-    ) {}
+    ) {
+    }
 
     /**
      * {@inheritdoc}
@@ -83,7 +84,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
     public function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface
     {
         $promise = $this->client->beginTransaction($isolationLevel)->then(
-            fn(Transaction $rawTx) => new TransactionalQueryBuilder($rawTx, $this->getDriverEnum())
+            fn (Transaction $rawTx) => new TransactionalQueryBuilder($rawTx, $this->getDriverEnum())
         );
 
         return Promise::propagateCancellation($promise);
@@ -105,6 +106,9 @@ class DatabaseConnection implements DatabaseConnectionInterface
         return $this->driverName;
     }
 
+    /**
+     * Get the current driver as an Enum for strict constructor passing.
+     */
     private function getDriverEnum(): DatabaseDriver
     {
         return DatabaseDriver::tryFrom($this->driverName) ?? DatabaseDriver::Mysql;

@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
+use Hibla\QueryBuilder\Enums\DatabaseDriver;
 use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
 use Hibla\QueryBuilder\Interfaces\TransactionalQueryBuilderInterface;
+use Hibla\QueryBuilder\Internals\DatabaseConnection;
 use Hibla\QueryBuilder\Internals\DatabaseManager;
 use Hibla\Sql\IsolationLevelInterface;
 use Hibla\Sql\SqlClientInterface;
@@ -33,6 +35,24 @@ class DB
         }
 
         return self::$manager;
+    }
+
+    /**
+     * Inject a custom SQL client directly.
+     * This acts as an escape hatch for testing or bypassing the configuration file entirely.
+     *
+     * This will automatically register the injected client as the default connection.
+     *
+     * @param SqlClientInterface $client The custom client instance (e.g., a mock).
+     * @param DatabaseDriver $driver The database driver (default: Mysql).
+     */
+    public static function setSqlClient(SqlClientInterface $client, DatabaseDriver $driver = DatabaseDriver::Mysql): void
+    {
+        $connectionName = 'default';
+        $connection = new DatabaseConnection($client, $driver->value);
+
+        self::getManager()->addConnection($connectionName, $connection);
+        self::getManager()->setDefaultConnectionName($connectionName);
     }
 
     /**
@@ -157,7 +177,7 @@ class DB
     }
 
     /**
-     * Reset the DatabaseManager (useful for tests).
+     * Reset the DatabaseManager (useful for tearing down tests).
      */
     public static function reset(): void
     {

@@ -175,6 +175,15 @@ class DatabaseManager implements ConnectionResolverInterface
     }
 
     /**
+     * Explicitly set the default connection name.
+     * Useful for testing or overriding configuration dynamically.
+     */
+    public function setDefaultConnectionName(string $name): void
+    {
+        $this->defaultConnectionName = $name;
+    }
+
+    /**
      * Get the default connection name from configuration.
      *
      * @return string

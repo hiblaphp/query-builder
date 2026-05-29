@@ -191,18 +191,6 @@ class CursorPaginator implements CursorPaginatorInterface
     }
 
     /**
-     * Return cursor pagination as JSON response
-     * Useful for API responses
-     */
-    public function respondJson(int $statusCode = 200, bool $includeItems = true, ?string $basePath = null): void
-    {
-        header('Content-Type: application/json');
-        http_response_code($statusCode);
-        echo $this->toJson($includeItems, $basePath);
-        exit;
-    }
-
-    /**
      * Get the cursor column name
      */
     public function getCursorColumn(): string

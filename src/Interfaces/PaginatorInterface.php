@@ -106,9 +106,4 @@ interface PaginatorInterface
      * Convert the paginator state and items to a JSON string.
      */
     public function toJson(bool $includeItems = true): string;
-
-    /**
-     * Send the paginator data directly as a JSON HTTP response.
-     */
-    public function respondJson(int $statusCode = 200, bool $includeItems = true): void;
 }

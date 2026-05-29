@@ -56,11 +56,6 @@ interface CursorPaginatorInterface
     public function toJson(bool $includeItems = true, ?string $basePath = null): string;
 
     /**
-     * Send the cursor paginator data directly as a JSON HTTP response.
-     */
-    public function respondJson(int $statusCode = 200, bool $includeItems = true, ?string $basePath = null): void;
-
-    /**
      * Get the name of the column used for the cursor sorting.
      */
     public function getCursorColumn(): string;

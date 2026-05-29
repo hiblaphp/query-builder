@@ -286,21 +286,4 @@ class Paginator implements PaginatorInterface
             ],
         ];
     }
-
-    /**
-     * Return pagination as JSON response
-     * Useful for API responses
-     *
-     * @param int $statusCode HTTP status code
-     * @param bool $includeItems Include items in response
-     *
-     * @return void
-     */
-    public function respondJson(int $statusCode = 200, bool $includeItems = true): void
-    {
-        header('Content-Type: application/json');
-        http_response_code($statusCode);
-        echo $this->toJson($includeItems);
-        exit;
-    }
 }

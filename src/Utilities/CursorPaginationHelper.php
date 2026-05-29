@@ -7,9 +7,9 @@ namespace Hibla\QueryBuilder\Utilities;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
 
 /**
- * Helper class for cursor-based pagination operations.
+ * @internal class for cursor-based pagination operations.
  */
-class CursorPaginationHelper
+final class CursorPaginationHelper
 {
     /**
      * Decode and validate a cursor value.

@@ -402,13 +402,22 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @param array<string, mixed> $data
+     * @param string $sequence Optional sequence/primary key name for PostgreSQL (defaults to 'id')
      */
-    public function insertGetId(array $data): PromiseInterface
+    public function insertGetId(array $data, string $sequence = 'id'): PromiseInterface
     {
         if ($data === []) {
             return Promise::resolved(0);
         }
+
         $sql = $this->buildInsertQuery($data);
+
+        // PostgreSQL requires an explicit RETURNING clause to yield the auto-increment ID
+        if ($this->getDriverEnum() === DatabaseDriver::Postgres) {
+            $sql .= ' RETURNING ' . $sequence;
+        }
 
         return $this->client->executeGetId($sql, array_values($data));
     }

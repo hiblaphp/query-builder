@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Utilities;
 
 /**
- * Utility class for converting numeric string values to proper PHP types.
+ * @internal class for converting numeric string values to proper PHP types.
  */
-class NumericConverter
+final class NumericConverter
 {
     /**
      * Convert numeric string values to int or float in a result set.

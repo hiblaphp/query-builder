@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Internals;
 
-use Hibla\Mysql\MysqlClient;
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\Exceptions\DatabaseConfigNotFoundException;
 use Hibla\QueryBuilder\Exceptions\InvalidConnectionConfigException;
@@ -15,6 +14,7 @@ use Hibla\QueryBuilder\Interfaces\TransactionalQueryBuilderInterface;
 use Hibla\QueryBuilder\Pagination\CursorPaginator;
 use Hibla\QueryBuilder\Pagination\Paginator;
 use Hibla\QueryBuilder\QueryBuilder;
+use Hibla\QueryBuilder\Utilities\ConnectionFactory;
 use Hibla\Sql\IsolationLevelInterface;
 use Hibla\Sql\SqlClientInterface;
 use Rcalicdan\ConfigLoader\Config;
@@ -126,52 +126,11 @@ class DatabaseManager implements ConnectionResolverInterface
     }
 
     /**
-     * {@inheritdoc}
-     *
-     * @throws InvalidConnectionConfigException If the driver is unsupported.
-     */
+      * {@inheritdoc}
+      */
     public function resolveClientFromConfig(array $config): SqlClientInterface
     {
-        $driver = strtolower(\is_string($config['driver'] ?? null) ? $config['driver'] : 'mysql');
-
-        if ($driver === 'mysql') {
-            $minVal = $config['min_connections'] ?? null;
-            $minConnections = is_numeric($minVal) ? (int) $minVal : 0;
-
-            $maxVal = $config['max_connections'] ?? null;
-            $maxConnections = is_numeric($maxVal) ? (int) $maxVal : 10;
-
-            $idleVal = $config['idle_timeout'] ?? null;
-            $idleTimeout = is_numeric($idleVal) ? (int) $idleVal : 60;
-
-            $lifetimeVal = $config['max_lifetime'] ?? null;
-            $maxLifetime = is_numeric($lifetimeVal) ? (int) $lifetimeVal : 3600;
-
-            $cacheSizeVal = $config['statement_cache_size'] ?? null;
-            $statementCacheSize = is_numeric($cacheSizeVal) ? (int) $cacheSizeVal : 256;
-
-            $enableStatementCache = (bool) ($config['enable_statement_cache'] ?? true);
-
-            $waitersVal = $config['max_waiters'] ?? null;
-            $maxWaiters = is_numeric($waitersVal) ? (int) $waitersVal : 0;
-
-            $timeoutVal = $config['acquire_timeout'] ?? null;
-            $acquireTimeout = is_numeric($timeoutVal) ? (float) $timeoutVal : 10.0;
-
-            return new MysqlClient(
-                config: $config,
-                minConnections: $minConnections,
-                maxConnections: $maxConnections,
-                idleTimeout: $idleTimeout,
-                maxLifetime: $maxLifetime,
-                statementCacheSize: $statementCacheSize,
-                enableStatementCache: $enableStatementCache,
-                maxWaiters: $maxWaiters,
-                acquireTimeout: $acquireTimeout,
-            );
-        }
-
-        throw new InvalidConnectionConfigException("Driver '{$driver}' is not supported yet.");
+        return ConnectionFactory::make($config);
     }
 
     /**

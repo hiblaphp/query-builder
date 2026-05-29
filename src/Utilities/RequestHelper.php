@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Utilities;
 
 /**
- * Helper class for HTTP request handling.
+ * @internal class for HTTP request handling.
  */
-class RequestHelper
+final class RequestHelper
 {
     /**
      * Get the current page from request.

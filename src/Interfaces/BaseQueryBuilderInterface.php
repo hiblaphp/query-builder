@@ -97,10 +97,11 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
      * Insert a single record and return the inserted ID.
      *
      * @param array<string, mixed> $data
+     * @param string $sequence Optional sequence/primary key name for PostgreSQL (defaults to 'id').
      *
      * @return PromiseInterface<int> The last insert ID.
      */
-    public function insertGetId(array $data): PromiseInterface;
+    public function insertGetId(array $data, string $sequence = 'id'): PromiseInterface;
 
     /**
      * Insert multiple records in a batch operation.

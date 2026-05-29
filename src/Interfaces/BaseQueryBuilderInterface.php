@@ -137,6 +137,16 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
     public function stream(int $bufferSize = 100): PromiseInterface;
 
     /**
+     * Stream the query results and execute a callback for each record.
+     *
+     * @param callable(array<string, mixed>|object $row): (PromiseInterface<mixed>|bool|void) $callback The callback executed for each record.
+     * @param positive-int $bufferSize Number of rows to buffer internally per read. Defaults to 100.
+     *
+     * @return PromiseInterface<void> Resolves when the entire stream has finished processing.
+     */
+    public function each(callable $callback, int $bufferSize = 100): PromiseInterface;
+
+    /**
      * Paginate the results with automatic request handling.
      *
      * @return PromiseInterface<PaginatorInterface>

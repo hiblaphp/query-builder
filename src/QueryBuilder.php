@@ -29,6 +29,7 @@ use Hibla\Sql\TransactionOptions;
 use Rcalicdan\QueryBuilderPrimitives\QueryBuilderBase;
 
 use function Hibla\async;
+use function Hibla\await;
 
 class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
 {
@@ -453,6 +454,46 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         $sql = $this->buildDeleteQuery();
 
         return $this->client->execute($sql, array_values($this->getCompiledBindings()));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function each(callable $callback, int $bufferSize = 100): PromiseInterface
+    {
+        $innerPromise = null;
+
+        $promise = $this->stream($bufferSize)->then(function (RowStream $stream) use ($callback, &$innerPromise) {
+            $innerPromise = async(function () use ($stream, $callback) {
+                try {
+                    foreach ($stream as $row) {
+                        $result = $callback($row);
+
+                        if ($result instanceof PromiseInterface) {
+                            $result = await($result);
+                        }
+
+                        if ($result === false) {
+                            $stream->cancel();
+
+                            break;
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    $stream->cancel();
+
+                    throw $e;
+                }
+            });
+
+            $innerPromise->onCancel($stream->cancel(...));
+
+            return $innerPromise;
+        });
+
+        Promise::forwardCancellation($promise, $innerPromise);
+
+        return Promise::propagateCancellation($promise);
     }
 
     /**

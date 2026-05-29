@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Interfaces;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
+use Hibla\Sql\RowStream;
 
 /**
  * Defines the contract for executing raw SQL queries directly.
@@ -50,4 +51,15 @@ interface RawQueryInterface
      * @return PromiseInterface<int> The number of affected rows.
      */
     public function rawExecute(string $sql, array $bindings = []): PromiseInterface;
+
+    /**
+     * Execute a raw query and return an unbuffered stream of results.
+     *
+     * @param string $sql
+     * @param array<int, mixed> $bindings
+     * @param positive-int $bufferSize Number of rows to buffer internally per read.
+     *
+     * @return PromiseInterface<RowStream>
+     */
+    public function rawStream(string $sql, array $bindings = [], int $bufferSize = 100): PromiseInterface;
 }

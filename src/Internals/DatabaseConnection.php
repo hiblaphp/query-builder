@@ -45,6 +45,14 @@ class DatabaseConnection implements DatabaseConnectionInterface
     /**
      * {@inheritdoc}
      */
+    public function rawStream(string $sql, array $bindings = [], int $bufferSize = 100): PromiseInterface
+    {
+        return new QueryBuilder($this->client, $this->getDriverEnum())->rawStream($sql, $bindings, $bufferSize);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function rawFirst(string $sql, array $bindings = []): PromiseInterface
     {
         return new QueryBuilder($this->client, $this->getDriverEnum())->rawFirst($sql, $bindings);

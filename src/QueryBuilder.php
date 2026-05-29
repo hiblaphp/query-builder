@@ -16,11 +16,13 @@ use Hibla\QueryBuilder\Interfaces\TransactionalQueryBuilderInterface;
 use Hibla\QueryBuilder\Internals\TransactionalQueryBuilder;
 use Hibla\QueryBuilder\Pagination\CursorPaginator;
 use Hibla\QueryBuilder\Pagination\Paginator;
+use Hibla\QueryBuilder\Streams\MappedRowStream;
 use Hibla\QueryBuilder\Utilities\CursorPaginationHelper;
 use Hibla\QueryBuilder\Utilities\RequestHelper;
 use Hibla\Sql\IsolationLevelInterface;
 use Hibla\Sql\QueryInterface;
 use Hibla\Sql\Result;
+use Hibla\Sql\RowStream;
 use Hibla\Sql\SqlClientInterface;
 use Hibla\Sql\Transaction;
 use Hibla\Sql\TransactionOptions;
@@ -184,6 +186,44 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
                 $rows = $result->fetchAll();
 
                 return $this->returnAsObject ? $this->convertToObjects($rows) : $rows;
+            })
+        ;
+
+        return Promise::propagateCancellation($promise);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function rawStream(string $sql, array $bindings = [], int $bufferSize = 100): PromiseInterface
+    {
+        $promise = $this->client->stream($sql, array_values($bindings), $bufferSize)
+            ->then(function (RowStream $stream) {
+                if ($this->returnAsObject) {
+                    return new MappedRowStream($stream, static fn (array $row): object => (object) $row);
+                }
+
+                return $stream;
+            })
+        ;
+
+        return Promise::propagateCancellation($promise);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function stream(int $bufferSize = 100): PromiseInterface
+    {
+        $sql = $this->buildSelectQuery();
+
+        $promise = $this->client->stream($sql, array_values($this->getCompiledBindings()), $bufferSize)
+            ->then(function (RowStream $stream) {
+                if ($this->returnAsObject) {
+                    return new MappedRowStream($stream, static fn (array $row): object => (object) $row);
+                }
+
+                return $stream;
             })
         ;
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Interfaces;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
+use Hibla\Sql\RowStream;
 use Rcalicdan\QueryBuilderPrimitives\Interfaces\QueryBuilderPrimitiveInterface;
 
 /**
@@ -125,6 +126,15 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
      * @return PromiseInterface<int> The number of affected rows.
      */
     public function delete(): PromiseInterface;
+
+    /**
+     * Execute the query and return an unbuffered stream of results.
+     *
+     * @param positive-int $bufferSize Number of rows to buffer internally per read. Defaults to 100.
+     *
+     * @return PromiseInterface<RowStream>
+     */
+    public function stream(int $bufferSize = 100): PromiseInterface;
 
     /**
      * Paginate the results with automatic request handling.

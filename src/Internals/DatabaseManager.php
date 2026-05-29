@@ -269,6 +269,19 @@ class DatabaseManager implements ConnectionResolverInterface
     }
 
     /**
+     * Execute a raw query and return an unbuffered stream of results.
+     *
+     * @param array<int, mixed> $bindings
+     * @param positive-int $bufferSize
+     *
+     * @return PromiseInterface<\Hibla\Sql\RowStream>
+     */
+    public function rawStream(string $sql, array $bindings = [], int $bufferSize = 100): PromiseInterface
+    {
+        return $this->connection()->rawStream($sql, $bindings, $bufferSize);
+    }
+
+    /**
      * Execute a raw query and return the first result.
      *
      * @param array<int, mixed> $bindings

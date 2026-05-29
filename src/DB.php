@@ -112,6 +112,20 @@ class DB
     }
 
     /**
+    * Execute a raw query and return an unbuffered stream of results.
+    *
+     * @param string $sql
+     * @param array<int, mixed> $bindings
+     * @param positive-int $bufferSize
+    *
+     * @return PromiseInterface<\Hibla\Sql\RowStream>
+    */
+    public static function rawStream(string $sql, array $bindings = [], int $bufferSize = 100): PromiseInterface
+    {
+        return self::getManager()->rawStream($sql, $bindings, $bufferSize);
+    }
+
+    /**
      * Execute a raw query and return the first result.
      *
      * @param string $sql

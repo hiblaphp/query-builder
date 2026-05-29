@@ -4,56 +4,35 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Pagination;
 
-use Hibla\QueryBuilder\Interfaces\PaginatorInterface;
+use Hibla\QueryBuilder\Interfaces\Pagination\PaginatorInterface;
 use Rcalicdan\ConfigLoader\Config;
 
-class Paginator implements PaginatorInterface
+/**
+ * Standard Offset-based Paginator.
+ */
+class Paginator extends AbstractPaginator implements PaginatorInterface
 {
-    private static ?TemplateEngine $templateEngine = null;
-
     /**
      * @param array<int|string, mixed> $items
+     * @param int $total
+     * @param int $perPage
+     * @param int $currentPage
+     * @param string|null $path
+     * @param string|null $query
      */
     public function __construct(
-        private array $items,
-        private int $total,
-        private int $perPage,
-        private int $currentPage,
-        private ?string $path = null,
-        private ?string $query = null,
+        array $items,
+        private readonly int $total,
+        int $perPage,
+        private readonly int $currentPage,
+        ?string $path = null,
+        private readonly ?string $query = null,
     ) {
+        parent::__construct($items, $perPage, $path);
     }
 
     /**
-     * Set a custom templates path
-     */
-    public static function setTemplatesPath(string $path): void
-    {
-        self::$templateEngine = new TemplateEngine($path);
-    }
-
-    /**
-     * Get the template engine instance
-     */
-    private static function getTemplateEngine(): TemplateEngine
-    {
-        if (self::$templateEngine === null) {
-            self::$templateEngine = new TemplateEngine();
-        }
-
-        return self::$templateEngine;
-    }
-
-    /**
-     * @return array<int|string, mixed>
-     */
-    public function items(): array
-    {
-        return $this->items;
-    }
-
-    /**
-     * Get total items count
+     * {@inheritDoc}
      */
     public function total(): int
     {
@@ -61,15 +40,7 @@ class Paginator implements PaginatorInterface
     }
 
     /**
-     * Get items per page
-     */
-    public function perPage(): int
-    {
-        return $this->perPage;
-    }
-
-    /**
-     * Get the current page number
+     * {@inheritDoc}
      */
     public function currentPage(): int
     {
@@ -77,7 +48,7 @@ class Paginator implements PaginatorInterface
     }
 
     /**
-     * Get the last page number
+     * {@inheritDoc}
      */
     public function lastPage(): int
     {
@@ -85,7 +56,7 @@ class Paginator implements PaginatorInterface
     }
 
     /**
-     * Get the starting item number for the current page
+     * {@inheritDoc}
      */
     public function from(): int
     {
@@ -97,7 +68,7 @@ class Paginator implements PaginatorInterface
     }
 
     /**
-     * Get the end item number for the current page
+     * {@inheritDoc}
      */
     public function to(): int
     {
@@ -109,7 +80,7 @@ class Paginator implements PaginatorInterface
     }
 
     /**
-     * Check if there are more items to paginate
+     * {@inheritDoc}
      */
     public function hasMore(): bool
     {
@@ -117,7 +88,7 @@ class Paginator implements PaginatorInterface
     }
 
     /**
-     * Check if there are multiple pages
+     * {@inheritDoc}
      */
     public function hasPages(): bool
     {
@@ -125,7 +96,7 @@ class Paginator implements PaginatorInterface
     }
 
     /**
-     * Check if it's the first page
+     * {@inheritDoc}
      */
     public function isFirstPage(): bool
     {
@@ -133,7 +104,7 @@ class Paginator implements PaginatorInterface
     }
 
     /**
-     * Check if it's the last page
+     * {@inheritDoc}
      */
     public function isLastPage(): bool
     {
@@ -141,31 +112,47 @@ class Paginator implements PaginatorInterface
     }
 
     /**
-     * Get the URL for the next page
+     * {@inheritDoc}
      */
-    public function nextPageUrl(): ?string
+    public function nextPageUrl(?string $basePath = null): ?string
     {
         if (! $this->hasMore()) {
             return null;
         }
 
-        return $this->url($this->currentPage + 1);
+        $originalPath = $this->path;
+        if ($basePath !== null) {
+            $this->path = $basePath;
+        }
+
+        $url = $this->url($this->currentPage + 1);
+        $this->path = $originalPath;
+
+        return $url;
     }
 
     /**
-     * Get the URL for the previous page
+     * {@inheritDoc}
      */
-    public function previousPageUrl(): ?string
+    public function previousPageUrl(?string $basePath = null): ?string
     {
         if ($this->currentPage <= 1) {
             return null;
         }
 
-        return $this->url($this->currentPage - 1);
+        $originalPath = $this->path;
+        if ($basePath !== null) {
+            $this->path = $basePath;
+        }
+
+        $url = $this->url($this->currentPage - 1);
+        $this->path = $originalPath;
+
+        return $url;
     }
 
     /**
-     * Get the URL for a specific page
+     * {@inheritDoc}
      */
     public function url(int $page): string
     {
@@ -180,7 +167,7 @@ class Paginator implements PaginatorInterface
     }
 
     /**
-     * @return array<int, string>
+     * {@inheritDoc}
      */
     public function getUrlRange(int $start, int $end): array
     {
@@ -193,13 +180,9 @@ class Paginator implements PaginatorInterface
     }
 
     /**
-     * Render pagination using a template
-     *
-     * @param string $template Template name (bootstrap, tailwind, simple)
-     *
-     * @return string Rendered HTML
+     * {@inheritDoc}
      */
-    public function render(?string $template = null): string
+    public function render(?string $template = null, ?string $basePath = null): string
     {
         if ($template === null) {
             /** @var string $template */
@@ -210,63 +193,17 @@ class Paginator implements PaginatorInterface
             return '';
         }
 
-        $engine = self::getTemplateEngine();
-
-        return $engine->render($template, ['paginator' => $this]);
-    }
-
-    /**
-     * Render pagination links (alias for render, Laravel-style convenience method)
-     *
-     * @param string|null $view Template name (bootstrap, tailwind, simple). If null, uses 'bootstrap'
-     */
-    public function links(?string $view = null): string
-    {
-        return $this->render($view);
-    }
-
-    /**
-     * Return pagination metadata as JSON
-     *
-     * @param bool $includeItems Include items in JSON response
-     */
-    public function toJson(bool $includeItems = true): string
-    {
-        $data = [
-            'data' => $includeItems ? $this->items : [],
-            'meta' => [
-                'total' => $this->total(),
-                'per_page' => $this->perPage(),
-                'current_page' => $this->currentPage(),
-                'last_page' => $this->lastPage(),
-                'from' => $this->from(),
-                'to' => $this->to(),
-            ],
-            'links' => [
-                'first' => $this->path !== null ? $this->url(1) : null,
-                'last' => $this->path !== null ? $this->url($this->lastPage()) : null,
-                'prev' => $this->previousPageUrl(),
-                'next' => $this->nextPageUrl(),
-            ],
-        ];
-
-        $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-
-        if ($json === false) {
-            return '{}';
+        if ($basePath !== null) {
+            $this->path = $basePath;
         }
 
-        return $json;
+        return self::getTemplateEngine()->render($template, ['paginator' => $this]);
     }
 
     /**
-     * Return pagination metadata as array
-     *
-     * @param bool $includeItems Include items in array response
-     *
-     * @return array<string, mixed>
+     * {@inheritDoc}
      */
-    public function toArray(bool $includeItems = true): array
+    public function toArray(bool $includeItems = true, ?string $basePath = null): array
     {
         return [
             'data' => $includeItems ? $this->items : [],
@@ -281,9 +218,31 @@ class Paginator implements PaginatorInterface
             'links' => [
                 'first' => $this->path !== null ? $this->url(1) : null,
                 'last' => $this->path !== null ? $this->url($this->lastPage()) : null,
-                'prev' => $this->previousPageUrl(),
-                'next' => $this->nextPageUrl(),
+                'prev' => $this->previousPageUrl($basePath),
+                'next' => $this->nextPageUrl($basePath),
             ],
         ];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function toJson(bool $includeItems = true, ?string $basePath = null): string
+    {
+        $json = json_encode($this->toArray($includeItems, $basePath), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+        return $json !== false ? $json : '{}';
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return \Generator<int|string, mixed, mixed, void>
+     */
+    public function getIterator(): \Generator
+    {
+        foreach ($this->items as $key => $row) {
+            yield $key => $row;
+        }
     }
 }

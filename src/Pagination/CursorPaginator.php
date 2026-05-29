@@ -4,71 +4,33 @@ declare(strict_types=1);
 
 namespace Hibla\QueryBuilder\Pagination;
 
-use Hibla\QueryBuilder\Interfaces\CursorPaginatorInterface;
+use Hibla\QueryBuilder\Interfaces\Pagination\CursorPaginatorInterface;
 use Rcalicdan\ConfigLoader\Config;
 
-class CursorPaginator implements CursorPaginatorInterface
+/**
+ * Cursor-based Paginator.
+ */
+class CursorPaginator extends AbstractPaginator implements CursorPaginatorInterface
 {
-    private static ?TemplateEngine $templateEngine = null;
-
     /**
      * @param array<int|string, mixed> $items
+     * @param int $perPage
+     * @param string|null $nextCursor
+     * @param string $cursorColumn
+     * @param string|null $path
      */
     public function __construct(
-        private array $items,
-        private int $perPage,
-        private ?string $nextCursor,
-        private string $cursorColumn,
-        private ?string $path = null,
+        array $items,
+        int $perPage,
+        private readonly ?string $nextCursor,
+        private readonly string $cursorColumn,
+        ?string $path = null,
     ) {
+        parent::__construct($items, $perPage, $path);
     }
 
     /**
-     * Set a custom templates path
-     */
-    public static function setTemplatesPath(string $path): void
-    {
-        self::$templateEngine = new TemplateEngine($path);
-    }
-
-    /**
-     * Get the template engine instance
-     */
-    private static function getTemplateEngine(): TemplateEngine
-    {
-        if (self::$templateEngine === null) {
-            self::$templateEngine = new TemplateEngine();
-        }
-
-        return self::$templateEngine;
-    }
-
-    /**
-     * Get the current path
-     */
-    public function path(): ?string
-    {
-        return $this->path;
-    }
-
-    /**
-     * @return array<int|string, mixed>
-     */
-    public function items(): array
-    {
-        return $this->items;
-    }
-
-    /**
-     * Get items per page
-     */
-    public function perPage(): int
-    {
-        return $this->perPage;
-    }
-
-    /**
-     * Get the cursor value for the next page
+     * {@inheritDoc}
      */
     public function nextCursor(): ?string
     {
@@ -76,7 +38,7 @@ class CursorPaginator implements CursorPaginatorInterface
     }
 
     /**
-     * Check if there are more items to paginate
+     * {@inheritDoc}
      */
     public function hasMore(): bool
     {
@@ -84,7 +46,7 @@ class CursorPaginator implements CursorPaginatorInterface
     }
 
     /**
-     * Get the next page URL
+     * {@inheritDoc}
      */
     public function nextPageUrl(?string $basePath = null): ?string
     {
@@ -104,10 +66,7 @@ class CursorPaginator implements CursorPaginatorInterface
     }
 
     /**
-     * Render cursor pagination using a template
-     *
-     * @param string $template Template name (cursor-simple, cursor-bootstrap, cursor-tailwind)
-     * @param string|null $basePath Base path for pagination links. If null, uses current path
+     * {@inheritDoc}
      */
     public function render(?string $template = null, ?string $basePath = null): string
     {
@@ -120,61 +79,15 @@ class CursorPaginator implements CursorPaginatorInterface
             return '';
         }
 
-        $engine = self::getTemplateEngine();
-
         if ($basePath !== null) {
             $this->path = $basePath;
         }
 
-        return $engine->render($template, ['paginator' => $this]);
+        return self::getTemplateEngine()->render($template, ['paginator' => $this]);
     }
 
     /**
-     * Render cursor pagination links (alias for render, Laravel-style convenience method)
-     *
-     * @param string|null $view Template name (cursor-simple, cursor-bootstrap, cursor-tailwind). If null, uses 'cursor-simple'
-     * @param string|null $basePath Base path for pagination links. If null, uses current path
-     */
-    public function links(?string $view = null, ?string $basePath = null): string
-    {
-        return $this->render($view ?? 'cursor-simple', $basePath);
-    }
-
-    /**
-     * Return cursor pagination metadata as JSON
-     *
-     * @param bool $includeItems Include items in JSON response
-     * @param string|null $basePath Base path for next page URL
-     */
-    public function toJson(bool $includeItems = true, ?string $basePath = null): string
-    {
-        $data = [
-            'data' => $includeItems ? $this->items : [],
-            'meta' => [
-                'per_page' => $this->perPage(),
-                'has_more' => $this->hasMore(),
-            ],
-            'links' => [
-                'next' => $this->nextPageUrl($basePath),
-            ],
-        ];
-
-        $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-
-        if ($json === false) {
-            return '{}';
-        }
-
-        return $json;
-    }
-
-    /**
-     * Return cursor pagination metadata as array
-     *
-     * @param bool $includeItems Include items in array response
-     * @param string|null $basePath Base path for next page URL
-     *
-     * @return array<string, mixed>
+     * {@inheritDoc}
      */
     public function toArray(bool $includeItems = true, ?string $basePath = null): array
     {
@@ -191,10 +104,32 @@ class CursorPaginator implements CursorPaginatorInterface
     }
 
     /**
-     * Get the cursor column name
+     * {@inheritDoc}
+     */
+    public function toJson(bool $includeItems = true, ?string $basePath = null): string
+    {
+        $json = json_encode($this->toArray($includeItems, $basePath), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+        return $json !== false ? $json : '{}';
+    }
+
+    /**
+     * {@inheritDoc}
      */
     public function getCursorColumn(): string
     {
         return $this->cursorColumn;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return \Generator<int|string, mixed, mixed, void>
+     */
+    public function getIterator(): \Generator
+    {
+        foreach ($this->items as $key => $row) {
+            yield $key => $row;
+        }
     }
 }

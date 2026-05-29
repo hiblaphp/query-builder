@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Interfaces;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
+use Hibla\QueryBuilder\Interfaces\Pagination\CursorPaginatorInterface;
+use Hibla\QueryBuilder\Interfaces\Pagination\PaginatorInterface;
 use Hibla\Sql\RowStream;
 use Rcalicdan\QueryBuilderPrimitives\Interfaces\QueryBuilderPrimitiveInterface;
 

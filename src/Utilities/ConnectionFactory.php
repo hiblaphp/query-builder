@@ -42,6 +42,7 @@ final class ConnectionFactory
      * Extracts the shared connection pool configurations safely.
      *
      * @param array<string, mixed> $config
+     *
      * @return array{
      *     min_connections: int,
      *     max_connections: int,

@@ -73,11 +73,57 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
     public function value(string $column): PromiseInterface;
 
     /**
+     * Retrieve an array of values from a single column, optionally keyed by another column.
+     *
+     * @param string $column The value column.
+     * @param string|null $key Optional key column.
+     *
+     * @return PromiseInterface<array<array-key, mixed>>
+     */
+    public function pluck(string $column, ?string $key = null): PromiseInterface;
+
+    /**
      * Count the number of records.
      *
      * @return PromiseInterface<int>
      */
     public function count(string $column = '*'): PromiseInterface;
+
+    /**
+     * Get the sum of the values of a given column.
+     *
+     * @param string $column
+     *
+     * @return PromiseInterface<mixed>
+     */
+    public function sum(string $column): PromiseInterface;
+
+    /**
+     * Get the average of the values of a given column.
+     *
+     * @param string $column
+     *
+     * @return PromiseInterface<mixed>
+     */
+    public function avg(string $column): PromiseInterface;
+
+    /**
+     * Get the minimum value of a given column.
+     *
+     * @param string $column
+     *
+     * @return PromiseInterface<mixed>
+     */
+    public function min(string $column): PromiseInterface;
+
+    /**
+     * Get the maximum value of a given column.
+     *
+     * @param string $column
+     *
+     * @return PromiseInterface<mixed>
+     */
+    public function max(string $column): PromiseInterface;
 
     /**
      * Check if any records exist.
@@ -131,6 +177,28 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
     public function delete(): PromiseInterface;
 
     /**
+     * Insert a single record or update it if a unique constraint is violated.
+     *
+     * @param array<string, mixed> $data
+     * @param string|array<int, string> $uniqueColumns Column(s) that determine uniqueness.
+     * @param array<int, string>|null $updateColumns Columns to update on conflict (null = all except unique).
+     *
+     * @return PromiseInterface<int> The number of affected rows.
+     */
+    public function upsert(array $data, string|array $uniqueColumns, ?array $updateColumns = null): PromiseInterface;
+
+    /**
+     * Insert multiple records or update them if a unique constraint is violated.
+     *
+     * @param array<int, array<string, mixed>> $data
+     * @param string|array<int, string> $uniqueColumns Column(s) that determine uniqueness.
+     * @param array<int, string>|null $updateColumns Columns to update on conflict (null = all except unique).
+     *
+     * @return PromiseInterface<int> The number of affected rows.
+     */
+    public function upsertBatch(array $data, string|array $uniqueColumns, ?array $updateColumns = null): PromiseInterface;
+
+    /**
      * Execute the query and return an unbuffered stream of results.
      *
      * @param positive-int $bufferSize Number of rows to buffer internally per read. Defaults to 100.
@@ -138,6 +206,38 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
      * @return PromiseInterface<RowStream>
      */
     public function stream(int $bufferSize = 100): PromiseInterface;
+
+    /**
+     * Stream the query results but group them into chunk arrays before passing to the callback.
+     *
+     * @param positive-int $chunkSize Number of rows per chunk.
+     * @param callable(array<int, array<string, mixed>|object>): (PromiseInterface<mixed>|bool|void) $callback
+     *
+     * @return PromiseInterface<void> Resolves when the entire stream has finished processing.
+     */
+    public function chunkStream(int $chunkSize, callable $callback): PromiseInterface;
+
+    /**
+     * Chunk the results of the query using LIMIT and OFFSET.
+     *
+     * @param positive-int $count The number of records per chunk.
+     * @param callable(array<int, array<string, mixed>|object>): (PromiseInterface<mixed>|bool|void) $callback
+     *
+     * @return PromiseInterface<void>
+     */
+    public function chunk(int $count, callable $callback): PromiseInterface;
+
+    /**
+     * Chunk the results of the query by comparing IDs (avoids OFFSET penalty).
+     *
+     * @param positive-int $count The number of records per chunk.
+     * @param callable(array<int, array<string, mixed>|object>): (PromiseInterface<mixed>|bool|void) $callback
+     * @param string $column The column to chunk by (usually 'id').
+     * @param string|null $alias The alias of the column if using JOINs.
+     *
+     * @return PromiseInterface<void>
+     */
+    public function chunkById(int $count, callable $callback, string $column = 'id', ?string $alias = null): PromiseInterface;
 
     /**
      * Stream the query results and execute a callback for each record.

@@ -366,6 +366,42 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     /**
      * {@inheritdoc}
      */
+    public function pluck(string $column, ?string $key = null): PromiseInterface
+    {
+        $query = clone $this;
+
+        if ($key === null) {
+            $query = $query->select($column);
+        } else {
+            $query = $query->select($column, $key);
+        }
+
+        $promise = $query->get()->then(function (array $results) use ($column, $key) {
+            $pluckResult = [];
+
+            foreach ($results as $row) {
+                $value = CursorPaginationHelper::extractColumnValue($row, $column);
+
+                if ($key === null) {
+                    $pluckResult[] = $value;
+                } else {
+                    $keyValue = CursorPaginationHelper::extractColumnValue($row, $key);
+
+                    if (\is_scalar($keyValue) || (\is_object($keyValue) && method_exists($keyValue, '__toString'))) {
+                        $pluckResult[(string) $keyValue] = $value;
+                    }
+                }
+            }
+
+            return $pluckResult;
+        });
+
+        return Promise::propagateCancellation($promise);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function count(string $column = '*'): PromiseInterface
     {
         $sql = $this->buildCountQuery($column);
@@ -375,6 +411,46 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         ;
 
         return Promise::propagateCancellation($promise);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function sum(string $column): PromiseInterface
+    {
+        $sql = $this->buildAggregateQuery('SUM', $column);
+
+        return $this->client->fetchValue($sql, null, array_values($this->getCompiledBindings()));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function avg(string $column): PromiseInterface
+    {
+        $sql = $this->buildAggregateQuery('AVG', $column);
+
+        return $this->client->fetchValue($sql, null, array_values($this->getCompiledBindings()));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function min(string $column): PromiseInterface
+    {
+        $sql = $this->buildAggregateQuery('MIN', $column);
+
+        return $this->client->fetchValue($sql, null, array_values($this->getCompiledBindings()));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function max(string $column): PromiseInterface
+    {
+        $sql = $this->buildAggregateQuery('MAX', $column);
+
+        return $this->client->fetchValue($sql, null, array_values($this->getCompiledBindings()));
     }
 
     /**
@@ -468,6 +544,39 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     /**
      * {@inheritdoc}
      */
+    public function upsert(array $data, string|array $uniqueColumns, ?array $updateColumns = null): PromiseInterface
+    {
+        if ($data === []) {
+            return Promise::resolved(0);
+        }
+
+        $sql = $this->buildUpsertQuery($data, $uniqueColumns, $updateColumns);
+
+        return $this->client->execute($sql, array_values($data));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function upsertBatch(array $data, string|array $uniqueColumns, ?array $updateColumns = null): PromiseInterface
+    {
+        if ($data === []) {
+            return Promise::resolved(0);
+        }
+
+        $sql = $this->buildUpsertQuery($data, $uniqueColumns, $updateColumns);
+
+        $bindings = [];
+        foreach ($data as $row) {
+            array_push($bindings, ...array_values($row));
+        }
+
+        return $this->client->execute($sql, $bindings);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function each(callable $callback, int $bufferSize = 100): PromiseInterface
     {
         $innerPromise = null;
@@ -503,6 +612,169 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         Promise::forwardCancellation($promise, $innerPromise);
 
         return Promise::propagateCancellation($promise);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function chunkStream(int $chunkSize, callable $callback): PromiseInterface
+    {
+        $innerPromise = null;
+
+        $promise = $this->stream($chunkSize)->then(function (RowStream $stream) use ($chunkSize, $callback, &$innerPromise) {
+            $innerPromise = async(function () use ($stream, $chunkSize, $callback) {
+                $buffer = [];
+
+                try {
+                    foreach ($stream as $row) {
+                        $buffer[] = $row;
+
+                        if (\count($buffer) >= $chunkSize) {
+                            $result = $callback($buffer);
+
+                            if ($result instanceof PromiseInterface) {
+                                $result = await($result);
+                            }
+
+                            $buffer = []; // clear buffer
+
+                            if ($result === false) {
+                                $stream->cancel();
+
+                                break;
+                            }
+                        }
+                    }
+
+                    // Process any remaining rows that didn't exactly fill the last chunk
+                    if (\count($buffer) > 0) {
+                        $result = $callback($buffer);
+
+                        if ($result instanceof PromiseInterface) {
+                            await($result);
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    $stream->cancel();
+
+                    throw $e;
+                }
+            });
+
+            $innerPromise->onCancel($stream->cancel(...));
+
+            return $innerPromise;
+        });
+
+        Promise::forwardCancellation($promise, $innerPromise);
+
+        return Promise::propagateCancellation($promise);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function chunk(int $count, callable $callback): PromiseInterface
+    {
+        /** @var PromiseInterface<mixed>|null $activePromise */
+        $activePromise = null;
+
+        $innerPromise = async(function () use ($count, $callback, &$activePromise) {
+            $page = 1;
+
+            while (true) {
+                $activePromise = $this->forPage($page, $count)->get();
+                $results = await($activePromise);
+                $activePromise = null;
+
+                if (\count($results) === 0) {
+                    break;
+                }
+
+                $callbackResult = $callback($results);
+
+                if ($callbackResult instanceof PromiseInterface) {
+                    $activePromise = $callbackResult;
+                    $callbackResult = await($activePromise);
+                    $activePromise = null;
+                }
+
+                if ($callbackResult === false) {
+                    break;
+                }
+
+                if (\count($results) < $count) {
+                    break;
+                }
+
+                $page++;
+            }
+        });
+
+        $innerPromise->onCancel(function () use (&$activePromise) {
+            if ($activePromise !== null && ! $activePromise->isSettled()) {
+                $activePromise->cancel();
+            }
+        });
+
+        return Promise::propagateCancellation($innerPromise);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function chunkById(int $count, callable $callback, string $column = 'id', ?string $alias = null): PromiseInterface
+    {
+        /** @var PromiseInterface<mixed>|null $activePromise */
+        $activePromise = null;
+
+        $innerPromise = async(function () use ($count, $callback, $column, $alias, &$activePromise) {
+            $lastId = null;
+            $extractColumn = $alias ?? $column;
+
+            while (true) {
+                $query = $this->orderByAsc($extractColumn);
+
+                if ($lastId !== null) {
+                    $query = $query->where($column, '>', $lastId);
+                }
+
+                $activePromise = $query->limit($count)->get();
+                $results = await($activePromise);
+                $activePromise = null;
+
+                if (\count($results) === 0) {
+                    break;
+                }
+
+                $callbackResult = $callback($results);
+
+                if ($callbackResult instanceof PromiseInterface) {
+                    $activePromise = $callbackResult;
+                    $callbackResult = await($activePromise);
+                    $activePromise = null;
+                }
+
+                if ($callbackResult === false) {
+                    break;
+                }
+
+                if (\count($results) < $count) {
+                    break;
+                }
+
+                $lastItem = end($results);
+                $lastId = CursorPaginationHelper::extractColumnValue($lastItem, $extractColumn);
+            }
+        });
+
+        $innerPromise->onCancel(function () use (&$activePromise) {
+            if ($activePromise !== null && ! $activePromise->isSettled()) {
+                $activePromise->cancel();
+            }
+        });
+
+        return Promise::propagateCancellation($innerPromise);
     }
 
     /**

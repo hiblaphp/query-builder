@@ -182,7 +182,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function raw(string $sql, array $bindings = []): PromiseInterface
     {
-        $promise = $this->client->query($sql, array_values($bindings))
+        $promise = $this->client->query($sql, $bindings)
             ->then(function (Result $result) {
                 $rows = $result->fetchAll();
 
@@ -198,7 +198,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function rawStream(string $sql, array $bindings = [], int $bufferSize = 100): PromiseInterface
     {
-        $promise = $this->client->stream($sql, array_values($bindings), $bufferSize)
+        $promise = $this->client->stream($sql, $bindings, $bufferSize)
             ->then(function (RowStream $stream) {
                 if ($this->returnAsObject) {
                     return new MappedRowStream($stream, static fn (array $row): object => (object) $row);
@@ -218,7 +218,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     {
         $sql = $this->buildSelectQuery();
 
-        $promise = $this->client->stream($sql, array_values($this->getCompiledBindings()), $bufferSize)
+        $promise = $this->client->stream($sql, $this->getCompiledBindings(), $bufferSize)
             ->then(function (RowStream $stream) {
                 if ($this->returnAsObject) {
                     return new MappedRowStream($stream, static fn (array $row): object => (object) $row);
@@ -236,7 +236,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function rawFirst(string $sql, array $bindings = []): PromiseInterface
     {
-        $promise = $this->client->fetchOne($sql, array_values($bindings))
+        $promise = $this->client->fetchOne($sql, $bindings)
             ->then(function (?array $result) {
                 if ($result === null) {
                     return null;
@@ -254,7 +254,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function rawValue(string $sql, array $bindings = []): PromiseInterface
     {
-        return $this->client->fetchValue($sql, null, array_values($bindings));
+        return $this->client->fetchValue($sql, null, $bindings);
     }
 
     /**
@@ -262,7 +262,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function rawExecute(string $sql, array $bindings = []): PromiseInterface
     {
-        return $this->client->execute($sql, array_values($bindings));
+        return $this->client->execute($sql, $bindings);
     }
 
     /**

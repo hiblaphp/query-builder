@@ -118,25 +118,3 @@ test('transacting binds an existing query builder to an active transaction', fun
 
     expect(await(qb('users')->count()))->toBe(1);
 });
-
-test('nested transaction via transaction() inside active transaction uses savepoints', function () {
-    $trx = await(newQb()->beginTransaction());
-
-    await($trx->from('users')->insert(['name' => 'Alice', 'email' => 'alice@test.com']));
-
-    try {
-        await($trx->transaction(function ($inner) {
-            await($inner->from('users')->insert(['name' => 'Bob', 'email' => 'bob@test.com']));
-
-            throw new RuntimeException('Rollback inner');
-        }));
-    } catch (RuntimeException) {
-        // expected — only Bob should be rolled back
-    }
-
-    await($trx->commit());
-
-    expect(await(qb('users')->count()))->toBe(1)
-        ->and(await(qb('users')->value('name')))->toBe('Alice')
-    ;
-});

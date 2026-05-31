@@ -17,7 +17,7 @@ test('chunk processes all rows across batches', function () {
     ));
 
     $processed = 0;
-    $batches   = 0;
+    $batches = 0;
 
     await(qb('users')->chunk(3, function (array $rows) use (&$processed, &$batches) {
         $processed += count($rows);
@@ -25,7 +25,8 @@ test('chunk processes all rows across batches', function () {
     }));
 
     expect($processed)->toBe(10)
-        ->and($batches)->toBe(4); 
+        ->and($batches)->toBe(4)
+    ;
 });
 
 test('chunk stops early when callback returns false', function () {
@@ -38,6 +39,7 @@ test('chunk stops early when callback returns false', function () {
 
     await(qb('users')->chunk(3, function (array $rows) use (&$processed) {
         $processed += count($rows);
+
         return false;
     }));
 
@@ -69,6 +71,7 @@ test('chunkById stops early when callback returns false', function () {
 
     await(qb('users')->chunkById(4, function (array $rows) use (&$processed) {
         $processed += count($rows);
+
         return false;
     }));
 
@@ -100,6 +103,7 @@ test('each stops early when callback returns false', function () {
 
     await(qb('users')->each(function () use (&$count) {
         $count++;
+
         return false;
     }));
 

@@ -13,7 +13,9 @@ uses()
     })
     ->afterAll(function () {
         TestSchema::down(ClientFactory::make());
-    });
+    })
+    ->in(__DIR__)
+;
 
 function client(): SqlClientInterface
 {

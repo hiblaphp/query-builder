@@ -5,8 +5,8 @@ declare(strict_types=1);
 use Hibla\QueryBuilder\QueryBuilder;
 use Hibla\Sql\RowStream;
 use Tests\Fixtures\TestSchema;
-
 use Tests\Helpers\ClientFactory;
+
 use function Hibla\await;
 
 beforeEach(function () {
@@ -26,7 +26,7 @@ test('stream yields all rows when iterated', function () {
     ));
 
     $stream = await(qb('users')->stream());
-    $count  = 0;
+    $count = 0;
 
     foreach ($stream as $row) {
         $count++;

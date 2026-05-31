@@ -19,7 +19,8 @@ test('where with explicit operator filters correctly', function () {
     $result = await(qb('users')->where('age', '>=', 18)->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->name)->toBe('Alice');
+        ->and($result[0]->name)->toBe('Alice')
+    ;
 });
 
 test('orWhere returns rows matching either condition', function () {
@@ -58,7 +59,8 @@ test('whereNotIn excludes rows whose column value is in the given list', functio
     $result = await(qb('users')->whereNotIn('status', ['inactive'])->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->name)->toBe('Alice');
+        ->and($result[0]->name)->toBe('Alice')
+    ;
 });
 
 test('whereNull and whereNotNull filter on null column', function () {
@@ -67,11 +69,12 @@ test('whereNull and whereNotNull filter on null column', function () {
         ['name' => 'Bob',   'email' => 'b@test.com', 'age' => null],
     ]);
 
-    $withAge    = await(qb('users')->whereNotNull('age')->get());
+    $withAge = await(qb('users')->whereNotNull('age')->get());
     $withoutAge = await(qb('users')->whereNull('age')->get());
 
     expect($withAge)->toHaveCount(1)
-        ->and($withoutAge)->toHaveCount(1);
+        ->and($withoutAge)->toHaveCount(1)
+    ;
 });
 
 test('whereBetween returns only rows within the inclusive range', function () {
@@ -84,7 +87,8 @@ test('whereBetween returns only rows within the inclusive range', function () {
     $result = await(qb('users')->whereBetween('age', [25, 35])->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->name)->toBe('Bob');
+        ->and($result[0]->name)->toBe('Bob')
+    ;
 });
 
 test('whereNested groups conditions with correct precedence', function () {
@@ -93,14 +97,15 @@ test('whereNested groups conditions with correct precedence', function () {
         ['name' => 'Bob',   'email' => 'b@test.com', 'status' => 'inactive', 'age' => 30],
         ['name' => 'Carol', 'email' => 'c@test.com', 'status' => 'active',   'age' => 17],
     ]);
-    
+
     $result = await(qb('users')
         ->where('status', 'active')
         ->whereNested(fn ($q) => $q->where('age', '>=', 18))
         ->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->name)->toBe('Alice');
+        ->and($result[0]->name)->toBe('Alice')
+    ;
 });
 
 test('like performs a case-insensitive partial match', function () {
@@ -112,7 +117,8 @@ test('like performs a case-insensitive partial match', function () {
     $result = await(qb('users')->like('name', 'Alice')->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->name)->toBe('Alice Smith');
+        ->and($result[0]->name)->toBe('Alice Smith')
+    ;
 });
 
 test('whereExists filters rows that have a related record', function () {
@@ -134,7 +140,8 @@ test('whereExists filters rows that have a related record', function () {
         ->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->name)->toBe('Alice');
+        ->and($result[0]->name)->toBe('Alice')
+    ;
 });
 
 test('whereRaw accepts a raw condition with bindings', function () {
@@ -146,7 +153,8 @@ test('whereRaw accepts a raw condition with bindings', function () {
     $result = await(qb('users')->whereRaw('age > ?', [18])->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->name)->toBe('Alice');
+        ->and($result[0]->name)->toBe('Alice')
+    ;
 });
 
 test('select limits the columns returned', function () {
@@ -158,7 +166,8 @@ test('select limits the columns returned', function () {
 
     expect($result[0])->toBeObject()
         ->and((array) $result[0])->toHaveKey('name')
-        ->and((array) $result[0])->not->toHaveKey('email');
+        ->and((array) $result[0])->not->toHaveKey('email')
+    ;
 });
 
 test('orderBy sorts results correctly', function () {
@@ -168,11 +177,12 @@ test('orderBy sorts results correctly', function () {
         ['name' => 'Bob',     'email' => 'b@test.com'],
     ]);
 
-    $asc  = await(qb('users')->orderBy('name', 'ASC')->pluck('name'));
+    $asc = await(qb('users')->orderBy('name', 'ASC')->pluck('name'));
     $desc = await(qb('users')->orderBy('name', 'DESC')->pluck('name'));
 
     expect($asc)->toBe(['Alice', 'Bob', 'Charlie'])
-        ->and($desc)->toBe(['Charlie', 'Bob', 'Alice']);
+        ->and($desc)->toBe(['Charlie', 'Bob', 'Alice'])
+    ;
 });
 
 test('limit and offset paginate raw results', function () {

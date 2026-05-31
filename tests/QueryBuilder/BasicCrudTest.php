@@ -47,10 +47,6 @@ test('toArray mode returns associative arrays instead of objects', function () {
     expect($result[0])->toBeArray()->toHaveKey('name');
 });
 
-// ---------------------------------------------------------------------------
-// first()
-// ---------------------------------------------------------------------------
-
 test('first returns null when table is empty', function () {
     expect(await(qb('users')->first()))->toBeNull();
 });
@@ -64,12 +60,9 @@ test('first returns a single object', function () {
     $result = await(qb('users')->orderBy('name')->first());
 
     expect($result)->toBeObject()
-        ->and($result->name)->toBe('Alice');
+        ->and($result->name)->toBe('Alice')
+    ;
 });
-
-// ---------------------------------------------------------------------------
-// find() / findOrFail()
-// ---------------------------------------------------------------------------
 
 test('find returns the row matching the given id', function () {
     TestSchema::insertUsers(client(), [
@@ -77,10 +70,11 @@ test('find returns the row matching the given id', function () {
     ]);
 
     $inserted = await(qb('users')->first());
-    $found    = await(qb('users')->find($inserted->id));
+    $found = await(qb('users')->find($inserted->id));
 
     expect($found)->not->toBeNull()
-        ->and($found->name)->toBe('Alice');
+        ->and($found->name)->toBe('Alice')
+    ;
 });
 
 test('find returns null when id does not exist', function () {
@@ -89,16 +83,13 @@ test('find returns null when id does not exist', function () {
 
 test('findOrFail throws RecordNotFoundException when row is missing', function () {
     expect(fn () => await(qb('users')->findOrFail(99999)))
-        ->toThrow(\Hibla\QueryBuilder\Exceptions\RecordNotFoundException::class);
+        ->toThrow(Hibla\QueryBuilder\Exceptions\RecordNotFoundException::class)
+    ;
 });
-
-// ---------------------------------------------------------------------------
-// insert()
-// ---------------------------------------------------------------------------
 
 test('insert adds a single row', function () {
     await(qb('users')->insert([
-        'name'  => 'Carol',
+        'name' => 'Carol',
         'email' => 'carol@test.com',
     ]));
 
@@ -107,7 +98,7 @@ test('insert adds a single row', function () {
 
 test('insertGetId returns the new primary key', function () {
     $id = await(qb('users')->insertGetId([
-        'name'  => 'Dave',
+        'name' => 'Dave',
         'email' => 'dave@test.com',
     ]));
 
@@ -131,12 +122,13 @@ test('update modifies only matched rows and returns affected count', function ()
     ]);
 
     $affected = await(qb('users')->where('email', 'alice@test.com')->update(['status' => 'inactive']));
-    $alice    = await(qb('users')->where('email', 'alice@test.com')->first());
-    $bob      = await(qb('users')->where('email', 'bob@test.com')->first());
+    $alice = await(qb('users')->where('email', 'alice@test.com')->first());
+    $bob = await(qb('users')->where('email', 'bob@test.com')->first());
 
     expect($affected)->toBe(1)
         ->and($alice->status)->toBe('inactive')
-        ->and($bob->status)->toBe('active');
+        ->and($bob->status)->toBe('active')
+    ;
 });
 
 test('update returns zero when no rows match', function () {
@@ -154,7 +146,8 @@ test('delete removes matched rows and returns affected count', function () {
     $affected = await(qb('users')->where('email', 'alice@test.com')->delete());
 
     expect($affected)->toBe(1)
-        ->and(await(qb('users')->count()))->toBe(1);
+        ->and(await(qb('users')->count()))->toBe(1)
+    ;
 });
 
 test('delete returns zero when no rows match', function () {
@@ -187,7 +180,8 @@ test('upsert updates the conflicting row', function () {
     $user = await(qb('users')->where('email', 'alice@test.com')->first());
 
     expect(await(qb('users')->count()))->toBe(1)
-        ->and($user->status)->toBe('inactive');
+        ->and($user->status)->toBe('inactive')
+    ;
 });
 
 test('value returns a single column value from the first row', function () {

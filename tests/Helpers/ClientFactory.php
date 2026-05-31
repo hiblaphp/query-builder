@@ -21,7 +21,7 @@ final class ClientFactory
     {
         return match (self::driver()) {
             'pgsql', 'postgres' => DatabaseDriver::Postgres,
-            default             => DatabaseDriver::Mysql,
+            default => DatabaseDriver::Mysql,
         };
     }
 
@@ -34,22 +34,22 @@ final class ClientFactory
     {
         return match (self::driver()) {
             'pgsql', 'postgres' => [
-                'driver'          => 'pgsql',
-                'host'            => getenv('PGSQL_HOST')     ?: '127.0.0.1',
-                'port'            => (int) (getenv('PGSQL_PORT') ?: 5443),
-                'database'        => getenv('PGSQL_DATABASE') ?: 'test_db',
-                'username'        => getenv('PGSQL_USERNAME') ?: 'postgres',
-                'password'        => getenv('PGSQL_PASSWORD') ?: 'postgres',
+                'driver' => 'pgsql',
+                'host' => getenv('PGSQL_HOST') ?: '127.0.0.1',
+                'port' => (int) (getenv('PGSQL_PORT') ?: 5443),
+                'database' => getenv('PGSQL_DATABASE') ?: 'test_db',
+                'username' => getenv('PGSQL_USERNAME') ?: 'postgres',
+                'password' => getenv('PGSQL_PASSWORD') ?: 'postgres',
                 'max_connections' => 2,
                 'min_connections' => 1,
             ],
             default => [
-                'driver'          => 'mysql',
-                'host'            => getenv('MYSQL_HOST')     ?: '127.0.0.1',
-                'port'            => (int) (getenv('MYSQL_PORT') ?: 3306),
-                'database'        => getenv('MYSQL_DATABASE') ?: 'test_db',
-                'username'        => getenv('MYSQL_USERNAME') ?: 'test_user',
-                'password'        => getenv('MYSQL_PASSWORD') ?: 'test_password',
+                'driver' => 'mysql',
+                'host' => getenv('MYSQL_HOST') ?: '127.0.0.1',
+                'port' => (int) (getenv('MYSQL_PORT') ?: 3306),
+                'database' => getenv('MYSQL_DATABASE') ?: 'test_db',
+                'username' => getenv('MYSQL_USERNAME') ?: 'test_user',
+                'password' => getenv('MYSQL_PASSWORD') ?: 'test_password',
                 'max_connections' => 2,
                 'min_connections' => 1,
             ],

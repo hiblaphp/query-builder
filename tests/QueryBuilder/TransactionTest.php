@@ -13,7 +13,7 @@ beforeEach(function () {
 test('transaction callback commits on success', function () {
     await(newQb()->transaction(function ($trx) {
         return $trx->from('users')->insert([
-            'name'  => 'Alice',
+            'name' => 'Alice',
             'email' => 'alice@test.com',
         ]);
     }));
@@ -25,13 +25,13 @@ test('transaction rolls back automatically when callback throws', function () {
     try {
         await(newQb()->transaction(function ($trx) {
             await($trx->from('users')->insert([
-                'name'  => 'Alice',
+                'name' => 'Alice',
                 'email' => 'alice@test.com',
             ]));
 
-            throw new \RuntimeException('Forced rollback');
+            throw new RuntimeException('Forced rollback');
         }));
-    } catch (\RuntimeException) {
+    } catch (RuntimeException) {
         // expected
     }
 
@@ -42,7 +42,7 @@ test('manual beginTransaction and commit persists rows', function () {
     $trx = await(newQb()->beginTransaction());
 
     await($trx->from('users')->insert([
-        'name'  => 'Bob',
+        'name' => 'Bob',
         'email' => 'bob@test.com',
     ]));
 
@@ -55,7 +55,7 @@ test('manual beginTransaction and rollback discards rows', function () {
     $trx = await(newQb()->beginTransaction());
 
     await($trx->from('users')->insert([
-        'name'  => 'Bob',
+        'name' => 'Bob',
         'email' => 'bob@test.com',
     ]));
 
@@ -74,7 +74,8 @@ test('savepoint allows partial rollback within a transaction', function () {
     await($trx->commit());
 
     expect(await(qb('users')->count()))->toBe(1)
-        ->and(await(qb('users')->value('name')))->toBe('Alice');
+        ->and(await(qb('users')->value('name')))->toBe('Alice')
+    ;
 });
 
 test('onCommit callback fires after successful commit', function () {
@@ -109,7 +110,7 @@ test('transacting binds an existing query builder to an active transaction', fun
     $trx = await(newQb()->beginTransaction());
 
     await(qb('users')->transacting($trx)->insert([
-        'name'  => 'Carol',
+        'name' => 'Carol',
         'email' => 'carol@test.com',
     ]));
 
@@ -126,14 +127,16 @@ test('nested transaction via transaction() inside active transaction uses savepo
     try {
         await($trx->transaction(function ($inner) {
             await($inner->from('users')->insert(['name' => 'Bob', 'email' => 'bob@test.com']));
-            throw new \RuntimeException('Rollback inner');
+
+            throw new RuntimeException('Rollback inner');
         }));
-    } catch (\RuntimeException) {
+    } catch (RuntimeException) {
         // expected — only Bob should be rolled back
     }
 
     await($trx->commit());
 
     expect(await(qb('users')->count()))->toBe(1)
-        ->and(await(qb('users')->value('name')))->toBe('Alice');
+        ->and(await(qb('users')->value('name')))->toBe('Alice')
+    ;
 });

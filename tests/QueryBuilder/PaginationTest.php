@@ -17,7 +17,6 @@ afterEach(function () {
     unset($_GET['page'], $_GET['cursor']);
 });
 
-
 test('paginate returns a PaginatorInterface instance', function () {
     $paginator = await(qb('users')->paginate(15, 'http://localhost/users'));
 
@@ -37,7 +36,8 @@ test('paginate reports correct total and per-page slice', function () {
         ->and($paginator->lastPage())->toBe(3)
         ->and($paginator->currentPage())->toBe(1)
         ->and($paginator->hasMore())->toBeTrue()
-        ->and($paginator->isFirstPage())->toBeTrue();
+        ->and($paginator->isFirstPage())->toBeTrue()
+    ;
 });
 
 test('paginate on last page has no more results', function () {
@@ -47,10 +47,11 @@ test('paginate on last page has no more results', function () {
     ));
 
     $_GET['page'] = 1;
-    $paginator    = await(qb('users')->paginate(10, 'http://localhost/users'));
+    $paginator = await(qb('users')->paginate(10, 'http://localhost/users'));
 
     expect($paginator->hasMore())->toBeFalse()
-        ->and($paginator->isLastPage())->toBeTrue();
+        ->and($paginator->isLastPage())->toBeTrue()
+    ;
 });
 
 test('paginate generates correct next and previous urls', function () {
@@ -60,10 +61,11 @@ test('paginate generates correct next and previous urls', function () {
     ));
 
     $_GET['page'] = 2;
-    $paginator    = await(qb('users')->paginate(10, 'http://localhost/users'));
+    $paginator = await(qb('users')->paginate(10, 'http://localhost/users'));
 
     expect($paginator->nextPageUrl())->toContain('page=3')
-        ->and($paginator->previousPageUrl())->toContain('page=1');
+        ->and($paginator->previousPageUrl())->toContain('page=1')
+    ;
 });
 
 test('paginate returns empty items on empty table', function () {
@@ -71,7 +73,8 @@ test('paginate returns empty items on empty table', function () {
 
     expect($paginator->total())->toBe(0)
         ->and($paginator->items())->toBeEmpty()
-        ->and($paginator->hasPages())->toBeFalse();
+        ->and($paginator->hasPages())->toBeFalse()
+    ;
 });
 
 test('cursorPaginate returns a CursorPaginatorInterface instance', function () {
@@ -90,7 +93,8 @@ test('cursorPaginate has next cursor when more rows exist', function () {
 
     expect($paginator->hasMore())->toBeTrue()
         ->and($paginator->nextCursor())->not->toBeNull()
-        ->and($paginator->items())->toHaveCount(5);
+        ->and($paginator->items())->toHaveCount(5)
+    ;
 });
 
 test('cursorPaginate has no next cursor on last page', function () {
@@ -103,7 +107,8 @@ test('cursorPaginate has no next cursor on last page', function () {
 
     expect($paginator->hasMore())->toBeFalse()
         ->and($paginator->nextCursor())->toBeNull()
-        ->and($paginator->items())->toHaveCount(3);
+        ->and($paginator->items())->toHaveCount(3)
+    ;
 });
 
 test('cursorPaginate second page uses cursor from first page', function () {
@@ -115,11 +120,11 @@ test('cursorPaginate second page uses cursor from first page', function () {
     $firstPage = await(qb('users')->cursorPaginate(5, 'id', 'http://localhost/users'));
 
     $_GET['cursor'] = $firstPage->nextCursor();
-    $secondPage     = await(qb('users')->cursorPaginate(5, 'id', 'http://localhost/users'));
+    $secondPage = await(qb('users')->cursorPaginate(5, 'id', 'http://localhost/users'));
 
     expect($secondPage->items())->toHaveCount(5);
 
-    $firstIds  = array_map(fn ($u) => $u->id, $firstPage->items());
+    $firstIds = array_map(fn ($u) => $u->id, $firstPage->items());
     $secondIds = array_map(fn ($u) => $u->id, $secondPage->items());
 
     expect(array_intersect($firstIds, $secondIds))->toBeEmpty();

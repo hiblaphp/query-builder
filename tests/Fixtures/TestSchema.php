@@ -101,8 +101,8 @@ final class TestSchema
                     $row['name'],
                     $row['email'],
                     $row['status'] ?? 'active',
-                    $row['age']    ?? null,
-                    $row['score']  ?? 0,
+                    $row['age'] ?? null,
+                    $row['score'] ?? 0,
                 ]
             ));
         }
@@ -115,7 +115,7 @@ final class TestSchema
                 'INSERT INTO orders (user_id, total, status) VALUES (?, ?, ?)',
                 [
                     $row['user_id'],
-                    $row['total']  ?? 0,
+                    $row['total'] ?? 0,
                     $row['status'] ?? 'pending',
                 ]
             ));

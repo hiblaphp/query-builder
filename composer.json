@@ -35,6 +35,18 @@
     },
     "scripts": {
         "test": "./vendor/bin/pest",
+        "test:mysql": [
+            "@putenv DATABASE=mysql",
+            "./vendor/bin/pest --compact"
+        ],
+        "test:pgsql": [
+            "@putenv DATABASE=pgsql",
+            "./vendor/bin/pest --compact"
+        ],
+        "test:all": [
+            "@test:mysql",
+            "@test:pgsql"
+        ],
         "format": "./vendor/bin/pint",
         "format-test": "./vendor/bin/pint --test",
         "analyze": "./vendor/bin/phpstan analyse"

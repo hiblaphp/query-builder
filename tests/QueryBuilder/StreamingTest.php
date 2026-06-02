@@ -8,6 +8,7 @@ use Tests\Fixtures\TestSchema;
 use Tests\Helpers\ClientFactory;
 
 use function Hibla\await;
+use function Hibla\async;
 
 beforeEach(function () {
     TestSchema::truncateAll(client());
@@ -91,4 +92,77 @@ test('rawStream yields rows for a raw sql query', function () {
     }
 
     expect($rows)->toHaveCount(2);
+});
+
+test('stream maintains low memory profile when processing large result sets', function () {
+    $totalRows = 20000; 
+    
+    fwrite(STDERR, "\n[Memory Test 1] Generating {$totalRows} rows...\n");
+    $batches = array_chunk(range(1, $totalRows), 1000);
+
+    foreach ($batches as $index => $batch) {
+        $insertData = array_map(
+            fn ($i) => ['name' => "User $i", 'email' => "user$i-1@test.com", 'score' => 99.99],
+            $batch
+        );
+        await(qb('users')->insertBatch($insertData));
+        fwrite(STDERR, "  -> Inserted batch " . ($index + 1) . "/" . count($batches) . "\n");
+    }
+
+    fwrite(STDERR, "[Memory Test 1] Starting stream...\n");
+    gc_collect_cycles();
+    $startMemory = memory_get_usage();
+
+    $stream = await(qb('users')->stream(bufferSize: 100));
+    $count = 0;
+    
+    await(async(function () use ($stream, &$count) {
+        foreach ($stream as $row) {
+            $count++;
+        }
+    }));
+
+    gc_collect_cycles();
+    $endMemory = memory_get_usage();
+    $memoryUsedMb = ($endMemory - $startMemory) / 1024 / 1024;
+
+    fwrite(STDERR, sprintf("[Memory Test 1] Completed! Memory used: %.2f MB\n", $memoryUsedMb));
+
+    expect($count)->toBe($totalRows)
+        ->and($memoryUsedMb)->toBeLessThan(2.0); 
+});
+
+test('chunkStream maintains low memory profile', function () {
+    $totalRows = 20000;
+    
+    fwrite(STDERR, "\n[Memory Test 2] Generating {$totalRows} rows...\n");
+    $batches = array_chunk(range(1, $totalRows), 1000);
+    
+    foreach ($batches as $index => $batch) {
+        $insertData = array_map(
+            fn ($i) => ['name' => "User $i", 'email' => "user$i-2@test.com", 'score' => 99.99],
+            $batch
+        );
+        await(qb('users')->insertBatch($insertData));
+        fwrite(STDERR, "  -> Inserted batch " . ($index + 1) . "/" . count($batches) . "\n");
+    }
+
+    fwrite(STDERR, "[Memory Test 2] Starting chunk stream...\n");
+    gc_collect_cycles();
+    $startMemory = memory_get_usage();
+
+    $count = 0;
+    
+    await(qb('users')->chunkStream(500, function (array $batch) use (&$count) {
+        $count += count($batch);
+    }));
+
+    gc_collect_cycles();
+    $endMemory = memory_get_usage();
+    $memoryUsedMb = ($endMemory - $startMemory) / 1024 / 1024;
+
+    fwrite(STDERR, sprintf("[Memory Test 2] Completed! Memory used: %.2f MB\n", $memoryUsedMb));
+
+    expect($count)->toBe($totalRows)
+        ->and($memoryUsedMb)->toBeLessThan(2.0); 
 });

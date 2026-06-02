@@ -118,3 +118,68 @@ test('transacting binds an existing query builder to an active transaction', fun
 
     expect(await(qb('users')->count()))->toBe(1);
 });
+
+test('lockForUpdate executes successfully inside an auto-managed transaction', function () {
+    TestSchema::insertUsers(client(), [['name' => 'Alice', 'email' => 'a@test.com']]);
+
+    $result = await(newQb()->transaction(function ($trx) {
+        return await($trx->from('users')
+            ->where('name', 'Alice')
+            ->lockForUpdate()
+            ->first());
+    }));
+
+    expect($result)->not->toBeNull()
+        ->and($result->name)->toBe('Alice');
+});
+
+test('lockForShare executes successfully inside a manual transaction', function () {
+    TestSchema::insertUsers(client(), [['name' => 'Bob', 'email' => 'b@test.com']]);
+
+    $trx = await(newQb()->beginTransaction());
+
+    try {
+        $result = await($trx->from('users')
+            ->where('name', 'Bob')
+            ->lockForShare()
+            ->first());
+
+        await($trx->commit());
+
+        expect($result)->not->toBeNull()
+            ->and($result->name)->toBe('Bob');
+    } catch (\Throwable $e) {
+        await($trx->rollback());
+        throw $e;
+    }
+});
+
+test('lockForUpdate with skipLocked modifier executes without syntax errors', function () {
+    TestSchema::insertUsers(client(), [['name' => 'Charlie', 'email' => 'c@test.com']]);
+
+    $result = await(newQb()->transaction(function ($trx) {
+        return await($trx->from('users')
+            ->where('name', 'Charlie')
+            ->lockForUpdate()
+            ->skipLocked()
+            ->first());
+    }));
+
+    expect($result)->not->toBeNull()
+        ->and($result->name)->toBe('Charlie');
+});
+
+test('lockForUpdate with noWait modifier executes without syntax errors', function () {
+    TestSchema::insertUsers(client(), [['name' => 'Dave', 'email' => 'd@test.com']]);
+
+    $result = await(newQb()->transaction(function ($trx) {
+        return await($trx->from('users')
+            ->where('name', 'Dave')
+            ->lockForUpdate()
+            ->noWait()
+            ->first());
+    }));
+
+    expect($result)->not->toBeNull()
+        ->and($result->name)->toBe('Dave');
+});

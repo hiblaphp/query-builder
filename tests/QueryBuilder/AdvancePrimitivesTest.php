@@ -67,7 +67,6 @@ test('union combines multiple query results without duplicates', function () {
         ->union(fn ($q) => $q->from('users')->select('status'))
         ->get());
 
-    // UNION removes duplicates, so only 1 row ('active') should return
     expect($result)->toHaveCount(1)
         ->and($result[0]->status)->toBe('active');
 });
@@ -83,7 +82,6 @@ test('unionAll combines multiple query results keeping duplicates', function () 
         ->unionAll(fn ($q) => $q->from('users')->select('status'))
         ->get());
 
-    // UNION ALL keeps duplicates, so 4 rows (2 from original + 2 from union)
     expect($result)->toHaveCount(4);
 });
 
@@ -94,7 +92,6 @@ test('whereGroup wraps conditions in parentheses', function () {
         ['name' => 'Charlie', 'email' => 'c@test.com', 'status' => 'pending'],
     ]);
 
-    // SELECT * FROM users WHERE name = 'Alice' OR (status = 'banned' AND email = 'b@test.com')
     $result = await(qb('users')
         ->where('name', 'Alice')
         ->whereGroup(function($q) {
@@ -107,8 +104,8 @@ test('whereGroup wraps conditions in parentheses', function () {
 
 test('whereNotExists filters out records that match subquery', function () {
     TestSchema::insertUsers(client(), [
-        ['name' => 'Alice', 'email' => 'a@test.com'], // Has order
-        ['name' => 'Bob', 'email' => 'b@test.com'],   // No order
+        ['name' => 'Alice', 'email' => 'a@test.com'], 
+        ['name' => 'Bob', 'email' => 'b@test.com'],  
     ]);
 
     $alice = await(qb('users')->where('name', 'Alice')->first());
@@ -124,9 +121,9 @@ test('whereNotExists filters out records that match subquery', function () {
 
 test('orWhereExists acts as an alternative subquery match', function () {
     TestSchema::insertUsers(client(), [
-        ['name' => 'Alice', 'email' => 'a@test.com', 'status' => 'active'], // Matches first condition
-        ['name' => 'Bob', 'email' => 'b@test.com', 'status' => 'banned'],   // Has order (Matches second condition)
-        ['name' => 'Charlie', 'email' => 'c@test.com', 'status' => 'banned'], // Neither
+        ['name' => 'Alice', 'email' => 'a@test.com', 'status' => 'active'], 
+        ['name' => 'Bob', 'email' => 'b@test.com', 'status' => 'banned'],  
+        ['name' => 'Charlie', 'email' => 'c@test.com', 'status' => 'banned'], 
     ]);
 
     $bob = await(qb('users')->where('name', 'Bob')->first());

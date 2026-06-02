@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Hibla\Sql\Exceptions\ConstraintViolationException;
+use Hibla\Sql\Exceptions\PreparedException;
 use Hibla\Sql\Exceptions\QueryException;
 use Hibla\Sql\Exceptions\TransactionException;
 use Tests\Fixtures\TestSchema;
@@ -60,14 +61,20 @@ test('AST throws InvalidArgumentException when passing named bindings to whereRa
         ->toThrow(InvalidArgumentException::class, 'Query builder primitives only support positional bindings');
 });
 
-test('QueryBuilder raw() throws InvalidArgumentException if named parameter is missing value', function () {
+test('QueryBuilder raw() throws PreparedException if named parameter is missing value', function () {
     expect(fn () => await(qb('users')->raw('SELECT * FROM users WHERE email = :email', ['wrong_key' => 'test'])))
-        ->toThrow(InvalidArgumentException::class);
+        ->toThrow(
+            PreparedException::class, 
+            'Missing value for named parameter: :email'
+        );
 });
 
-test('QueryBuilder raw() throws InvalidArgumentException if mixing named and positional parameters', function () {
+test('QueryBuilder raw() throws PreparedException if mixing named and positional parameters', function () {
     expect(fn () => await(qb('users')->raw('SELECT * FROM users WHERE id = ? OR email = :email', [1, 'email' => 'a@test.com'])))
-        ->toThrow(InvalidArgumentException::class);
+        ->toThrow(
+            PreparedException::class, 
+            'Cannot mix named and positional parameters in the same query.'
+        );
 });
 
 test('cursor pagination ignores invalid base64 cursor and defaults to page 1', function () {

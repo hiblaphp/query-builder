@@ -97,7 +97,6 @@ test('rawStream yields rows for a raw sql query', function () {
 test('stream maintains low memory profile when processing large result sets', function () {
     $totalRows = 20000; 
     
-    fwrite(STDERR, "\n[Memory Test 1] Generating {$totalRows} rows...\n");
     $batches = array_chunk(range(1, $totalRows), 1000);
 
     foreach ($batches as $index => $batch) {
@@ -105,11 +104,10 @@ test('stream maintains low memory profile when processing large result sets', fu
             fn ($i) => ['name' => "User $i", 'email' => "user$i-1@test.com", 'score' => 99.99],
             $batch
         );
+
         await(qb('users')->insertBatch($insertData));
-        fwrite(STDERR, "  -> Inserted batch " . ($index + 1) . "/" . count($batches) . "\n");
     }
 
-    fwrite(STDERR, "[Memory Test 1] Starting stream...\n");
     gc_collect_cycles();
     $startMemory = memory_get_usage();
 
@@ -126,8 +124,6 @@ test('stream maintains low memory profile when processing large result sets', fu
     $endMemory = memory_get_usage();
     $memoryUsedMb = ($endMemory - $startMemory) / 1024 / 1024;
 
-    fwrite(STDERR, sprintf("[Memory Test 1] Completed! Memory used: %.2f MB\n", $memoryUsedMb));
-
     expect($count)->toBe($totalRows)
         ->and($memoryUsedMb)->toBeLessThan(2.0); 
 });
@@ -135,7 +131,6 @@ test('stream maintains low memory profile when processing large result sets', fu
 test('chunkStream maintains low memory profile', function () {
     $totalRows = 20000;
     
-    fwrite(STDERR, "\n[Memory Test 2] Generating {$totalRows} rows...\n");
     $batches = array_chunk(range(1, $totalRows), 1000);
     
     foreach ($batches as $index => $batch) {
@@ -144,10 +139,8 @@ test('chunkStream maintains low memory profile', function () {
             $batch
         );
         await(qb('users')->insertBatch($insertData));
-        fwrite(STDERR, "  -> Inserted batch " . ($index + 1) . "/" . count($batches) . "\n");
     }
 
-    fwrite(STDERR, "[Memory Test 2] Starting chunk stream...\n");
     gc_collect_cycles();
     $startMemory = memory_get_usage();
 
@@ -160,8 +153,6 @@ test('chunkStream maintains low memory profile', function () {
     gc_collect_cycles();
     $endMemory = memory_get_usage();
     $memoryUsedMb = ($endMemory - $startMemory) / 1024 / 1024;
-
-    fwrite(STDERR, sprintf("[Memory Test 2] Completed! Memory used: %.2f MB\n", $memoryUsedMb));
 
     expect($count)->toBe($totalRows)
         ->and($memoryUsedMb)->toBeLessThan(2.0); 

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Hibla\Sql\Exceptions\DeadlockException;
+use Hibla\Sql\TransactionOptions;
 use Tests\Fixtures\TestSchema;
 
 use function Hibla\await;
@@ -186,4 +188,61 @@ test('lockForUpdate with noWait modifier executes without syntax errors', functi
 
     expect($result)->not->toBeNull()
         ->and($result->name)->toBe('Dave');
+});
+
+test('transaction auto-retries on DeadlockException and succeeds on subsequent attempt', function () {
+    $attempts = 0;
+    $options = new TransactionOptions(attempts: 3);
+
+    await(newQb()->transaction(function ($trx) use (&$attempts) {
+        $attempts++;
+
+        if ($attempts === 1) {
+            throw new DeadlockException('Deadlock mock');
+        }
+
+        await($trx->from('users')->insert([
+            'name' => 'RetrySuccess',
+            'email' => 'retry@test.com',
+        ]));
+    }, $options));
+
+    expect($attempts)->toBe(2);
+
+    $count = await(qb('users')->where('email', 'retry@test.com')->count());
+    expect($count)->toBe(1);
+});
+
+test('transaction does not retry on non-retryable exceptions', function () {
+    $attempts = 0;
+    $options = new TransactionOptions(attempts: 3);
+
+    try {
+        await(newQb()->transaction(function ($trx) use (&$attempts) {
+            $attempts++;
+            throw new \RuntimeException('Permanent application failure');
+        }, $options));
+        test()->fail('Should have thrown an exception');
+    } catch (\RuntimeException $e) {
+        expect($e->getMessage())->toBe('Permanent application failure');
+    }
+
+    expect($attempts)->toBe(1);
+});
+
+test('transaction throws the final exception when retry attempts are exhausted', function () {
+    $attempts = 0;
+    $options = new TransactionOptions(attempts: 3);
+
+    try {
+        await(newQb()->transaction(function ($trx) use (&$attempts) {
+            $attempts++;
+            throw new DeadlockException('Deadlock mock ' . $attempts);
+        }, $options));
+        test()->fail('Should have thrown an exception');
+    } catch (DeadlockException $e) {
+        expect($e->getMessage())->toBe('Deadlock mock 3');
+    }
+
+    expect($attempts)->toBe(3);
 });

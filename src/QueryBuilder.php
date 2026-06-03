@@ -212,13 +212,13 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     }
 
     /**
-     * {@inheritdoc}
-     */
+       * {@inheritdoc}
+       */
     public function stream(int $bufferSize = 100): PromiseInterface
     {
         $sql = $this->buildSelectQuery();
 
-        $promise = $this->client->stream($sql, $this->getCompiledBindings(), $bufferSize)
+        $promise = $this->client->stream($sql, array_values($this->getCompiledBindings()), $bufferSize)
             ->then(function (RowStream $stream) {
                 if ($this->returnAsObject) {
                     return new MappedRowStream($stream, static fn (array $row): object => (object) $row);
@@ -805,22 +805,22 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     /**
      * {@inheritdoc}
      */
-    public function cursorPaginate(int $perPage = 15, string $cursorColumn = 'id', ?string $path = null): PromiseInterface
+    public function cursorPaginate(int $perPage = 15, string|array $cursorColumns = 'id', ?string $path = null): PromiseInterface
     {
         $cursor = RequestHelper::getCursor();
         $path ??= RequestHelper::getCurrentPath();
 
-        $query = CursorPaginationHelper::applyCursor($this, $cursor, $cursorColumn);
+        $query = CursorPaginationHelper::applyCursor($this, $cursor, $cursorColumns);
 
-        $promise = $query->limit($perPage + 1)->get()->then(function (array $results) use ($perPage, $cursorColumn, $path) {
+        $promise = $query->limit($perPage + 1)->get()->then(function (array $results) use ($perPage, $cursorColumns, $path) {
             $hasMore = \count($results) > $perPage;
             if ($hasMore) {
                 array_pop($results);
             }
 
-            $nextCursor = CursorPaginationHelper::resolveNextCursor($results, $cursorColumn, $hasMore);
+            $nextCursor = CursorPaginationHelper::resolveNextCursor($results, $cursorColumns, $hasMore);
 
-            return new CursorPaginator($results, $perPage, $nextCursor, $cursorColumn, $path);
+            return new CursorPaginator($results, $perPage, $nextCursor, $cursorColumns, $path);
         });
 
         return Promise::propagateCancellation($promise);

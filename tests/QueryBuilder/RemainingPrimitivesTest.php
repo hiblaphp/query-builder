@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Tests\Fixtures\TestSchema;
+
 use function Hibla\await;
 
 beforeEach(function () {
@@ -13,7 +14,7 @@ test('orWhereNotExists applies alternative negative subquery', function () {
     TestSchema::insertUsers(client(), [
         ['name' => 'Alice', 'email' => 'a@test.com', 'status' => 'active'],
         ['name' => 'Bob', 'email' => 'b@test.com', 'status' => 'banned'],
-        ['name' => 'Charlie', 'email' => 'c@test.com', 'status' => 'banned']
+        ['name' => 'Charlie', 'email' => 'c@test.com', 'status' => 'banned'],
     ]);
 
     $charlie = await(qb('users')->where('name', 'Charlie')->first());
@@ -21,13 +22,14 @@ test('orWhereNotExists applies alternative negative subquery', function () {
 
     $result = await(qb('users')
         ->where('status', 'active')
-        ->orWhereNotExists(fn($q) => $q->from('orders')->whereRaw('orders.user_id = users.id'))
+        ->orWhereNotExists(fn ($q) => $q->from('orders')->whereRaw('orders.user_id = users.id'))
         ->orderBy('name')
         ->get());
 
     expect($result)->toHaveCount(2)
         ->and($result[0]->name)->toBe('Alice')
-        ->and($result[1]->name)->toBe('Bob');
+        ->and($result[1]->name)->toBe('Bob')
+    ;
 });
 
 test('whereNested and orWhereNested apply proper logical grouping', function () {
@@ -39,14 +41,15 @@ test('whereNested and orWhereNested apply proper logical grouping', function () 
     ]);
 
     $result = await(qb('users')
-        ->whereNested(fn($q) => $q->where('status', 'active')->where('age', '>', 18))
-        ->orWhereNested(fn($q) => $q->where('status', 'banned')->where('age', '>', 35))
+        ->whereNested(fn ($q) => $q->where('status', 'active')->where('age', '>', 18))
+        ->orWhereNested(fn ($q) => $q->where('status', 'banned')->where('age', '>', 35))
         ->orderBy('name')
         ->get());
 
     expect($result)->toHaveCount(2)
         ->and($result[0]->name)->toBe('Alice')
-        ->and($result[1]->name)->toBe('Dave');
+        ->and($result[1]->name)->toBe('Dave')
+    ;
 });
 
 test('addSelect appends to existing select clauses', function () {
@@ -64,14 +67,15 @@ test('addSelect appends to existing select clauses', function () {
         ->toHaveKey('name')
         ->toHaveKey('email')
         ->toHaveKey('age')
-        ->not->toHaveKey('id'); 
+        ->not->toHaveKey('id')
+    ;
 });
 
 test('orWhereColumn applies alternative column comparison', function () {
     TestSchema::insertUsers(client(), [
-        ['name' => 'Alice', 'email' => 'alice@test.com'], 
+        ['name' => 'Alice', 'email' => 'alice@test.com'],
         ['name' => 'Bob', 'email' => 'b@test.com', 'status' => 'pending'],
-        ['name' => 'Charlie', 'email' => 'Charlie'] 
+        ['name' => 'Charlie', 'email' => 'Charlie'],
     ]);
 
     $result = await(qb('users')
@@ -82,7 +86,8 @@ test('orWhereColumn applies alternative column comparison', function () {
 
     expect($result)->toHaveCount(2)
         ->and($result[0]->name)->toBe('Bob')
-        ->and($result[1]->name)->toBe('Charlie');
+        ->and($result[1]->name)->toBe('Charlie')
+    ;
 });
 
 test('orWhereRaw applies raw alternative conditions safely', function () {
@@ -100,15 +105,16 @@ test('orWhereRaw applies raw alternative conditions safely', function () {
 
     expect($result)->toHaveCount(2)
         ->and($result[0]->name)->toBe('Alice')
-        ->and($result[1]->name)->toBe('Charlie');
+        ->and($result[1]->name)->toBe('Charlie')
+    ;
 });
 
 test('orHaving and orHavingRaw apply alternative aggregations', function () {
     TestSchema::insertOrders(client(), [
-        ['user_id' => 1, 'total' => 10], 
-        ['user_id' => 2, 'total' => 100], 
+        ['user_id' => 1, 'total' => 10],
+        ['user_id' => 2, 'total' => 100],
         ['user_id' => 3, 'total' => 10],
-        ['user_id' => 3, 'total' => 10], 
+        ['user_id' => 3, 'total' => 10],
     ]);
 
     $result = await(qb('orders')
@@ -121,7 +127,8 @@ test('orHaving and orHavingRaw apply alternative aggregations', function () {
 
     expect($result)->toHaveCount(2)
         ->and((int) $result[0]->user_id)->toBe(2)
-        ->and((int) $result[1]->user_id)->toBe(3);
+        ->and((int) $result[1]->user_id)->toBe(3)
+    ;
 });
 
 test('resetWhere clears all conditions and bindings', function () {

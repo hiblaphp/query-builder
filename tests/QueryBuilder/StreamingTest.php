@@ -7,8 +7,8 @@ use Hibla\Sql\RowStream;
 use Tests\Fixtures\TestSchema;
 use Tests\Helpers\ClientFactory;
 
-use function Hibla\await;
 use function Hibla\async;
+use function Hibla\await;
 
 beforeEach(function () {
     TestSchema::truncateAll(client());
@@ -95,8 +95,8 @@ test('rawStream yields rows for a raw sql query', function () {
 });
 
 test('stream maintains low memory profile when processing large result sets', function () {
-    $totalRows = 20000; 
-    
+    $totalRows = 20000;
+
     $batches = array_chunk(range(1, $totalRows), 1000);
 
     foreach ($batches as $index => $batch) {
@@ -113,7 +113,7 @@ test('stream maintains low memory profile when processing large result sets', fu
 
     $stream = await(qb('users')->stream(bufferSize: 100));
     $count = 0;
-    
+
     await(async(function () use ($stream, &$count) {
         foreach ($stream as $row) {
             $count++;
@@ -125,14 +125,15 @@ test('stream maintains low memory profile when processing large result sets', fu
     $memoryUsedMb = ($endMemory - $startMemory) / 1024 / 1024;
 
     expect($count)->toBe($totalRows)
-        ->and($memoryUsedMb)->toBeLessThan(2.0); 
+        ->and($memoryUsedMb)->toBeLessThan(2.0)
+    ;
 });
 
 test('chunkStream maintains low memory profile', function () {
     $totalRows = 20000;
-    
+
     $batches = array_chunk(range(1, $totalRows), 1000);
-    
+
     foreach ($batches as $index => $batch) {
         $insertData = array_map(
             fn ($i) => ['name' => "User $i", 'email' => "user$i-2@test.com", 'score' => 99.99],
@@ -145,7 +146,7 @@ test('chunkStream maintains low memory profile', function () {
     $startMemory = memory_get_usage();
 
     $count = 0;
-    
+
     await(qb('users')->chunkStream(500, function (array $batch) use (&$count) {
         $count += count($batch);
     }));
@@ -155,5 +156,6 @@ test('chunkStream maintains low memory profile', function () {
     $memoryUsedMb = ($endMemory - $startMemory) / 1024 / 1024;
 
     expect($count)->toBe($totalRows)
-        ->and($memoryUsedMb)->toBeLessThan(2.0); 
+        ->and($memoryUsedMb)->toBeLessThan(2.0)
+    ;
 });

@@ -259,7 +259,11 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
     /**
      * Paginate with cursor-based pagination.
      *
+     * @param int $perPage
+     * @param string|array<int|string, string> $cursorColumns Columns to paginate by (e.g. ['score' => 'desc', 'id' => 'asc'])
+     * @param string|null $path
+     *
      * @return PromiseInterface<CursorPaginatorInterface>
      */
-    public function cursorPaginate(int $perPage = 15, string $cursorColumn = 'id', ?string $path = null): PromiseInterface;
+    public function cursorPaginate(int $perPage = 15, string|array $cursorColumns = 'id', ?string $path = null): PromiseInterface;
 }

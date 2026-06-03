@@ -129,3 +129,39 @@ test('cursorPaginate second page uses cursor from first page', function () {
 
     expect(array_intersect($firstIds, $secondIds))->toBeEmpty();
 });
+
+test('cursorPaginate supports multi-column tie-breakers to prevent skipped rows', function () {
+    TestSchema::insertUsers(client(), [
+        ['name' => 'Alice', 'email' => 'alice@test.com', 'score' => 100],
+        ['name' => 'Bob', 'email' => 'bob@test.com', 'score' => 100],
+        ['name' => 'Charlie', 'email' => 'charlie@test.com', 'score' => 100],
+        ['name' => 'Dave', 'email' => 'dave@test.com', 'score' => 100],
+        ['name' => 'Eve', 'email' => 'eve@test.com', 'score' => 100],
+    ]);
+
+    $page1 = await(qb('users')
+        ->orderBy('score', 'asc')
+        ->orderBy('id', 'asc')
+        ->cursorPaginate(2, ['score' => 'asc', 'id' => 'asc'], 'http://localhost/users'));
+
+    expect($page1->items())->toHaveCount(2)
+        ->and($page1->items()[0]->name)->toBe('Alice')
+        ->and($page1->items()[1]->name)->toBe('Bob')
+        ->and($page1->hasMore())->toBeTrue()
+    ;
+
+    $_GET['cursor'] = $page1->nextCursor();
+
+    $page2 = await(qb('users')
+        ->orderBy('score', 'asc')
+        ->orderBy('id', 'asc')
+        ->cursorPaginate(2, ['score' => 'asc', 'id' => 'asc'], 'http://localhost/users'));
+
+    expect($page2->items())->toHaveCount(2)
+        ->and($page2->items()[0]->name)->toBe('Charlie')
+        ->and($page2->items()[1]->name)->toBe('Dave')
+        ->and($page2->hasMore())->toBeTrue()
+    ;
+
+    unset($_GET['cursor']);
+});

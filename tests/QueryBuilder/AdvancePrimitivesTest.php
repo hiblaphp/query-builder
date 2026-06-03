@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Tests\Fixtures\TestSchema;
+
 use function Hibla\await;
 
 beforeEach(function () {
@@ -19,24 +20,26 @@ test('groupBy and having filter aggregated results', function () {
     $result = await(qb('orders')
         ->selectRaw('user_id, SUM(total) as grand_total')
         ->groupBy('user_id')
-        ->havingRaw('SUM(total) > ?', [100]) 
+        ->havingRaw('SUM(total) > ?', [100])
         ->get());
 
     expect($result)->toHaveCount(1)
         ->and((int) $result[0]->user_id)->toBe(1)
-        ->and((float) $result[0]->grand_total)->toBe(150.0);
+        ->and((float) $result[0]->grand_total)->toBe(150.0)
+    ;
 });
 
 test('whereColumn compares two columns in the same table', function () {
     TestSchema::insertUsers(client(), [
-        ['name' => 'Alice', 'email' => 'Alice'], 
-        ['name' => 'Bob', 'email' => 'bob@test.com'] 
+        ['name' => 'Alice', 'email' => 'Alice'],
+        ['name' => 'Bob', 'email' => 'bob@test.com'],
     ]);
 
     $result = await(qb('users')->whereColumn('name', 'email')->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->name)->toBe('Alice');
+        ->and($result[0]->name)->toBe('Alice')
+    ;
 });
 
 test('whereSub filters based on a subquery', function () {
@@ -53,7 +56,8 @@ test('whereSub filters based on a subquery', function () {
         ->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->name)->toBe('Alice');
+        ->and($result[0]->name)->toBe('Alice')
+    ;
 });
 
 test('union combines multiple query results without duplicates', function () {
@@ -68,7 +72,8 @@ test('union combines multiple query results without duplicates', function () {
         ->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->status)->toBe('active');
+        ->and($result[0]->status)->toBe('active')
+    ;
 });
 
 test('unionAll combines multiple query results keeping duplicates', function () {
@@ -94,7 +99,7 @@ test('whereGroup wraps conditions in parentheses', function () {
 
     $result = await(qb('users')
         ->where('name', 'Alice')
-        ->whereGroup(function($q) {
+        ->whereGroup(function ($q) {
             return $q->where('status', 'banned')->where('email', 'b@test.com');
         }, 'OR')
         ->get());
@@ -104,8 +109,8 @@ test('whereGroup wraps conditions in parentheses', function () {
 
 test('whereNotExists filters out records that match subquery', function () {
     TestSchema::insertUsers(client(), [
-        ['name' => 'Alice', 'email' => 'a@test.com'], 
-        ['name' => 'Bob', 'email' => 'b@test.com'],  
+        ['name' => 'Alice', 'email' => 'a@test.com'],
+        ['name' => 'Bob', 'email' => 'b@test.com'],
     ]);
 
     $alice = await(qb('users')->where('name', 'Alice')->first());
@@ -116,14 +121,15 @@ test('whereNotExists filters out records that match subquery', function () {
         ->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->name)->toBe('Bob');
+        ->and($result[0]->name)->toBe('Bob')
+    ;
 });
 
 test('orWhereExists acts as an alternative subquery match', function () {
     TestSchema::insertUsers(client(), [
-        ['name' => 'Alice', 'email' => 'a@test.com', 'status' => 'active'], 
-        ['name' => 'Bob', 'email' => 'b@test.com', 'status' => 'banned'],  
-        ['name' => 'Charlie', 'email' => 'c@test.com', 'status' => 'banned'], 
+        ['name' => 'Alice', 'email' => 'a@test.com', 'status' => 'active'],
+        ['name' => 'Bob', 'email' => 'b@test.com', 'status' => 'banned'],
+        ['name' => 'Charlie', 'email' => 'c@test.com', 'status' => 'banned'],
     ]);
 
     $bob = await(qb('users')->where('name', 'Bob')->first());
@@ -137,7 +143,8 @@ test('orWhereExists acts as an alternative subquery match', function () {
 
     expect($result)->toHaveCount(2)
         ->and($result[0]->name)->toBe('Alice')
-        ->and($result[1]->name)->toBe('Bob');
+        ->and($result[1]->name)->toBe('Bob')
+    ;
 });
 
 test('havingRaw safely accepts bindings', function () {

@@ -215,5 +215,6 @@ test('pluck with key returns a column-keyed map', function () {
 
     expect($map)
         ->toHaveKey('alice@test.com', 'Alice')
-        ->toHaveKey('bob@test.com', 'Bob');
+        ->toHaveKey('bob@test.com', 'Bob')
+    ;
 });

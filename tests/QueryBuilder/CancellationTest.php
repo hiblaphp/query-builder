@@ -40,13 +40,6 @@ function getSleepQuery(DatabaseDriver $driver, int $seconds): string
         : "SELECT SLEEP({$seconds}) AS sleep_result";
 }
 
-function getSlowQuery(int $seconds): string
-{
-    return ClientFactory::driverEnum() === DatabaseDriver::Postgres
-        ? "SELECT pg_sleep({$seconds})"
-        : "SELECT SLEEP({$seconds})";
-}
-
 beforeEach(function () {
     TestSchema::truncateAll(ClientFactory::make());
 });
@@ -72,7 +65,6 @@ test('query promise cancellation propagates to the server and cleanly recovers t
         }
 
         $durationMs = (hrtime(true) - $startTime) / 1e6;
-
         expect($durationMs)->toBeLessThan(2000);
 
         $result = await($qb->raw('SELECT 1 as val'));
@@ -123,7 +115,7 @@ test('stream cancellation propagates to the server and stops delivery', function
     [$client, $qb, $driver] = createCancellationClient(enableServerSideCancellation: true);
 
     try {
-        $rows = array_map(fn($i) => ['name' => "User $i", 'email' => "stream$i@test.com"], range(1, 100));
+        $rows = array_map(fn ($i) => ['name' => "User $i", 'email' => "stream$i@test.com"], range(1, 100));
         await($qb->from('users')->insertBatch($rows));
 
         $count = 0;
@@ -176,8 +168,6 @@ test('cancellation without server-side support drops the connection safely', fun
 
         $durationMs = (hrtime(true) - $startTime) / 1e6;
 
-        // Postgres pg_close() blocks synchronously if a query is active.
-        // MySQL driver handles it non-blockingly. We adjust assertions accordingly.
         if ($driver !== DatabaseDriver::Postgres) {
             expect($durationMs)->toBeLessThan(1500);
         }
@@ -194,7 +184,7 @@ test('returning false inside each() gracefully cancels the stream without throwi
     [$client, $qb, $driver] = createCancellationClient(enableServerSideCancellation: true);
 
     try {
-        $rows = array_map(fn($i) => ['name' => "User $i", 'email' => "internal$i@test.com"], range(1, 100));
+        $rows = array_map(fn ($i) => ['name' => "User $i", 'email' => "internal$i@test.com"], range(1, 100));
         await($qb->from('users')->insertBatch($rows));
 
         $count = 0;
@@ -222,7 +212,7 @@ test('returning false inside chunkStream() gracefully cancels the stream without
     [$client, $qb, $driver] = createCancellationClient(enableServerSideCancellation: true);
 
     try {
-        $rows = array_map(fn($i) => ['name' => "User $i", 'email' => "chunk$i@test.com"], range(1, 100));
+        $rows = array_map(fn ($i) => ['name' => "User $i", 'email' => "chunk$i@test.com"], range(1, 100));
         await($qb->from('users')->insertBatch($rows));
 
         $processedRows = 0;
@@ -240,7 +230,8 @@ test('returning false inside chunkStream() gracefully cancels the stream without
         await($promise);
 
         expect($chunkCount)->toBe(2)
-            ->and($processedRows)->toBe(20);
+            ->and($processedRows)->toBe(20)
+        ;
 
         $result = await($qb->raw('SELECT 1 as val'));
         $val = is_object($result[0]) ? $result[0]->val : $result[0]['val'];
@@ -254,7 +245,7 @@ test('returning false inside chunk() gracefully halts pagination without throwin
     [$client, $qb, $driver] = createCancellationClient(enableServerSideCancellation: true);
 
     try {
-        $rows = array_map(fn($i) => ['name' => "User $i", 'email' => "pagechunk$i@test.com"], range(1, 50));
+        $rows = array_map(fn ($i) => ['name' => "User $i", 'email' => "pagechunk$i@test.com"], range(1, 50));
         await($qb->from('users')->insertBatch($rows));
 
         $processedRows = 0;
@@ -272,7 +263,8 @@ test('returning false inside chunk() gracefully halts pagination without throwin
         await($promise);
 
         expect($chunkCount)->toBe(3)
-            ->and($processedRows)->toBe(30);
+            ->and($processedRows)->toBe(30)
+        ;
 
         $result = await($qb->raw('SELECT 1 as val'));
         $val = is_object($result[0]) ? $result[0]->val : $result[0]['val'];
@@ -283,99 +275,157 @@ test('returning false inside chunk() gracefully halts pagination without throwin
 });
 
 test('returning false inside chunkById() gracefully halts pagination without throwing', function () {
-    TestSchema::insertUsers(client(), array_map(
-        fn($i) => ['name' => "User $i", 'email' => "user$i@test.com", 'score' => 10],
-        range(1, 10)
-    ));
+    [$client, $qb, $driver] = createCancellationClient(enableServerSideCancellation: true);
 
-    $count = 0;
-    $promise = qb('users')->chunkById(3, function (array $batch) use (&$count) {
-        $count += count($batch);
-        if ($count >= 6) {
-            return false;
-        }
-    });
+    try {
+        $rows = array_map(fn ($i) => ['name' => "User $i", 'email' => "user$i@test.com", 'score' => 10], range(1, 10));
+        await($qb->from('users')->insertBatch($rows));
 
-    await($promise);
+        $count = 0;
+        $promise = $qb->from('users')->chunkById(3, function (array $batch) use (&$count) {
+            $count += count($batch);
+            if ($count >= 6) {
+                return false;
+            }
+        });
 
-    expect($count)->toBe(6)
-        ->and($promise->isCancelled())->toBeFalse();
+        await($promise);
+
+        expect($count)->toBe(6)
+            ->and($promise->isCancelled())->toBeFalse()
+        ;
+
+        $result = await($qb->raw('SELECT 1 as val'));
+        $val = is_object($result[0]) ? $result[0]->val : $result[0]['val'];
+        expect((int) $val)->toBe(1);
+    } finally {
+        await($client->closeAsync());
+    }
 });
 
 test('calling cancel multiple times is idempotent and does not break the pool', function () {
-    $sql = getSlowQuery(2);
-    $promise = qb('users')->raw($sql);
-
-    $promise->cancel();
-    $promise->cancel();
-    $promise->cancel();
+    [$client, $qb, $driver] = createCancellationClient(enableServerSideCancellation: true);
 
     try {
-        await($promise);
-    } catch (CancelledException) {
-        // Expected
-    }
+        $sql = getSleepQuery($driver, 2);
 
-    $recovery = await(qb('users')->raw('SELECT 1 AS ok'));
-    expect((int)$recovery[0]->ok)->toBe(1);
+        $promise = $qb->raw($sql);
+
+        $promise->cancel();
+        $promise->cancel();
+        $promise->cancel();
+
+        try {
+            await($promise);
+        } catch (CancelledException) {
+            // expected
+        }
+
+        $recovery = await($qb->raw('SELECT 1 AS ok'));
+        $val = is_object($recovery[0]) ? $recovery[0]->ok : $recovery[0]['ok'];
+        expect((int)$val)->toBe(1);
+    } finally {
+        await($client->closeAsync());
+    }
 });
 
 test('concurrent mass cancellation safely kills all queries and recovers the pool', function () {
-    $sql = getSlowQuery(3);
+    $config = ClientFactory::config();
+    $config['enable_server_side_cancellation'] = true;
+    $config['max_connections'] = 3;
+    $config['min_connections'] = 3;
 
-    $promises = [
-        qb('users')->raw($sql),
-        qb('users')->raw($sql),
-        qb('users')->raw($sql),
-    ];
+    $driver = ClientFactory::driverEnum();
+    $client = $driver === DatabaseDriver::Postgres ? new PostgresClient($config) : new MysqlClient($config);
+    $qb = new QueryBuilder($client, $driver);
 
-    await(delay(0.1));
+    try {
+        $sql = getSleepQuery($driver, 5);
 
-    foreach ($promises as $promise) {
-        $promise->cancel();
+        $promises = [
+            $qb->raw($sql),
+            $qb->raw($sql),
+            $qb->raw($sql),
+        ];
+
+        Loop::addTimer(0.2, function () use ($promises) {
+            foreach ($promises as $promise) {
+                $promise->cancel();
+            }
+        });
+
+        foreach ($promises as $promise) {
+            try {
+                await($promise);
+            } catch (CancelledException $e) {
+                // expected
+            }
+        }
+
+        $recoveries = await(Promise::all([
+            $qb->raw('SELECT 1'),
+            $qb->raw('SELECT 1'),
+            $qb->raw('SELECT 1'),
+        ]));
+
+        expect($recoveries)->toHaveCount(3);
+    } finally {
+        await($client->closeAsync());
     }
-    await(delay(0.2));
-
-    $recoveries = await(Promise::all([
-        qb('users')->raw('SELECT 1'),
-        qb('users')->raw('SELECT 1'),
-        qb('users')->raw('SELECT 1'),
-    ]));
-
-    expect($recoveries)->toHaveCount(3);
 });
 
 test('commit and rollback promises are uninterruptible', function () {
-    $tx = await(newQb()->beginTransaction());
+    [$client, $qb, $driver] = createCancellationClient(enableServerSideCancellation: true);
 
-    await($tx->from('users')->insert(['name' => 'Cancel Test', 'email' => 'cancel@test.com']));
+    try {
+        $tx = await($qb->beginTransaction());
 
-    $commitPromise = $tx->commit();
+        await($tx->from('users')->insert(['name' => 'Cancel Test', 'email' => 'cancel@test.com']));
 
-    $commitPromise->cancel();
+        $commitPromise = $tx->commit();
 
-    await(delay(0.1));
+        $commitPromise->cancel();
 
-    $count = await(qb('users')->where('email', 'cancel@test.com')->count());
-    expect($count)->toBe(1);
+        try {
+            await($commitPromise);
+        } catch (CancelledException $e) {
+            //expected
+        }
+
+        await(delay(0.05));
+
+        $count = await($qb->from('users')->where('email', 'cancel@test.com')->count());
+        expect($count)->toBe(1);
+    } finally {
+        await($client->closeAsync());
+    }
 });
 
 test('aggregate builder methods propagate cancellation to the driver', function () {
-    $sleepFunc = ClientFactory::driver() === 'pgsql'
-        ? 'pg_sleep(2)'
-        : 'SLEEP(2)';
-
-    $promise = qb('users')->count($sleepFunc);
-
-    Loop::addTimer(0.1, fn() => $promise->cancel());
+    [$client, $qb, $driver] = createCancellationClient(enableServerSideCancellation: true);
 
     try {
-        await($promise);
-        $this->fail('Promise should have been cancelled');
-    } catch (\Throwable $e) {
-        expect($e)->toBeInstanceOf(CancelledException::class);
-    }
+        await($qb->from('users')->insert(['name' => 'Sleep', 'email' => 'sleep@test.com']));
 
-    $recovery = await(qb('users')->raw('SELECT 1 AS ok'));
-    expect($recovery[0]->ok)->toBe(1);
+        $sleepClause = $driver === DatabaseDriver::Postgres ? 'pg_sleep(3) IS NOT NULL' : 'SLEEP(3) = 0';
+
+        $promise = $qb->from('users')->whereRaw($sleepClause)->count();
+
+        Loop::addTimer(0.1, function () use ($promise) {
+            $promise->cancel();
+        });
+
+        try {
+            await($promise);
+            test()->fail('Promise should have been cancelled');
+        } catch (Throwable $e) {
+            expect($e)->toBeInstanceOf(CancelledException::class);
+        }
+
+        $recovery = await($qb->raw('SELECT 1 AS ok'));
+        $val = is_object($recovery[0]) ? $recovery[0]->ok : $recovery[0]['ok'];
+        expect((int)$val)->toBe(1);
+    } finally {
+        await($client->closeAsync());
+    }
 });

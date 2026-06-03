@@ -15,7 +15,9 @@ interface CursorPaginatorInterface extends BasePaginatorInterface
     public function nextCursor(): ?string;
 
     /**
-     * Get the name of the column used for cursor sorting.
+     * Get the columns and directions used for cursor sorting.
+     *
+     * @return array<string, string>
      */
-    public function getCursorColumn(): string;
+    public function getCursorColumns(): array;
 }

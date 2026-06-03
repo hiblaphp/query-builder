@@ -16,14 +16,14 @@ class CursorPaginator extends AbstractPaginator implements CursorPaginatorInterf
      * @param array<int|string, mixed> $items
      * @param int $perPage
      * @param string|null $nextCursor
-     * @param string $cursorColumn
+     * @param string|array<int|string, string> $cursorColumns
      * @param string|null $path
      */
     public function __construct(
         array $items,
         int $perPage,
         private readonly ?string $nextCursor,
-        private readonly string $cursorColumn,
+        private readonly string|array $cursorColumns,
         ?string $path = null,
     ) {
         parent::__construct($items, $perPage, $path);
@@ -35,6 +35,16 @@ class CursorPaginator extends AbstractPaginator implements CursorPaginatorInterf
     public function nextCursor(): ?string
     {
         return $this->nextCursor;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return array<string, string>
+     */
+    public function getCursorColumns(): array
+    {
+        return \Hibla\QueryBuilder\Utilities\CursorPaginationHelper::normalizeColumns($this->cursorColumns);
     }
 
     /**
@@ -111,14 +121,6 @@ class CursorPaginator extends AbstractPaginator implements CursorPaginatorInterf
         $json = json_encode($this->toArray($includeItems, $basePath), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
         return $json !== false ? $json : '{}';
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function getCursorColumn(): string
-    {
-        return $this->cursorColumn;
     }
 
     /**

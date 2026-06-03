@@ -16,7 +16,8 @@ uses()
         $client = ClientFactory::make();
         TestSchema::down($client);
     })
-    ->in(__DIR__);
+    ->in(__DIR__)
+;
 
 function client(): SqlClientInterface
 {

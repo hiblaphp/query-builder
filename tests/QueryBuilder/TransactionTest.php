@@ -130,7 +130,8 @@ test('lockForUpdate executes successfully inside an auto-managed transaction', f
     }));
 
     expect($result)->not->toBeNull()
-        ->and($result->name)->toBe('Alice');
+        ->and($result->name)->toBe('Alice')
+    ;
 });
 
 test('lockForShare executes successfully inside a manual transaction', function () {
@@ -147,9 +148,11 @@ test('lockForShare executes successfully inside a manual transaction', function 
         await($trx->commit());
 
         expect($result)->not->toBeNull()
-            ->and($result->name)->toBe('Bob');
-    } catch (\Throwable $e) {
+            ->and($result->name)->toBe('Bob')
+        ;
+    } catch (Throwable $e) {
         await($trx->rollback());
+
         throw $e;
     }
 });
@@ -166,7 +169,8 @@ test('lockForUpdate with skipLocked modifier executes without syntax errors', fu
     }));
 
     expect($result)->not->toBeNull()
-        ->and($result->name)->toBe('Charlie');
+        ->and($result->name)->toBe('Charlie')
+    ;
 });
 
 test('lockForUpdate with noWait modifier executes without syntax errors', function () {

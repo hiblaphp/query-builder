@@ -13,30 +13,46 @@ final class CursorPaginationHelper
 {
     /**
      * Decode and validate a cursor value.
+     *
+     * @return array<string, mixed>|false
      */
-    public static function decodeCursor(?string $cursor): string|false
+    public static function decodeCursor(?string $cursor): array|false
     {
         if (! \is_string($cursor) || $cursor === '') {
             return false;
         }
 
-        return base64_decode($cursor, true);
+        $decodedString = base64_decode($cursor, true);
+        if ($decodedString === false) {
+            return false;
+        }
+
+        $decodedJson = json_decode($decodedString, true);
+        if (! \is_array($decodedJson)) {
+            return false;
+        }
+
+        /** @var array<string, mixed> $decodedJson */
+        return $decodedJson;
     }
 
     /**
-     * Encode a cursor value.
+     * Encode an array of cursor values.
+     *
+     * @param array<string, mixed> $values
      */
-    public static function encodeCursor(mixed $value): ?string
+    public static function encodeCursor(array $values): ?string
     {
-        if ($value === null) {
+        if ($values === []) {
             return null;
         }
 
-        if (! \is_scalar($value) && ! (\is_object($value) && method_exists($value, '__toString'))) {
+        $json = json_encode($values);
+        if ($json === false) {
             return null;
         }
 
-        return base64_encode((string) $value);
+        return base64_encode($json);
     }
 
     /**
@@ -56,24 +72,56 @@ final class CursorPaginationHelper
     }
 
     /**
+     * Normalize cursor columns into [column => direction] format.
+     *
+     * @param string|array<int|string, string> $columns
+     *
+     * @return array<string, string>
+     */
+    public static function normalizeColumns(string|array $columns): array
+    {
+        if (\is_string($columns)) {
+            return [$columns => 'asc'];
+        }
+
+        $normalized = [];
+        foreach ($columns as $key => $value) {
+            if (\is_int($key)) {
+                $normalized[$value] = 'asc';
+            } else {
+                $normalized[$key] = strtolower($value) === 'desc' ? 'desc' : 'asc';
+            }
+        }
+
+        return $normalized;
+    }
+
+    /**
      * Resolve the next cursor from results.
      *
      * @param array<mixed> $results
+     * @param string|array<int|string, string> $cursorColumns
      */
     public static function resolveNextCursor(
         array $results,
-        string $cursorColumn,
+        string|array $cursorColumns,
         bool $hasMore
     ): ?string {
         if (! $hasMore || \count($results) === 0) {
             return null;
         }
 
+        $columns = self::normalizeColumns($cursorColumns);
+
         /** @var array<mixed>|object $lastItem */
         $lastItem = end($results);
-        $cursorValue = self::extractColumnValue($lastItem, $cursorColumn);
 
-        return self::encodeCursor($cursorValue);
+        $cursorValues = [];
+        foreach (array_keys($columns) as $col) {
+            $cursorValues[$col] = self::extractColumnValue($lastItem, $col);
+        }
+
+        return self::encodeCursor($cursorValues);
     }
 
     /**
@@ -81,21 +129,45 @@ final class CursorPaginationHelper
      *
      * @param QueryBuilderInterface $builder
      * @param string|null $cursor
-     * @param string $cursorColumn
+     * @param string|array<int|string, string> $cursorColumns
      *
      * @return QueryBuilderInterface
      */
     public static function applyCursor(
         QueryBuilderInterface $builder,
         ?string $cursor,
-        string $cursorColumn
+        string|array $cursorColumns
     ): QueryBuilderInterface {
-        $cursorValue = self::decodeCursor($cursor);
+        $cursorValues = self::decodeCursor($cursor);
 
-        if ($cursorValue === false) {
+        if ($cursorValues === false) {
             return $builder;
         }
 
-        return $builder->where($cursorColumn, '>', $cursorValue);
+        $columns = self::normalizeColumns($cursorColumns);
+        $colNames = array_keys($columns);
+
+        return $builder->whereGroup(function ($q) use ($columns, $cursorValues, $colNames) {
+            for ($i = 0; $i < \count($colNames); $i++) {
+                $q = $q->orWhereNested(function ($inner) use ($columns, $cursorValues, $colNames, $i) {
+
+                    for ($j = 0; $j < $i; $j++) {
+                        $prevCol = $colNames[$j];
+                        $inner = $inner->where($prevCol, '=', $cursorValues[$prevCol] ?? null);
+                    }
+
+                    $currCol = $colNames[$i];
+                    $direction = $columns[$currCol];
+
+                    $operator = $direction === 'desc' ? '<' : '>';
+
+                    $inner = $inner->where($currCol, $operator, $cursorValues[$currCol] ?? null);
+
+                    return $inner;
+                });
+            }
+
+            return $q;
+        });
     }
 }

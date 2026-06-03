@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Tests\Fixtures\TestSchema;
+
 use function Hibla\await;
 
 beforeEach(function () {
@@ -21,13 +22,14 @@ test('innerJoin retrieves matching records across tables', function () {
 
     expect($result)->toHaveCount(1)
         ->and($result[0]->name)->toBe('Alice')
-        ->and((float) $result[0]->total)->toBe(150.0);
+        ->and((float) $result[0]->total)->toBe(150.0)
+    ;
 });
 
 test('leftJoin retrieves all left records even if right is missing', function () {
     TestSchema::insertUsers(client(), [
         ['name' => 'Alice', 'email' => 'a@test.com'],
-        ['name' => 'Bob', 'email' => 'b@test.com']
+        ['name' => 'Bob', 'email' => 'b@test.com'],
     ]);
     $alice = await(qb('users')->where('name', 'Alice')->first());
     TestSchema::insertOrders(client(), [['user_id' => $alice->id, 'total' => 100]]);
@@ -42,16 +44,17 @@ test('leftJoin retrieves all left records even if right is missing', function ()
         ->and($result[0]->name)->toBe('Alice')
         ->and($result[0]->total)->not->toBeNull()
         ->and($result[1]->name)->toBe('Bob')
-        ->and($result[1]->total)->toBeNull();
+        ->and($result[1]->total)->toBeNull()
+    ;
 });
 
 test('rightJoin retrieves all right records even if left is missing', function () {
     TestSchema::insertUsers(client(), [['name' => 'Alice', 'email' => 'a@test.com']]);
     $alice = await(qb('users')->where('name', 'Alice')->first());
-    
+
     TestSchema::insertOrders(client(), [
         ['user_id' => $alice->id, 'total' => 100],
-        ['user_id' => 999, 'total' => 50] 
+        ['user_id' => 999, 'total' => 50],
     ]);
 
     $result = await(qb('users')
@@ -61,18 +64,19 @@ test('rightJoin retrieves all right records even if left is missing', function (
         ->get());
 
     expect($result)->toHaveCount(2)
-        ->and($result[0]->name)->toBe('Alice') 
-        ->and($result[1]->name)->toBeNull();   
+        ->and($result[0]->name)->toBe('Alice')
+        ->and($result[1]->name)->toBeNull()
+    ;
 });
 
 test('crossJoin produces a cartesian product of two tables', function () {
     TestSchema::insertUsers(client(), [
         ['name' => 'Alice', 'email' => 'a@test.com'],
-        ['name' => 'Bob', 'email' => 'b@test.com']
+        ['name' => 'Bob', 'email' => 'b@test.com'],
     ]);
     TestSchema::insertOrders(client(), [
         ['user_id' => 1, 'total' => 100],
-        ['user_id' => 1, 'total' => 200]
+        ['user_id' => 1, 'total' => 200],
     ]);
 
     $result = await(qb('users')->crossJoin('orders')->get());
@@ -91,7 +95,8 @@ test('joins support table aliases', function () {
         ->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->name)->toBe('Alice');
+        ->and($result[0]->name)->toBe('Alice')
+    ;
 });
 
 test('joins can chain multiple tables', function () {
@@ -107,7 +112,8 @@ test('joins can chain multiple tables', function () {
 
     expect($result)->toHaveCount(1)
         ->and($result[0]->buyer)->toBe('Alice')
-        ->and($result[0]->same_buyer)->toBe('Alice');
+        ->and($result[0]->same_buyer)->toBe('Alice')
+    ;
 });
 
 test('joins work alongside where conditions on joined tables', function () {
@@ -115,7 +121,7 @@ test('joins work alongside where conditions on joined tables', function () {
     $alice = await(qb('users')->first());
     TestSchema::insertOrders(client(), [
         ['user_id' => $alice->id, 'total' => 150, 'status' => 'pending'],
-        ['user_id' => $alice->id, 'total' => 300, 'status' => 'completed']
+        ['user_id' => $alice->id, 'total' => 300, 'status' => 'completed'],
     ]);
 
     $result = await(qb('users')
@@ -125,7 +131,8 @@ test('joins work alongside where conditions on joined tables', function () {
         ->get());
 
     expect($result)->toHaveCount(1)
-        ->and((float) $result[0]->total)->toBe(300.0);
+        ->and((float) $result[0]->total)->toBe(300.0)
+    ;
 });
 
 test('joins work with grouping and aggregation', function () {
@@ -133,7 +140,7 @@ test('joins work with grouping and aggregation', function () {
     $alice = await(qb('users')->first());
     TestSchema::insertOrders(client(), [
         ['user_id' => $alice->id, 'total' => 10],
-        ['user_id' => $alice->id, 'total' => 20]
+        ['user_id' => $alice->id, 'total' => 20],
     ]);
 
     $result = await(qb('users')
@@ -147,10 +154,10 @@ test('joins work with grouping and aggregation', function () {
 
 test('leftJoin combined with whereNull finds orphan records', function () {
     TestSchema::insertUsers(client(), [
-        ['name' => 'Alice', 'email' => 'a@test.com'], 
-        ['name' => 'Bob', 'email' => 'b@test.com']   
+        ['name' => 'Alice', 'email' => 'a@test.com'],
+        ['name' => 'Bob', 'email' => 'b@test.com'],
     ]);
-    
+
     $alice = await(qb('users')->where('name', 'Alice')->first());
     TestSchema::insertOrders(client(), [['user_id' => $alice->id, 'total' => 10]]);
 
@@ -161,7 +168,8 @@ test('leftJoin combined with whereNull finds orphan records', function () {
         ->get());
 
     expect($orphans)->toHaveCount(1)
-        ->and($orphans[0]->name)->toBe('Bob');
+        ->and($orphans[0]->name)->toBe('Bob')
+    ;
 });
 
 test('join condition can handle complex ON clauses', function () {
@@ -169,7 +177,7 @@ test('join condition can handle complex ON clauses', function () {
     $alice = await(qb('users')->first());
     TestSchema::insertOrders(client(), [
         ['user_id' => $alice->id, 'total' => 10, 'status' => 'pending'],
-        ['user_id' => $alice->id, 'total' => 50, 'status' => 'completed']
+        ['user_id' => $alice->id, 'total' => 50, 'status' => 'completed'],
     ]);
 
     $result = await(qb('users')

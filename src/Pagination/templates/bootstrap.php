@@ -1,7 +1,7 @@
 <nav aria-label="Page navigation">
     <ul class="pagination">
         <!-- Previous Page Link -->
-        <?php if ($paginator->currentPage() > 1): ?>
+        <?php if ($paginator->currentPage > 1): ?>
             <li class="page-item">
                 <a class="page-link" href="<?= htmlspecialchars($paginator->previousPageUrl()); ?>" aria-label="Previous">
                     <span aria-hidden="true">&laquo;</span>
@@ -16,8 +16,8 @@
 
         <!-- Page Numbers -->
         <?php
-        $currentPage = $paginator->currentPage();
-        $lastPage = $paginator->lastPage();
+        $currentPage = $paginator->currentPage;
+        $lastPage = $paginator->lastPage;
         $start = max(1, $currentPage - 2);
         $end = min($lastPage, $currentPage + 2);
         ?>
@@ -60,7 +60,7 @@
         <?php endif; ?>
 
         <!-- Next Page Link -->
-        <?php if ($paginator->hasMore()): ?>
+        <?php if ($paginator->hasMore): ?>
             <li class="page-item">
                 <a class="page-link" href="<?= htmlspecialchars($paginator->nextPageUrl()); ?>" aria-label="Next">
                     Next

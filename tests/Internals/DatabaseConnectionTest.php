@@ -21,7 +21,8 @@ test('DatabaseConnection returns correct driver metadata and raw client', functi
 
     try {
         expect($conn->getClient())->toBe($client)
-            ->and($conn->getDriverName())->toBe($driver);
+            ->and($conn->getDriverName())->toBe($driver)
+        ;
     } finally {
         $conn->close();
     }
@@ -42,21 +43,22 @@ test('DatabaseConnection successfully instantiates QueryBuilder with proper bind
 test('DatabaseConnection proxies raw database executions directly', function () {
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
-    
+
     $conn = new DatabaseConnection($client, ClientFactory::driver());
 
     try {
         await($conn->rawExecute('INSERT INTO users (name, email) VALUES (?, ?)', ['ConnectionUser', 'conn@test.com']));
-        
+
         $name = await($conn->rawValue('SELECT name FROM users WHERE email = ?', ['conn@test.com']));
         $row = await($conn->rawFirst('SELECT * FROM users WHERE email = ?', ['conn@test.com']));
         $rows = await($conn->raw('SELECT * FROM users'));
 
-        $rowName = is_object($row) ? $row->name : $row['name'];
+        $rowName = \is_object($row) ? $row->name : $row['name'];
 
         expect($name)->toBe('ConnectionUser')
             ->and($rowName)->toBe('ConnectionUser')
-            ->and($rows)->toHaveCount(1);
+            ->and($rows)->toHaveCount(1)
+        ;
     } finally {
         $conn->close();
     }
@@ -65,7 +67,7 @@ test('DatabaseConnection proxies raw database executions directly', function () 
 test('DatabaseConnection handles auto-managed transactions', function () {
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
-    
+
     $conn = new DatabaseConnection($client, ClientFactory::driver());
 
     try {
@@ -83,7 +85,7 @@ test('DatabaseConnection handles auto-managed transactions', function () {
 test('DatabaseConnection handles manual transaction flows', function () {
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
-    
+
     $conn = new DatabaseConnection($client, ClientFactory::driver());
 
     try {
@@ -104,5 +106,5 @@ test('DatabaseConnection supports asynchronous closing', function () {
 
     await($conn->closeAsync());
 
-    expect(fn() => await($client->query('SELECT 1')))->toThrow(RuntimeException::class);
+    expect(fn () => await($client->query('SELECT 1')))->toThrow(RuntimeException::class);
 });

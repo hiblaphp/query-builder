@@ -14,26 +14,30 @@ interface BasePaginatorInterface extends \IteratorAggregate
     /**
      * Get the active items for the current page/window.
      *
-     * @return array<int|string, mixed>
+     * @var array<int|string, mixed>
      */
-    public function items(): array;
+    public array $items { get; }
 
     /**
      * Get the number of items shown per page/window.
+     *
+     * @var int
      */
-    public function perPage(): int;
+    public int $perPage { get; }
 
     /**
-     * Get the current base request path.
+     * Get or set the current base request path.
      *
-     * @return string|null
+     * @var string|null
      */
-    public function path(): ?string;
+    public ?string $path { get; set; }
 
     /**
      * Check if there are more items to paginate.
+     *
+     * @var bool
      */
-    public function hasMore(): bool;
+    public bool $hasMore { get; }
 
     /**
      * Get the URL for the next page/window.

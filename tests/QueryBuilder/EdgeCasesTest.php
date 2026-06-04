@@ -88,7 +88,7 @@ test('cursor pagination ignores invalid base64 cursor and defaults to page 1', f
 
     $_GET['cursor'] = 'invalid_not_base64_!@#$';
     $paginator = await(qb('users')->cursorPaginate(10, 'id', 'http://localhost/users'));
-    expect($paginator->items())->toHaveCount(1);
+    expect($paginator->items)->toHaveCount(1);
 
     unset($_GET['cursor']);
 });
@@ -109,5 +109,6 @@ test('calling commit on a transaction that is already closed throws TransactionE
     await($tx->commit());
 
     expect(fn () => await($tx->commit()))
-        ->toThrow(TransactionException::class, 'Cannot perform operation: transaction is no longer active');
+        ->toThrow(TransactionException::class, 'Cannot perform operation: transaction is no longer active')
+    ;
 });

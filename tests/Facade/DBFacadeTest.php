@@ -143,8 +143,9 @@ test('DB::connection routes queries to independent registered connections', func
 
 test('Accessing an unconfigured connection throws DatabaseConfigurationException', function () {
     DB::reset();
-    expect(fn() => DB::connection('ghost_connection'))
-        ->toThrow(DatabaseConfigurationException::class);
+    expect(fn () => DB::connection('ghost_connection'))
+        ->toThrow(DatabaseConfigurationException::class)
+    ;
 });
 
 test('Overwriting a connection with the same name updates the registry correctly', function () {
@@ -176,7 +177,7 @@ test('Removing a registered connection makes it inaccessible', function () {
     try {
         DB::addConnection('temporary_conn', $conn);
         DB::removeConnection('temporary_conn');
-        expect(fn() => DB::connection('temporary_conn'))->toThrow(DatabaseConfigurationException::class);
+        expect(fn () => DB::connection('temporary_conn'))->toThrow(DatabaseConfigurationException::class);
     } finally {
         $client->close();
         DB::reset();
@@ -185,7 +186,7 @@ test('Removing a registered connection makes it inaccessible', function () {
 
 test('Removing a non-existent connection is handled safely', function () {
     DB::reset();
-    expect(fn() => DB::removeConnection('non_existent'))->not->toThrow(Throwable::class);
+    expect(fn () => DB::removeConnection('non_existent'))->not->toThrow(Throwable::class);
 });
 
 test('DB::table() auto-initializes from config file when Facade is reset', function () {
@@ -297,7 +298,7 @@ test('Facade manual transaction throws TransactionException on closed connection
 
         DB::connection()->getClient()->close();
 
-        expect(fn() => await($tx->commit()))->toThrow(TransactionException::class);
+        expect(fn () => await($tx->commit()))->toThrow(TransactionException::class);
     } finally {
         $client->close();
         DB::reset();
@@ -310,8 +311,9 @@ test('DB::raw with missing named parameter values throws PreparedException', fun
     DB::setSqlClient($client, ClientFactory::driverEnum());
 
     try {
-        expect(fn() => await(DB::raw('SELECT * FROM users WHERE email = :email', ['not_email' => 'val'])))
-            ->toThrow(PreparedException::class, 'Missing value for named parameter: :email');
+        expect(fn () => await(DB::raw('SELECT * FROM users WHERE email = :email', ['not_email' => 'val'])))
+            ->toThrow(PreparedException::class, 'Missing value for named parameter: :email')
+        ;
     } finally {
         $client->close();
         DB::reset();
@@ -320,8 +322,9 @@ test('DB::raw with missing named parameter values throws PreparedException', fun
 
 test('DB::resolveClientFromConfig throws exception on unsupported drivers', function () {
     DB::reset();
-    expect(fn() => DB::resolveClientFromConfig(['driver' => 'oracle_db']))
-        ->toThrow(InvalidConnectionConfigException::class);
+    expect(fn () => DB::resolveClientFromConfig(['driver' => 'oracle_db']))
+        ->toThrow(InvalidConnectionConfigException::class)
+    ;
 });
 
 test('Multiple connections maintain strict transaction state isolation', function () {
@@ -371,13 +374,13 @@ test('DB::close() closes specific or all connections synchronously', function ()
     try {
         DB::close('secondary');
 
-        expect(fn() => DB::connection('secondary'))->toThrow(DatabaseConfigurationException::class);
-        expect(fn() => await($client2->query('SELECT 1')))->toThrow(RuntimeException::class);
+        expect(fn () => DB::connection('secondary'))->toThrow(DatabaseConfigurationException::class);
+        expect(fn () => await($client2->query('SELECT 1')))->toThrow(RuntimeException::class);
         expect(await(DB::table('users')->count()))->toBeInt();
 
         DB::close();
 
-        expect(fn() => await($client1->query('SELECT 1')))->toThrow(RuntimeException::class);
+        expect(fn () => await($client1->query('SELECT 1')))->toThrow(RuntimeException::class);
     } finally {
         $client1->close();
         $client2->close();
@@ -400,13 +403,13 @@ test('DB::closeAsync() closes specific or all connections asynchronously', funct
 
         expect($promise)->toBeInstanceOf(PromiseInterface::class);
         await($promise);
-        expect(fn() => DB::connection('secondary'))->toThrow(DatabaseConfigurationException::class);
-        expect(fn() => await($client2->query('SELECT 1')))->toThrow(RuntimeException::class);
+        expect(fn () => DB::connection('secondary'))->toThrow(DatabaseConfigurationException::class);
+        expect(fn () => await($client2->query('SELECT 1')))->toThrow(RuntimeException::class);
         expect(await(DB::table('users')->count()))->toBeInt();
 
         await(DB::closeAsync());
 
-        expect(fn() => await($client1->query('SELECT 1')))->toThrow(RuntimeException::class);
+        expect(fn () => await($client1->query('SELECT 1')))->toThrow(RuntimeException::class);
     } finally {
         $client1->close();
         $client2->close();

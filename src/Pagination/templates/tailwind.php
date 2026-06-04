@@ -1,7 +1,7 @@
 <div class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6">
     <div class="flex flex-1 justify-between sm:hidden">
         <!-- Mobile Previous -->
-        <?php if ($paginator->currentPage() > 1): ?>
+        <?php if ($paginator->currentPage > 1): ?>
             <a href="<?= htmlspecialchars($paginator->previousPageUrl()); ?>" class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
                 Previous
             </a>
@@ -12,7 +12,7 @@
         <?php endif; ?>
 
         <!-- Mobile Next -->
-        <?php if ($paginator->hasMore()): ?>
+        <?php if ($paginator->hasMore): ?>
             <a href="<?= htmlspecialchars($paginator->nextPageUrl()); ?>" class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
                 Next
             </a>
@@ -26,15 +26,15 @@
     <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
         <div>
             <p class="text-sm text-gray-700">
-                Showing <span class="font-medium"><?= $paginator->from(); ?></span> to
-                <span class="font-medium"><?= $paginator->to(); ?></span> of
-                <span class="font-medium"><?= $paginator->total(); ?></span> results
+                Showing <span class="font-medium"><?= $paginator->from; ?></span> to
+                <span class="font-medium"><?= $paginator->to; ?></span> of
+                <span class="font-medium"><?= $paginator->total; ?></span> results
             </p>
         </div>
 
         <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
             <!-- Desktop Previous -->
-            <?php if ($paginator->currentPage() > 1): ?>
+            <?php if ($paginator->currentPage > 1): ?>
                 <a href="<?= htmlspecialchars($paginator->previousPageUrl()); ?>" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
                     <span class="sr-only">Previous</span>
                     <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -52,8 +52,8 @@
 
             <!-- Page Numbers -->
             <?php
-            $currentPage = $paginator->currentPage();
-        $lastPage = $paginator->lastPage();
+            $currentPage = $paginator->currentPage;
+        $lastPage = $paginator->lastPage;
         $start = max(1, $currentPage - 2);
         $end = min($lastPage, $currentPage + 2);
         ?>
@@ -93,7 +93,7 @@
             <?php endif; ?>
 
             <!-- Desktop Next -->
-            <?php if ($paginator->hasMore()): ?>
+            <?php if ($paginator->hasMore): ?>
                 <a href="<?= htmlspecialchars($paginator->nextPageUrl()); ?>" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
                     <span class="sr-only">Next</span>
                     <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">

@@ -22,9 +22,9 @@ class Paginator extends AbstractPaginator implements PaginatorInterface
      */
     public function __construct(
         array $items,
-        private readonly int $total,
+        public private(set) int $total,
         int $perPage,
-        private readonly int $currentPage,
+        public private(set) int $currentPage,
         ?string $path = null,
         private readonly ?string $query = null,
     ) {
@@ -32,83 +32,64 @@ class Paginator extends AbstractPaginator implements PaginatorInterface
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function total(): int
-    {
-        return $this->total;
+    public int $lastPage {
+        get => (int) ceil($this->total / $this->perPage);
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function currentPage(): int
-    {
-        return $this->currentPage;
-    }
+    public int $from {
+        get {
+            if ($this->total === 0) {
+                return 0;
+            }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function lastPage(): int
-    {
-        return (int) ceil($this->total / $this->perPage);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function from(): int
-    {
-        if ($this->total === 0) {
-            return 0;
+            return ($this->currentPage - 1) * $this->perPage + 1;
         }
-
-        return ($this->currentPage - 1) * $this->perPage + 1;
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function to(): int
-    {
-        if ($this->total === 0) {
-            return 0;
+    public int $to {
+        get {
+            if ($this->total === 0) {
+                return 0;
+            }
+
+            return min($this->currentPage * $this->perPage, $this->total);
         }
-
-        return min($this->currentPage * $this->perPage, $this->total);
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function hasMore(): bool
-    {
-        return $this->currentPage < $this->lastPage();
+    public bool $hasMore {
+        get => $this->currentPage < $this->lastPage;
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function hasPages(): bool
-    {
-        return $this->lastPage() > 1;
+    public bool $hasPages {
+        get => $this->lastPage > 1;
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function isFirstPage(): bool
-    {
-        return $this->currentPage === 1;
+    public bool $isFirstPage {
+        get => $this->currentPage === 1;
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function isLastPage(): bool
-    {
-        return $this->currentPage >= $this->lastPage();
+    public bool $isLastPage {
+        get => $this->currentPage >= $this->lastPage;
     }
 
     /**
@@ -116,7 +97,7 @@ class Paginator extends AbstractPaginator implements PaginatorInterface
      */
     public function nextPageUrl(?string $basePath = null): ?string
     {
-        if (! $this->hasMore()) {
+        if (! $this->hasMore) {
             return null;
         }
 
@@ -189,7 +170,7 @@ class Paginator extends AbstractPaginator implements PaginatorInterface
             $template = Config::loadFromRoot('pdo-schema.pagination.default_template') ?? 'tailwind';
         }
 
-        if (! $this->hasPages()) {
+        if (! $this->hasPages) {
             return '';
         }
 
@@ -208,16 +189,16 @@ class Paginator extends AbstractPaginator implements PaginatorInterface
         return [
             'data' => $includeItems ? $this->items : [],
             'meta' => [
-                'total' => $this->total(),
-                'per_page' => $this->perPage(),
-                'current_page' => $this->currentPage(),
-                'last_page' => $this->lastPage(),
-                'from' => $this->from(),
-                'to' => $this->to(),
+                'total' => $this->total,
+                'per_page' => $this->perPage,
+                'current_page' => $this->currentPage,
+                'last_page' => $this->lastPage,
+                'from' => $this->from,
+                'to' => $this->to,
             ],
             'links' => [
                 'first' => $this->path !== null ? $this->url(1) : null,
-                'last' => $this->path !== null ? $this->url($this->lastPage()) : null,
+                'last' => $this->path !== null ? $this->url($this->lastPage) : null,
                 'prev' => $this->previousPageUrl($basePath),
                 'next' => $this->nextPageUrl($basePath),
             ],

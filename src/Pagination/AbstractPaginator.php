@@ -19,9 +19,9 @@ abstract class AbstractPaginator implements BasePaginatorInterface
      * @param string|null $path
      */
     public function __construct(
-        protected array $items,
-        protected int $perPage,
-        protected ?string $path = null,
+        public private(set) array $items,
+        public private(set) int $perPage,
+        public ?string $path = null,
     ) {
     }
 
@@ -45,30 +45,6 @@ abstract class AbstractPaginator implements BasePaginatorInterface
     protected static function getTemplateEngine(): TemplateEngine
     {
         return self::$templateEngine ??= new TemplateEngine();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function items(): array
-    {
-        return $this->items;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function perPage(): int
-    {
-        return $this->perPage;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function path(): ?string
-    {
-        return $this->path;
     }
 
     /**

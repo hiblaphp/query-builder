@@ -11,13 +11,15 @@ interface CursorPaginatorInterface extends BasePaginatorInterface
 {
     /**
      * Get the encoded next cursor token, or null if no more pages remain.
+     *
+     * @var string|null
      */
-    public function nextCursor(): ?string;
+    public ?string $nextCursor { get; }
 
     /**
      * Get the columns and directions used for cursor sorting.
      *
-     * @return array<string, string>
+     * @var array<string, string>
      */
-    public function getCursorColumns(): array;
+    public array $cursorColumns { get; }
 }

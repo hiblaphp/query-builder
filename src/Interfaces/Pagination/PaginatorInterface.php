@@ -12,58 +12,58 @@ interface PaginatorInterface extends BasePaginatorInterface
     /**
      * Get the total number of records across all pages.
      *
-     * @return int
+     * @var int
      */
-    public function total(): int;
+    public int $total { get; }
 
     /**
      * Get the current page number.
      *
-     * @return int
+     * @var int
      */
-    public function currentPage(): int;
+    public int $currentPage { get; }
 
     /**
      * Get the total number of pages.
      *
-     * @return int
+     * @var int
      */
-    public function lastPage(): int;
+    public int $lastPage { get; }
 
     /**
      * Get the starting record number for the current page.
      *
-     * @return int
+     * @var int
      */
-    public function from(): int;
+    public int $from { get; }
 
     /**
      * Get the ending record number for the current page.
      *
-     * @return int
+     * @var int
      */
-    public function to(): int;
+    public int $to { get; }
 
     /**
      * Determine if there are enough records to split across multiple pages.
      *
-     * @return bool
+     * @var bool
      */
-    public function hasPages(): bool;
+    public bool $hasPages { get; }
 
     /**
      * Determine if the current page is the first page.
      *
-     * @return bool
+     * @var bool
      */
-    public function isFirstPage(): bool;
+    public bool $isFirstPage { get; }
 
     /**
      * Determine if the current page is the last page.
      *
-     * @return bool
+     * @var bool
      */
-    public function isLastPage(): bool;
+    public bool $isLastPage { get; }
 
     /**
      * Get the URL for the previous page, or null if on the first page.

@@ -31,12 +31,12 @@ test('paginate reports correct total and per-page slice', function () {
 
     $paginator = await(qb('users')->paginate(10, 'http://localhost/users'));
 
-    expect($paginator->total())->toBe(25)
-        ->and($paginator->items())->toHaveCount(10)
-        ->and($paginator->lastPage())->toBe(3)
-        ->and($paginator->currentPage())->toBe(1)
-        ->and($paginator->hasMore())->toBeTrue()
-        ->and($paginator->isFirstPage())->toBeTrue()
+    expect($paginator->total)->toBe(25)
+        ->and($paginator->items)->toHaveCount(10)
+        ->and($paginator->lastPage)->toBe(3)
+        ->and($paginator->currentPage)->toBe(1)
+        ->and($paginator->hasMore)->toBeTrue()
+        ->and($paginator->isFirstPage)->toBeTrue()
     ;
 });
 
@@ -49,8 +49,8 @@ test('paginate on last page has no more results', function () {
     $_GET['page'] = 1;
     $paginator = await(qb('users')->paginate(10, 'http://localhost/users'));
 
-    expect($paginator->hasMore())->toBeFalse()
-        ->and($paginator->isLastPage())->toBeTrue()
+    expect($paginator->hasMore)->toBeFalse()
+        ->and($paginator->isLastPage)->toBeTrue()
     ;
 });
 
@@ -71,9 +71,9 @@ test('paginate generates correct next and previous urls', function () {
 test('paginate returns empty items on empty table', function () {
     $paginator = await(qb('users')->paginate(10, 'http://localhost/users'));
 
-    expect($paginator->total())->toBe(0)
-        ->and($paginator->items())->toBeEmpty()
-        ->and($paginator->hasPages())->toBeFalse()
+    expect($paginator->total)->toBe(0)
+        ->and($paginator->items)->toBeEmpty()
+        ->and($paginator->hasPages)->toBeFalse()
     ;
 });
 
@@ -91,9 +91,9 @@ test('cursorPaginate has next cursor when more rows exist', function () {
 
     $paginator = await(qb('users')->cursorPaginate(5, 'id', 'http://localhost/users'));
 
-    expect($paginator->hasMore())->toBeTrue()
-        ->and($paginator->nextCursor())->not->toBeNull()
-        ->and($paginator->items())->toHaveCount(5)
+    expect($paginator->hasMore)->toBeTrue()
+        ->and($paginator->nextCursor)->not->toBeNull()
+        ->and($paginator->items)->toHaveCount(5)
     ;
 });
 
@@ -105,9 +105,9 @@ test('cursorPaginate has no next cursor on last page', function () {
 
     $paginator = await(qb('users')->cursorPaginate(10, 'id', 'http://localhost/users'));
 
-    expect($paginator->hasMore())->toBeFalse()
-        ->and($paginator->nextCursor())->toBeNull()
-        ->and($paginator->items())->toHaveCount(3)
+    expect($paginator->hasMore)->toBeFalse()
+        ->and($paginator->nextCursor)->toBeNull()
+        ->and($paginator->items)->toHaveCount(3)
     ;
 });
 
@@ -119,13 +119,13 @@ test('cursorPaginate second page uses cursor from first page', function () {
 
     $firstPage = await(qb('users')->cursorPaginate(5, 'id', 'http://localhost/users'));
 
-    $_GET['cursor'] = $firstPage->nextCursor();
+    $_GET['cursor'] = $firstPage->nextCursor;
     $secondPage = await(qb('users')->cursorPaginate(5, 'id', 'http://localhost/users'));
 
-    expect($secondPage->items())->toHaveCount(5);
+    expect($secondPage->items)->toHaveCount(5);
 
-    $firstIds = array_map(fn ($u) => $u->id, $firstPage->items());
-    $secondIds = array_map(fn ($u) => $u->id, $secondPage->items());
+    $firstIds = array_map(fn ($u) => $u->id, $firstPage->items);
+    $secondIds = array_map(fn ($u) => $u->id, $secondPage->items);
 
     expect(array_intersect($firstIds, $secondIds))->toBeEmpty();
 });
@@ -144,23 +144,23 @@ test('cursorPaginate supports multi-column tie-breakers to prevent skipped rows'
         ->orderBy('id', 'asc')
         ->cursorPaginate(2, ['score' => 'asc', 'id' => 'asc'], 'http://localhost/users'));
 
-    expect($page1->items())->toHaveCount(2)
-        ->and($page1->items()[0]->name)->toBe('Alice')
-        ->and($page1->items()[1]->name)->toBe('Bob')
-        ->and($page1->hasMore())->toBeTrue()
+    expect($page1->items)->toHaveCount(2)
+        ->and($page1->items[0]->name)->toBe('Alice')
+        ->and($page1->items[1]->name)->toBe('Bob')
+        ->and($page1->hasMore)->toBeTrue()
     ;
 
-    $_GET['cursor'] = $page1->nextCursor();
+    $_GET['cursor'] = $page1->nextCursor;
 
     $page2 = await(qb('users')
         ->orderBy('score', 'asc')
         ->orderBy('id', 'asc')
         ->cursorPaginate(2, ['score' => 'asc', 'id' => 'asc'], 'http://localhost/users'));
 
-    expect($page2->items())->toHaveCount(2)
-        ->and($page2->items()[0]->name)->toBe('Charlie')
-        ->and($page2->items()[1]->name)->toBe('Dave')
-        ->and($page2->hasMore())->toBeTrue()
+    expect($page2->items)->toHaveCount(2)
+        ->and($page2->items[0]->name)->toBe('Charlie')
+        ->and($page2->items[1]->name)->toBe('Dave')
+        ->and($page2->hasMore)->toBeTrue()
     ;
 
     unset($_GET['cursor']);

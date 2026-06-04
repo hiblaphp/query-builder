@@ -313,6 +313,7 @@ class DatabaseManager implements ConnectionResolverInterface
             foreach (array_keys($this->connections) as $connName) {
                 $this->removeConnection($connName);
             }
+
             return;
         }
 
@@ -335,7 +336,7 @@ class DatabaseManager implements ConnectionResolverInterface
             }
             $this->defaultConnectionName = null;
 
-            return \Hibla\Promise\Promise::all($promises)->then(fn() => null);
+            return \Hibla\Promise\Promise::all($promises)->then(fn () => null);
         }
 
         if (isset($this->connections[$name])) {

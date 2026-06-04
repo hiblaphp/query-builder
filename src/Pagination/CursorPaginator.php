@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Pagination;
 
 use Hibla\QueryBuilder\Interfaces\Pagination\CursorPaginatorInterface;
+use Hibla\QueryBuilder\Utilities\CursorPaginationHelper;
 use Rcalicdan\ConfigLoader\Config;
 
 /**
@@ -16,43 +17,31 @@ class CursorPaginator extends AbstractPaginator implements CursorPaginatorInterf
      * @param array<int|string, mixed> $items
      * @param int $perPage
      * @param string|null $nextCursor
-     * @param string|array<int|string, string> $cursorColumns
+     * @param string|array<int|string, string> $rawCursorColumns
      * @param string|null $path
      */
     public function __construct(
         array $items,
         int $perPage,
-        private readonly ?string $nextCursor,
-        private readonly string|array $cursorColumns,
+        public private(set) ?string $nextCursor,
+        private readonly string|array $rawCursorColumns,
         ?string $path = null,
     ) {
         parent::__construct($items, $perPage, $path);
     }
 
     /**
-     * {@inheritDoc}
+     * @inheritDoc
      */
-    public function nextCursor(): ?string
-    {
-        return $this->nextCursor;
+    public bool $hasMore {
+        get => $this->nextCursor !== null;
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @return array<string, string>
+     * @inheritDoc
      */
-    public function getCursorColumns(): array
-    {
-        return \Hibla\QueryBuilder\Utilities\CursorPaginationHelper::normalizeColumns($this->cursorColumns);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function hasMore(): bool
-    {
-        return $this->nextCursor !== null;
+    public array $cursorColumns {
+        get => CursorPaginationHelper::normalizeColumns($this->rawCursorColumns);
     }
 
     /**
@@ -60,7 +49,7 @@ class CursorPaginator extends AbstractPaginator implements CursorPaginatorInterf
      */
     public function nextPageUrl(?string $basePath = null): ?string
     {
-        if (! $this->hasMore()) {
+        if (! $this->hasMore) {
             return null;
         }
 
@@ -85,7 +74,7 @@ class CursorPaginator extends AbstractPaginator implements CursorPaginatorInterf
             $template = Config::loadFromRoot('pdo-schema.pagination.default_cursor_template') ?? 'cursor-simple';
         }
 
-        if (! $this->hasMore()) {
+        if (! $this->hasMore) {
             return '';
         }
 
@@ -104,8 +93,8 @@ class CursorPaginator extends AbstractPaginator implements CursorPaginatorInterf
         return [
             'data' => $includeItems ? $this->items : [],
             'meta' => [
-                'per_page' => $this->perPage(),
-                'has_more' => $this->hasMore(),
+                'per_page' => $this->perPage,
+                'has_more' => $this->hasMore,
             ],
             'links' => [
                 'next' => $this->nextPageUrl($basePath),

@@ -178,10 +178,7 @@ test('Removing a registered connection makes it inaccessible', function () {
         DB::removeConnection('temporary_conn');
         expect(fn() => DB::connection('temporary_conn'))->toThrow(DatabaseConfigurationException::class);
     } finally {
-        try {
-            $client->close();
-        } catch (Throwable $e) {
-        }
+        $client->close();
         DB::reset();
     }
 });
@@ -302,10 +299,7 @@ test('Facade manual transaction throws TransactionException on closed connection
 
         expect(fn() => await($tx->commit()))->toThrow(TransactionException::class);
     } finally {
-        try {
-            $client->close();
-        } catch (Throwable $e) {
-        }
+        $client->close();
         DB::reset();
     }
 });

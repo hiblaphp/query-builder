@@ -17,7 +17,7 @@ use Tests\Helpers\ClientFactory;
 
 use function Hibla\await;
 
-test('1. DB::table successfully routes to default connection', function () {
+test('DB::table successfully routes to default connection', function () {
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
@@ -34,7 +34,7 @@ test('1. DB::table successfully routes to default connection', function () {
     }
 });
 
-test('2. DB::rawMethods proxy to connection and execute successfully', function () {
+test('DB::rawMethods proxy to connection and execute successfully', function () {
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
@@ -59,7 +59,7 @@ test('2. DB::rawMethods proxy to connection and execute successfully', function 
     }
 });
 
-test('3. DB::transaction runs transaction callback and commits successfully', function () {
+test('DB::transaction runs transaction callback and commits successfully', function () {
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
@@ -78,7 +78,7 @@ test('3. DB::transaction runs transaction callback and commits successfully', fu
     }
 });
 
-test('4. DB::beginTransaction allows manual commit flow', function () {
+test('DB::beginTransaction allows manual commit flow', function () {
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
@@ -98,7 +98,7 @@ test('4. DB::beginTransaction allows manual commit flow', function () {
     }
 });
 
-test('5. DB::beginTransaction allows manual rollback flow', function () {
+test('DB::beginTransaction allows manual rollback flow', function () {
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
@@ -118,7 +118,7 @@ test('5. DB::beginTransaction allows manual rollback flow', function () {
     }
 });
 
-test('6. DB::connection routes queries to independent registered connections', function () {
+test('DB::connection routes queries to independent registered connections', function () {
     DB::reset();
     $client1 = ConnectionFactory::make(ClientFactory::config());
     $client2 = ConnectionFactory::make(ClientFactory::config());
@@ -141,13 +141,13 @@ test('6. DB::connection routes queries to independent registered connections', f
     }
 });
 
-test('7. Accessing an unconfigured connection throws DatabaseConfigurationException', function () {
+test('Accessing an unconfigured connection throws DatabaseConfigurationException', function () {
     DB::reset();
     expect(fn() => DB::connection('ghost_connection'))
         ->toThrow(DatabaseConfigurationException::class);
 });
 
-test('8. Overwriting a connection with the same name updates the registry correctly', function () {
+test('Overwriting a connection with the same name updates the registry correctly', function () {
     DB::reset();
     $client1 = ConnectionFactory::make(ClientFactory::config());
     $client2 = ConnectionFactory::make(ClientFactory::config());
@@ -168,7 +168,7 @@ test('8. Overwriting a connection with the same name updates the registry correc
     }
 });
 
-test('9. Removing a registered connection makes it inaccessible', function () {
+test('Removing a registered connection makes it inaccessible', function () {
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     $conn = new DatabaseConnection($client, ClientFactory::driverEnum()->value);
@@ -176,8 +176,6 @@ test('9. Removing a registered connection makes it inaccessible', function () {
     try {
         DB::addConnection('temporary_conn', $conn);
         DB::removeConnection('temporary_conn');
-
-        // Should throw because 'temporary_conn' is not in hibla-database.php
         expect(fn() => DB::connection('temporary_conn'))->toThrow(DatabaseConfigurationException::class);
     } finally {
         try {
@@ -188,32 +186,32 @@ test('9. Removing a registered connection makes it inaccessible', function () {
     }
 });
 
-test('10. Removing a non-existent connection is handled safely', function () {
+test('Removing a non-existent connection is handled safely', function () {
     DB::reset();
     expect(fn() => DB::removeConnection('non_existent'))->not->toThrow(Throwable::class);
 });
 
-test('11. DB::table() auto-initializes from config file when Facade is reset', function () {
+test('DB::table() auto-initializes from config file when Facade is reset', function () {
     DB::reset();
     $qb = DB::table('users');
     expect($qb)->toBeInstanceOf(Hibla\QueryBuilder\Interfaces\QueryBuilderInterface::class);
     DB::reset();
 });
 
-test('12. DB::connection() auto-initializes from config file when Facade is reset', function () {
+test('DB::connection() auto-initializes from config file when Facade is reset', function () {
     DB::reset();
     $conn = DB::connection();
     expect($conn)->toBeInstanceOf(Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface::class);
     DB::reset();
 });
 
-test('13. DBFacade safely handles consecutive resets', function () {
+test('DBFacade safely handles consecutive resets', function () {
     DB::reset();
     DB::reset();
     expect(true)->toBeTrue();
 });
 
-test('14. Facade transaction rolls back automatically on callback exception', function () {
+test('Facade transaction rolls back automatically on callback exception', function () {
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
@@ -238,7 +236,7 @@ test('14. Facade transaction rolls back automatically on callback exception', fu
     }
 });
 
-test('15. Facade transaction auto-retries on DeadlockException and succeeds', function () {
+test('Facade transaction auto-retries on DeadlockException and succeeds', function () {
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
@@ -268,7 +266,7 @@ test('15. Facade transaction auto-retries on DeadlockException and succeeds', fu
     }
 });
 
-test('16. Nested transaction via Facade executes successfully using savepoints', function () {
+test('Nested transaction via Facade executes successfully using savepoints', function () {
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
@@ -291,7 +289,7 @@ test('16. Nested transaction via Facade executes successfully using savepoints',
     }
 });
 
-test('17. Facade manual transaction throws TransactionException on closed connection', function () {
+test('Facade manual transaction throws TransactionException on closed connection', function () {
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
@@ -312,7 +310,7 @@ test('17. Facade manual transaction throws TransactionException on closed connec
     }
 });
 
-test('18. DB::raw with missing named parameter values throws PreparedException', function () {
+test('DB::raw with missing named parameter values throws PreparedException', function () {
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     DB::setSqlClient($client, ClientFactory::driverEnum());
@@ -326,13 +324,13 @@ test('18. DB::raw with missing named parameter values throws PreparedException',
     }
 });
 
-test('19. DB::resolveClientFromConfig throws exception on unsupported drivers', function () {
+test('DB::resolveClientFromConfig throws exception on unsupported drivers', function () {
     DB::reset();
     expect(fn() => DB::resolveClientFromConfig(['driver' => 'oracle_db']))
         ->toThrow(InvalidConnectionConfigException::class);
 });
 
-test('20. Multiple connections maintain strict transaction state isolation', function () {
+test('Multiple connections maintain strict transaction state isolation', function () {
     DB::reset();
     $client1 = ConnectionFactory::make(ClientFactory::config());
     $client2 = ConnectionFactory::make(ClientFactory::config());
@@ -366,7 +364,7 @@ test('20. Multiple connections maintain strict transaction state isolation', fun
     }
 });
 
-test('21. DB::close() closes specific or all connections synchronously', function () {
+test('DB::close() closes specific or all connections synchronously', function () {
     DB::reset();
     $client1 = ConnectionFactory::make(ClientFactory::config());
     $client2 = ConnectionFactory::make(ClientFactory::config());
@@ -393,7 +391,7 @@ test('21. DB::close() closes specific or all connections synchronously', functio
     }
 });
 
-test('22. DB::closeAsync() closes specific or all connections asynchronously', function () {
+test('DB::closeAsync() closes specific or all connections asynchronously', function () {
     DB::reset();
     $client1 = ConnectionFactory::make(ClientFactory::config());
     $client2 = ConnectionFactory::make(ClientFactory::config());

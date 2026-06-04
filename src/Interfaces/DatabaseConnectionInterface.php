@@ -46,4 +46,16 @@ interface DatabaseConnectionInterface extends RawQueryInterface
      * Get the driver name (e.g., 'mysql', 'pgsql').
      */
     public function getDriverName(): string;
+
+    /**
+     * Close the database connection pool synchronously.
+     */
+    public function close(): void;
+
+    /**
+     * Close the database connection pool asynchronously.
+     *
+     * @return PromiseInterface<void>
+     */
+    public function closeAsync(): PromiseInterface;
 }

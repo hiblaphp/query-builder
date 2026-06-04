@@ -14,7 +14,7 @@ use Hibla\Sql\IsolationLevelInterface;
 use Hibla\Sql\Transaction;
 
 /**
- * @internal Do not use this directly type hinting. Use TransactionalQueryBuilderInterface.
+ * @internal Do not use this directly for type hinting. Use TransactionalQueryBuilderInterface.
  *
  * A specialized Query Builder that operates within an active transaction.
  *

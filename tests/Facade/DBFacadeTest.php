@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\QueryBuilder\DB;
 use Hibla\QueryBuilder\Exceptions\DatabaseConfigurationException;
 use Hibla\QueryBuilder\Exceptions\InvalidConnectionConfigException;
@@ -142,9 +143,8 @@ test('6. DB::connection routes queries to independent registered connections', f
 
 test('7. Accessing an unconfigured connection throws DatabaseConfigurationException', function () {
     DB::reset();
-    expect(fn () => DB::connection('ghost_connection'))
-        ->toThrow(DatabaseConfigurationException::class)
-    ;
+    expect(fn() => DB::connection('ghost_connection'))
+        ->toThrow(DatabaseConfigurationException::class);
 });
 
 test('8. Overwriting a connection with the same name updates the registry correctly', function () {
@@ -178,7 +178,7 @@ test('9. Removing a registered connection makes it inaccessible', function () {
         DB::removeConnection('temporary_conn');
 
         // Should throw because 'temporary_conn' is not in hibla-database.php
-        expect(fn () => DB::connection('temporary_conn'))->toThrow(DatabaseConfigurationException::class);
+        expect(fn() => DB::connection('temporary_conn'))->toThrow(DatabaseConfigurationException::class);
     } finally {
         try {
             $client->close();
@@ -190,12 +190,11 @@ test('9. Removing a registered connection makes it inaccessible', function () {
 
 test('10. Removing a non-existent connection is handled safely', function () {
     DB::reset();
-    expect(fn () => DB::removeConnection('non_existent'))->not->toThrow(Throwable::class);
+    expect(fn() => DB::removeConnection('non_existent'))->not->toThrow(Throwable::class);
 });
 
 test('11. DB::table() auto-initializes from config file when Facade is reset', function () {
     DB::reset();
-    // Resolving table lazily creates the builder without executing queries
     $qb = DB::table('users');
     expect($qb)->toBeInstanceOf(Hibla\QueryBuilder\Interfaces\QueryBuilderInterface::class);
     DB::reset();
@@ -203,7 +202,6 @@ test('11. DB::table() auto-initializes from config file when Facade is reset', f
 
 test('12. DB::connection() auto-initializes from config file when Facade is reset', function () {
     DB::reset();
-    // Resolving connection directly validates config loading without executing queries
     $conn = DB::connection();
     expect($conn)->toBeInstanceOf(Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface::class);
     DB::reset();
@@ -302,10 +300,9 @@ test('17. Facade manual transaction throws TransactionException on closed connec
     try {
         $tx = await(DB::beginTransaction());
 
-        // Manually close the connection to trigger the failure
         DB::connection()->getClient()->close();
 
-        expect(fn () => await($tx->commit()))->toThrow(TransactionException::class);
+        expect(fn() => await($tx->commit()))->toThrow(TransactionException::class);
     } finally {
         try {
             $client->close();
@@ -321,9 +318,8 @@ test('18. DB::raw with missing named parameter values throws PreparedException',
     DB::setSqlClient($client, ClientFactory::driverEnum());
 
     try {
-        expect(fn () => await(DB::raw('SELECT * FROM users WHERE email = :email', ['not_email' => 'val'])))
-            ->toThrow(PreparedException::class, 'Missing value for named parameter: :email')
-        ;
+        expect(fn() => await(DB::raw('SELECT * FROM users WHERE email = :email', ['not_email' => 'val'])))
+            ->toThrow(PreparedException::class, 'Missing value for named parameter: :email');
     } finally {
         $client->close();
         DB::reset();
@@ -332,9 +328,8 @@ test('18. DB::raw with missing named parameter values throws PreparedException',
 
 test('19. DB::resolveClientFromConfig throws exception on unsupported drivers', function () {
     DB::reset();
-    expect(fn () => DB::resolveClientFromConfig(['driver' => 'oracle_db']))
-        ->toThrow(InvalidConnectionConfigException::class)
-    ;
+    expect(fn() => DB::resolveClientFromConfig(['driver' => 'oracle_db']))
+        ->toThrow(InvalidConnectionConfigException::class);
 });
 
 test('20. Multiple connections maintain strict transaction state isolation', function () {
@@ -364,6 +359,62 @@ test('20. Multiple connections maintain strict transaction state isolation', fun
         expect($count)->toBe(1)
             ->and($user->name)->toBe('Reporting Tx')
         ;
+    } finally {
+        $client1->close();
+        $client2->close();
+        DB::reset();
+    }
+});
+
+test('21. DB::close() closes specific or all connections synchronously', function () {
+    DB::reset();
+    $client1 = ConnectionFactory::make(ClientFactory::config());
+    $client2 = ConnectionFactory::make(ClientFactory::config());
+
+    DB::setSqlClient($client1, ClientFactory::driverEnum());
+
+    $conn2 = new DatabaseConnection($client2, ClientFactory::driverEnum()->value);
+    DB::addConnection('secondary', $conn2);
+
+    try {
+        DB::close('secondary');
+
+        expect(fn() => DB::connection('secondary'))->toThrow(DatabaseConfigurationException::class);
+        expect(fn() => await($client2->query('SELECT 1')))->toThrow(RuntimeException::class);
+        expect(await(DB::table('users')->count()))->toBeInt();
+
+        DB::close();
+
+        expect(fn() => await($client1->query('SELECT 1')))->toThrow(RuntimeException::class);
+    } finally {
+        $client1->close();
+        $client2->close();
+        DB::reset();
+    }
+});
+
+test('22. DB::closeAsync() closes specific or all connections asynchronously', function () {
+    DB::reset();
+    $client1 = ConnectionFactory::make(ClientFactory::config());
+    $client2 = ConnectionFactory::make(ClientFactory::config());
+
+    DB::setSqlClient($client1, ClientFactory::driverEnum());
+
+    $conn2 = new DatabaseConnection($client2, ClientFactory::driverEnum()->value);
+    DB::addConnection('secondary', $conn2);
+
+    try {
+        $promise = DB::closeAsync('secondary');
+
+        expect($promise)->toBeInstanceOf(PromiseInterface::class);
+        await($promise);
+        expect(fn() => DB::connection('secondary'))->toThrow(DatabaseConfigurationException::class);
+        expect(fn() => await($client2->query('SELECT 1')))->toThrow(RuntimeException::class);
+        expect(await(DB::table('users')->count()))->toBeInt();
+
+        await(DB::closeAsync());
+
+        expect(fn() => await($client1->query('SELECT 1')))->toThrow(RuntimeException::class);
     } finally {
         $client1->close();
         $client2->close();

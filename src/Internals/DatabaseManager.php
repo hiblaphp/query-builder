@@ -127,8 +127,8 @@ class DatabaseManager implements ConnectionResolverInterface
     }
 
     /**
-      * {@inheritdoc}
-      */
+     * {@inheritdoc}
+     */
     public function resolveClientFromConfig(array $config): SqlClientInterface
     {
         return ConnectionFactory::make($config);
@@ -278,15 +278,15 @@ class DatabaseManager implements ConnectionResolverInterface
     }
 
     /**
-      * Execute an auto-managed transaction.
-      *
-      * @template TResult
-      *
-       * @param callable(TransactionalQueryBuilderInterface): TResult $callback
-       * @param TransactionOptions|null $options
-      *
-       * @return PromiseInterface<TResult>
-      */
+     * Execute an auto-managed transaction.
+     *
+     * @template TResult
+     *
+     * @param callable(TransactionalQueryBuilderInterface): TResult $callback
+     * @param TransactionOptions|null $options
+     *
+     * @return PromiseInterface<TResult>
+     */
     public function transaction(callable $callback, ?TransactionOptions $options = null): PromiseInterface
     {
         return $this->connection()->transaction($callback, $options);
@@ -302,5 +302,53 @@ class DatabaseManager implements ConnectionResolverInterface
     public function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface
     {
         return $this->connection()->beginTransaction($isolationLevel);
+    }
+
+    /**
+     * Close a specific connection pool, or all open connection pools if no name is provided.
+     */
+    public function close(?string $name = null): void
+    {
+        if ($name === null) {
+            foreach (array_keys($this->connections) as $connName) {
+                $this->removeConnection($connName);
+            }
+            return;
+        }
+
+        $this->removeConnection($name);
+    }
+
+    /**
+     * Close a specific connection pool, or all open connection pools asynchronously.
+     *
+     * @return PromiseInterface<void>
+     */
+    public function closeAsync(?string $name = null): PromiseInterface
+    {
+        if ($name === null) {
+            $promises = [];
+            foreach (array_keys($this->connections) as $connName) {
+                $conn = $this->connections[$connName];
+                $promises[] = $conn->getClient()->closeAsync();
+                unset($this->connections[$connName]);
+            }
+            $this->defaultConnectionName = null;
+
+            return \Hibla\Promise\Promise::all($promises)->then(fn() => null);
+        }
+
+        if (isset($this->connections[$name])) {
+            $conn = $this->connections[$name];
+            $promise = $conn->getClient()->closeAsync();
+            unset($this->connections[$name]);
+            if ($this->defaultConnectionName === $name) {
+                $this->defaultConnectionName = null;
+            }
+
+            return $promise;
+        }
+
+        return \Hibla\Promise\Promise::resolved();
     }
 }

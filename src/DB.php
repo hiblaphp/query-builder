@@ -22,9 +22,7 @@ class DB
 {
     private static ?DatabaseManager $manager = null;
 
-    private function __construct()
-    {
-    }
+    private function __construct() {}
 
     /**
      * Get the singleton DatabaseManager instance internally.
@@ -190,6 +188,24 @@ class DB
     public static function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface
     {
         return self::getManager()->beginTransaction($isolationLevel);
+    }
+
+    /**
+     * Close a specific connection pool, or all open connection pools if no name is provided.
+     */
+    public static function close(?string $name = null): void
+    {
+        self::getManager()->close($name);
+    }
+
+    /**
+     * Close a specific connection pool, or all open connection pools asynchronously.
+     *
+     * @return PromiseInterface<void>
+     */
+    public static function closeAsync(?string $name = null): PromiseInterface
+    {
+        return self::getManager()->closeAsync($name);
     }
 
     /**

@@ -187,7 +187,8 @@ test('lockForUpdate with noWait modifier executes without syntax errors', functi
     }));
 
     expect($result)->not->toBeNull()
-        ->and($result->name)->toBe('Dave');
+        ->and($result->name)->toBe('Dave')
+    ;
 });
 
 test('transaction auto-retries on DeadlockException and succeeds on subsequent attempt', function () {
@@ -220,10 +221,11 @@ test('transaction does not retry on non-retryable exceptions', function () {
     try {
         await(newQb()->transaction(function ($trx) use (&$attempts) {
             $attempts++;
-            throw new \RuntimeException('Permanent application failure');
+
+            throw new RuntimeException('Permanent application failure');
         }, $options));
         test()->fail('Should have thrown an exception');
-    } catch (\RuntimeException $e) {
+    } catch (RuntimeException $e) {
         expect($e->getMessage())->toBe('Permanent application failure');
     }
 
@@ -237,6 +239,7 @@ test('transaction throws the final exception when retry attempts are exhausted',
     try {
         await(newQb()->transaction(function ($trx) use (&$attempts) {
             $attempts++;
+
             throw new DeadlockException('Deadlock mock ' . $attempts);
         }, $options));
         test()->fail('Should have thrown an exception');
@@ -245,4 +248,90 @@ test('transaction throws the final exception when retry attempts are exhausted',
     }
 
     expect($attempts)->toBe(3);
+});
+
+test('nested transaction commits successfully alongside outer transaction', function () {
+    await(newQb()->transaction(function ($outerTx) {
+        await($outerTx->from('users')->insert(['name' => 'Outer', 'email' => 'outer@test.com']));
+
+        await($outerTx->transaction(function ($nestedTx) {
+            await($nestedTx->from('users')->insert(['name' => 'Nested', 'email' => 'nested@test.com']));
+        }));
+    }));
+
+    $users = await(qb('users')->orderBy('id')->pluck('name'));
+
+    expect($users)->toHaveCount(2)
+        ->and($users)->toContain('Outer', 'Nested')
+    ;
+});
+
+test('nested transaction rolls back to savepoint without aborting outer transaction', function () {
+    await(newQb()->transaction(function ($outerTx) {
+        await($outerTx->from('users')->insert(['name' => 'Outer 1', 'email' => 'outer1@test.com']));
+
+        try {
+            await($outerTx->transaction(function ($nestedTx) {
+                await($nestedTx->from('users')->insert(['name' => 'Nested', 'email' => 'nested@test.com']));
+
+                throw new RuntimeException('Nested operation failed');
+            }));
+        } catch (RuntimeException $e) {
+            expect($e->getMessage())->toBe('Nested operation failed');
+        }
+
+        await($outerTx->from('users')->insert(['name' => 'Outer 2', 'email' => 'outer2@test.com']));
+    }));
+
+    $users = await(qb('users')->orderBy('id')->pluck('name'));
+
+    expect($users)->toHaveCount(2)
+        ->and($users)->toContain('Outer 1', 'Outer 2')
+        ->and($users)->not->toContain('Nested')
+    ;
+});
+
+test('outer transaction rollback discards successful nested transactions', function () {
+    try {
+        await(newQb()->transaction(function ($outerTx) {
+            await($outerTx->from('users')->insert(['name' => 'Outer', 'email' => 'outer@test.com']));
+
+            await($outerTx->transaction(function ($nestedTx) {
+                await($nestedTx->from('users')->insert(['name' => 'Nested', 'email' => 'nested@test.com']));
+            }));
+
+            throw new RuntimeException('Outer operation failed');
+        }));
+    } catch (RuntimeException) {
+        // expected
+    }
+
+    expect(await(qb('users')->count()))->toBe(0);
+});
+
+test('deeply nested transactions handle isolated rollbacks correctly', function () {
+    await(newQb()->transaction(function ($l1) {
+        await($l1->from('users')->insert(['name' => 'Level 1', 'email' => 'l1@test.com']));
+
+        await($l1->transaction(function ($l2) {
+            await($l2->from('users')->insert(['name' => 'Level 2', 'email' => 'l2@test.com']));
+
+            try {
+                await($l2->transaction(function ($l3) {
+                    await($l3->from('users')->insert(['name' => 'Level 3', 'email' => 'l3@test.com']));
+
+                    throw new RuntimeException('Level 3 failed');
+                }));
+            } catch (RuntimeException) {
+                // Ignore L3 failure
+            }
+        }));
+    }));
+
+    $users = await(qb('users')->orderBy('id')->pluck('name'));
+
+    expect($users)->toHaveCount(2)
+        ->and($users)->toContain('Level 1', 'Level 2')
+        ->and($users)->not->toContain('Level 3')
+    ;
 });

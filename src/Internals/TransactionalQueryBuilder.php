@@ -12,7 +12,6 @@ use Hibla\QueryBuilder\Interfaces\TransactionalQueryBuilderInterface;
 use Hibla\QueryBuilder\QueryBuilder;
 use Hibla\Sql\IsolationLevelInterface;
 use Hibla\Sql\Transaction;
-use Hibla\Sql\TransactionOptions;
 
 /**
  * @internal Do not use this directly type hinting. Use TransactionalQueryBuilderInterface.
@@ -20,7 +19,8 @@ use Hibla\Sql\TransactionOptions;
  * A specialized Query Builder that operates within an active transaction.
  *
  * Provides manual transaction controls (commit, rollback, savepoints) while
- * retaining all standard query building capabilities.
+ * retaining all standard query building capabilities. It also seamlessly
+ * supports nested auto-managed transactions via savepoints under the hood.
  */
 class TransactionalQueryBuilder extends QueryBuilder implements TransactionalQueryBuilderInterface
 {
@@ -37,17 +37,7 @@ class TransactionalQueryBuilder extends QueryBuilder implements TransactionalQue
     public function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface
     {
         return Promise::rejected(
-            new QueryBuilderException('Cannot begin a transaction. You are already inside an active transaction. Use savepoints manually.')
-        );
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function transaction(callable $callback, ?TransactionOptions $options = null): PromiseInterface
-    {
-        return Promise::rejected(
-            new QueryBuilderException('Nested auto-transactions are not supported on the transactional builder. Use savepoints manually.')
+            new QueryBuilderException('Cannot begin a manual transaction. You are already inside an active transaction. Use the auto-managed transaction() method for nested support, or manage savepoints manually.')
         );
     }
 

@@ -17,6 +17,7 @@ use Hibla\QueryBuilder\QueryBuilder;
 use Hibla\QueryBuilder\Utilities\ConnectionFactory;
 use Hibla\Sql\IsolationLevelInterface;
 use Hibla\Sql\SqlClientInterface;
+use Hibla\Sql\TransactionOptions;
 use Rcalicdan\ConfigLoader\Config;
 
 /**
@@ -277,17 +278,18 @@ class DatabaseManager implements ConnectionResolverInterface
     }
 
     /**
-     * Execute an auto-managed transaction.
-     *
-     * @template TResult
-     *
-     * @param callable(TransactionalQueryBuilderInterface): TResult $callback
-     *
-     * @return PromiseInterface<TResult>
-     */
-    public function transaction(callable $callback): PromiseInterface
+      * Execute an auto-managed transaction.
+      *
+      * @template TResult
+      *
+       * @param callable(TransactionalQueryBuilderInterface): TResult $callback
+       * @param TransactionOptions|null $options
+      *
+       * @return PromiseInterface<TResult>
+      */
+    public function transaction(callable $callback, ?TransactionOptions $options = null): PromiseInterface
     {
-        return $this->connection()->transaction($callback);
+        return $this->connection()->transaction($callback, $options);
     }
 
     /**

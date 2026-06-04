@@ -13,6 +13,7 @@ use Hibla\QueryBuilder\Internals\DatabaseConnection;
 use Hibla\QueryBuilder\Internals\DatabaseManager;
 use Hibla\Sql\IsolationLevelInterface;
 use Hibla\Sql\SqlClientInterface;
+use Hibla\Sql\TransactionOptions;
 
 /**
  * Static Facade for the DatabaseManager.
@@ -112,14 +113,14 @@ class DB
     }
 
     /**
-    * Execute a raw query and return an unbuffered stream of results.
-    *
+     * Execute a raw query and return an unbuffered stream of results.
+     *
      * @param string $sql
      * @param array<int, mixed> $bindings
      * @param positive-int $bufferSize
-    *
+     *
      * @return PromiseInterface<\Hibla\Sql\RowStream>
-    */
+     */
     public static function rawStream(string $sql, array $bindings = [], int $bufferSize = 100): PromiseInterface
     {
         return self::getManager()->rawStream($sql, $bindings, $bufferSize);
@@ -170,12 +171,13 @@ class DB
      * @template TResult
      *
      * @param callable(TransactionalQueryBuilderInterface): TResult $callback
+     * @param TransactionOptions|null $options
      *
      * @return PromiseInterface<TResult>
      */
-    public static function transaction(callable $callback): PromiseInterface
+    public static function transaction(callable $callback, ?TransactionOptions $options = null): PromiseInterface
     {
-        return self::getManager()->transaction($callback);
+        return self::getManager()->transaction($callback, $options);
     }
 
     /**

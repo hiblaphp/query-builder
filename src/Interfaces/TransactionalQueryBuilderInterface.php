@@ -11,9 +11,9 @@ use Hibla\Sql\Transaction;
  * A specialized Query Builder that operates within an active transaction.
  *
  * Provides manual transaction controls (commit, rollback, savepoints) while
- * retaining all standard query building capabilities.
+ * retaining all standard query building capabilities, including nested transactions.
  */
-interface TransactionalQueryBuilderInterface extends BaseQueryBuilderInterface
+interface TransactionalQueryBuilderInterface extends QueryBuilderInterface
 {
     /**
      * Commits the transaction, making all changes permanent.

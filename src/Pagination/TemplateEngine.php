@@ -9,6 +9,18 @@ use Hibla\QueryBuilder\Exceptions\TemplateNotFoundException;
 class TemplateEngine
 {
     private string $templatesPath;
+    
+    /**
+     * In-memory cache to prevent blocking file I/O.
+     * 
+     * @var array<string, string>
+     */
+    private static array $pathCache = [];
+
+    /**
+     * Maximum number of cached paths to prevent memory leaks in long-running processes.
+     */
+    private const int MAX_CACHE_SIZE = 50;
 
     public function __construct(?string $templatesPath = null)
     {
@@ -23,28 +35,30 @@ class TemplateEngine
         if (! is_dir($path)) {
             throw new TemplateNotFoundException("Templates path does not exist: {$path}");
         }
+        
+        self::$pathCache = [];
     }
 
-    /**
-     * Render a template with variables
-     *
-     * @param string $template Template name (supports dot notation: 'folder.template' or 'bootstrap')
-     * @param array<string, mixed> $data Variables to pass to template
-     *
-     * @return string Rendered HTML
-     *
-     * @throws TemplateNotFoundException
-     */
     public function render(string $template, array $data = []): string
     {
         if (str_contains($template, '::')) {
             $template = explode('::', $template)[1];
         }
 
-        $templatePath = $this->getTemplatePath($template);
+        if (isset(self::$pathCache[$template])) {
+            $templatePath = self::$pathCache[$template];
+        } else {
+            if (\count(self::$pathCache) >= self::MAX_CACHE_SIZE) {
+                self::$pathCache = []; 
+            }
 
-        if (! file_exists($templatePath)) {
-            throw new TemplateNotFoundException("Template not found: {$template} at {$templatePath}");
+            $templatePath = $this->getTemplatePath($template);
+
+            if (! file_exists($templatePath)) {
+                throw new TemplateNotFoundException("Template not found: {$template} at {$templatePath}");
+            }
+
+            self::$pathCache[$template] = $templatePath;
         }
 
         extract($data, EXTR_SKIP);
@@ -65,9 +79,7 @@ class TemplateEngine
     {
         $templatePath = str_replace('.', DIRECTORY_SEPARATOR, $template);
 
-        $path = $this->templatesPath . DIRECTORY_SEPARATOR . $templatePath . '.php';
-
-        return $path;
+        return $this->templatesPath . DIRECTORY_SEPARATOR . $templatePath . '.php';
     }
 
     /**
@@ -77,6 +89,10 @@ class TemplateEngine
     {
         if (str_contains($template, '::')) {
             $template = explode('::', $template)[1];
+        }
+
+        if (isset(self::$pathCache[$template])) {
+            return true;
         }
 
         return file_exists($this->getTemplatePath($template));

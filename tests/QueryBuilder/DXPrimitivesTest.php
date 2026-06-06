@@ -205,5 +205,67 @@ test('treats non-invokable objects as truthy values on live database execution',
         ->get());
 
     expect($results)->toHaveCount(1)
-        ->and($results[0]->name)->toBe('Alice');
+        ->and($results[0]->name)->toBe('Alice')
+    ;
+});
+
+test('inRandomOrder executes without syntax errors', function () {
+    TestSchema::insertUsers(client(), [
+        ['name' => 'Alice', 'email' => 'alice@test.com'],
+        ['name' => 'Bob', 'email' => 'bob@test.com'],
+    ]);
+
+    $results = await(qb('users')->inRandomOrder()->get());
+
+    expect($results)->toHaveCount(2);
+});
+
+test('reorder clears and overrides existing sort order during execution', function () {
+    TestSchema::insertUsers(client(), [
+        ['name' => 'Alice', 'email' => 'alice@test.com', 'score' => 10],
+        ['name' => 'Bob', 'email' => 'bob@test.com', 'score' => 50],
+    ]);
+
+    $results = await(qb('users')
+        ->orderBy('score', 'ASC')
+        ->reorder('score', 'DESC')
+        ->get());
+
+    expect($results[0]->name)->toBe('Bob')
+        ->and($results[1]->name)->toBe('Alice')
+    ;
+});
+
+test('orderByRaw executes correctly with positional bindings', function () {
+    TestSchema::insertUsers(client(), [
+        ['name' => 'Bob', 'email' => 'bob@test.com', 'status' => 'moderator'],
+        ['name' => 'Alice', 'email' => 'alice@test.com', 'status' => 'admin'],
+    ]);
+
+    $results = await(qb('users')
+        ->orderByRaw('CASE WHEN status = ? THEN 0 ELSE 1 END', ['admin'])
+        ->get());
+
+    expect($results[0]->name)->toBe('Alice')
+        ->and($results[1]->name)->toBe('Bob')
+    ;
+});
+
+test('groupByRaw executes correctly with positional bindings', function () {
+    TestSchema::insertUsers(client(), [
+        ['name' => 'Alice', 'email' => 'alice@test.com', 'age' => 20],
+        ['name' => 'Bob', 'email' => 'bob@test.com', 'age' => 20],
+        ['name' => 'Charlie', 'email' => 'charlie@test.com', 'age' => 30],
+    ]);
+
+    $results = await(qb('users')
+        ->selectRaw('COUNT(*) as count')
+        ->groupByRaw('CASE WHEN age > ? THEN 1 ELSE 0 END', [25])
+        ->orderBy('count')
+        ->get());
+
+    expect($results)->toHaveCount(2)
+        ->and((int) $results[0]->count)->toBe(1)
+        ->and((int) $results[1]->count)->toBe(2)
+    ;
 });

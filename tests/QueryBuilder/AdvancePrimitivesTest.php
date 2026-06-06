@@ -173,5 +173,6 @@ test('selectDistinct retrieves unique combinations of columns', function () {
 
     expect($result)->toHaveCount(2)
         ->and($result[0]->status)->toBe('active')
-        ->and($result[1]->status)->toBe('banned');
+        ->and($result[1]->status)->toBe('banned')
+    ;
 });

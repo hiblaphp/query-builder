@@ -127,5 +127,6 @@ test('skipLocked without setting lock mode first throws LogicException', functio
 
 test('lockOf without setting lock mode first throws LogicException', function () {
     expect(fn () => qb('users')->lockOf('users'))
-        ->toThrow(LogicException::class, 'Cannot add OF clause without a lock mode');
+        ->toThrow(LogicException::class, 'Cannot add OF clause without a lock mode')
+    ;
 });

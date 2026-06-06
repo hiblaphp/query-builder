@@ -144,5 +144,6 @@ test('resetWhere clears all conditions and bindings', function () {
     $result = await($resetQuery->get());
 
     expect($result)->toHaveCount(2)
-        ->and($resetQuery->getBindings())->toBeEmpty();
+        ->and($resetQuery->getBindings())->toBeEmpty()
+    ;
 });

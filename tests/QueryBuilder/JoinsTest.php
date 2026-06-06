@@ -186,5 +186,6 @@ test('join condition can handle complex ON clauses', function () {
         ->get());
 
     expect($result)->toHaveCount(1)
-        ->and((float) $result[0]->total)->toBe(50.0);
+        ->and((float) $result[0]->total)->toBe(50.0)
+    ;
 });

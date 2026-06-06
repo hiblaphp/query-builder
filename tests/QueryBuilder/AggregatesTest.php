@@ -84,3 +84,15 @@ test('exists with where only checks matching rows', function () {
     expect(await(qb('users')->where('status', 'inactive')->exists()))->toBeFalse();
     expect(await(qb('users')->where('status', 'active')->exists()))->toBeTrue();
 });
+
+test('doesntExist returns true when table is empty', function () {
+    expect(await(qb('users')->doesntExist()))->toBeTrue();
+});
+
+test('doesntExist returns false when at least one row matches', function () {
+    TestSchema::insertUsers(client(), [
+        ['name' => 'Alice', 'email' => 'a@test.com'],
+    ]);
+
+    expect(await(qb('users')->doesntExist()))->toBeFalse();
+});

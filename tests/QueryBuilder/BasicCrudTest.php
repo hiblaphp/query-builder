@@ -218,3 +218,39 @@ test('pluck with key returns a column-keyed map', function () {
         ->toHaveKey('bob@test.com', 'Bob')
     ;
 });
+
+test('increment increases a column value', function () {
+    TestSchema::insertUsers(client(), [
+        ['name' => 'Alice', 'email' => 'alice@test.com', 'score' => 10],
+    ]);
+
+    $affected = await(qb('users')->where('name', 'Alice')->increment('score', 5));
+    $user = await(qb('users')->where('name', 'Alice')->first());
+
+    expect($affected)->toBe(1)
+        ->and((float) $user->score)->toBe(15.0)
+    ;
+});
+
+test('decrement decreases a column value and updates extra columns', function () {
+    TestSchema::insertUsers(client(), [
+        ['name' => 'Alice', 'email' => 'alice@test.com', 'score' => 10, 'status' => 'active'],
+    ]);
+
+    $affected = await(qb('users')->where('name', 'Alice')->decrement('score', 3, ['status' => 'inactive']));
+    $user = await(qb('users')->where('name', 'Alice')->first());
+
+    expect($affected)->toBe(1)
+        ->and((float) $user->score)->toBe(7.0)
+        ->and($user->status)->toBe('inactive')
+    ;
+});
+
+test('increment and decrement handles zero affected rows if no match', function () {
+    $affectedInc = await(qb('users')->where('name', 'Ghost')->increment('score', 5));
+    $affectedDec = await(qb('users')->where('name', 'Ghost')->decrement('score', 5));
+
+    expect($affectedInc)->toBe(0)
+        ->and($affectedDec)->toBe(0)
+    ;
+});

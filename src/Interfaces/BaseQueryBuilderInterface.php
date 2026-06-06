@@ -133,6 +133,35 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
     public function exists(): PromiseInterface;
 
     /**
+     * Check if no records exist.
+     *
+     * @return PromiseInterface<bool>
+     */
+    public function doesntExist(): PromiseInterface;
+
+    /**
+     * Increment a column's value by a given amount.
+     *
+     * @param string $column
+     * @param int|float $amount
+     * @param array<string, mixed> $extra Extra columns to update.
+     *
+     * @return PromiseInterface<int> The number of affected rows.
+     */
+    public function increment(string $column, int|float $amount = 1, array $extra = []): PromiseInterface;
+
+    /**
+     * Decrement a column's value by a given amount.
+     *
+     * @param string $column
+     * @param int|float $amount
+     * @param array<string, mixed> $extra Extra columns to update.
+     *
+     * @return PromiseInterface<int> The number of affected rows.
+     */
+    public function decrement(string $column, int|float $amount = 1, array $extra = []): PromiseInterface;
+
+    /**
      * Insert a single record.
      *
      * @param array<string, mixed> $data

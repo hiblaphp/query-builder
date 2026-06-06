@@ -212,8 +212,8 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     }
 
     /**
-       * {@inheritdoc}
-       */
+     * {@inheritdoc}
+     */
     public function stream(int $bufferSize = 100): PromiseInterface
     {
         $sql = $this->buildSelectQuery();
@@ -458,9 +458,71 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      */
     public function exists(): PromiseInterface
     {
-        $promise = $this->count()->then(fn (int $count) => $count > 0);
+        $sql = $this->buildExistsQuery();
+
+        $promise = $this->client->fetchValue($sql, null, array_values($this->getCompiledBindings()))
+            ->then(function (mixed $value) {
+                if (\is_bool($value)) {
+                    return $value;
+                }
+
+                if (\is_string($value)) {
+                    $normalized = strtolower($value);
+                    if ($normalized === 't' || $normalized === 'true' || $normalized === '1') {
+                        return true;
+                    }
+                    if ($normalized === 'f' || $normalized === 'false' || $normalized === '0') {
+                        return false;
+                    }
+                }
+
+                if (\is_int($value)) {
+                    return $value > 0;
+                }
+
+                if (\is_float($value)) {
+                    return $value > 0;
+                }
+
+                return false;
+            })
+        ;
 
         return Promise::propagateCancellation($promise);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function doesntExist(): PromiseInterface
+    {
+        $promise = $this->exists()->then(fn (bool $exists) => ! $exists);
+
+        return Promise::propagateCancellation($promise);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function increment(string $column, int|float $amount = 1, array $extra = []): PromiseInterface
+    {
+        $sql = $this->buildIncrementQuery($column, $amount, $extra);
+
+        $bindings = [...array_values($extra), ...array_values($this->getCompiledBindings())];
+
+        return $this->client->execute($sql, $bindings);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function decrement(string $column, int|float $amount = 1, array $extra = []): PromiseInterface
+    {
+        $sql = $this->buildDecrementQuery($column, $amount, $extra);
+
+        $bindings = [...array_values($extra), ...array_values($this->getCompiledBindings())];
+
+        return $this->client->execute($sql, $bindings);
     }
 
     /**

@@ -9,10 +9,10 @@ use Hibla\QueryBuilder\Exceptions\TemplateNotFoundException;
 class TemplateEngine
 {
     private string $templatesPath;
-    
+
     /**
      * In-memory cache to prevent blocking file I/O.
-     * 
+     *
      * @var array<string, string>
      */
     private static array $pathCache = [];
@@ -35,7 +35,7 @@ class TemplateEngine
         if (! is_dir($path)) {
             throw new TemplateNotFoundException("Templates path does not exist: {$path}");
         }
-        
+
         self::$pathCache = [];
     }
 
@@ -49,7 +49,7 @@ class TemplateEngine
             $templatePath = self::$pathCache[$template];
         } else {
             if (\count(self::$pathCache) >= self::MAX_CACHE_SIZE) {
-                self::$pathCache = []; 
+                self::$pathCache = [];
             }
 
             $templatePath = $this->getTemplatePath($template);

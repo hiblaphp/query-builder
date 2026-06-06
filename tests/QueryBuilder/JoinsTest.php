@@ -189,3 +189,171 @@ test('join condition can handle complex ON clauses', function () {
         ->and((float) $result[0]->total)->toBe(50.0)
     ;
 });
+
+test('advanced innerJoin using closure with parameter bindings', function () {
+    TestSchema::insertUsers(client(), [['name' => 'Alice', 'email' => 'a@test.com']]);
+    $alice = await(qb('users')->first());
+    TestSchema::insertOrders(client(), [
+        ['user_id' => $alice->id, 'total' => 150, 'status' => 'completed'],
+        ['user_id' => $alice->id, 'total' => 50, 'status' => 'pending'],
+    ]);
+
+    $result = await(qb('users')
+        ->select('users.name', 'orders.total')
+        ->innerJoin('orders', function ($join) {
+            return $join->on('users.id', '=', 'orders.user_id')
+                ->where('orders.status', 'completed')
+            ;
+        })
+        ->get());
+
+    expect($result)->toHaveCount(1)
+        ->and($result[0]->name)->toBe('Alice')
+        ->and((float) $result[0]->total)->toBe(150.0)
+    ;
+});
+
+test('advanced leftJoin with nested group conditions', function () {
+    TestSchema::insertUsers(client(), [
+        ['name' => 'Alice', 'email' => 'a@test.com'],
+        ['name' => 'Bob', 'email' => 'b@test.com'],
+    ]);
+    $alice = await(qb('users')->where('name', 'Alice')->first());
+    TestSchema::insertOrders(client(), [
+        ['user_id' => $alice->id, 'total' => 100, 'status' => 'pending'],
+        ['user_id' => $alice->id, 'total' => 200, 'status' => 'completed'],
+    ]);
+
+    $result = await(qb('users')
+        ->select('users.name', 'orders.total', 'orders.status')
+        ->leftJoin('orders', function ($join) {
+            return $join->on('users.id', 'orders.user_id')
+                ->whereGroup(function ($q) {
+                    return $q->where('orders.status', 'pending')
+                        ->orWhere('orders.status', 'completed')
+                    ;
+                })
+            ;
+        })
+        ->orderBy('users.name', 'ASC')
+        ->orderBy('orders.total', 'ASC')
+        ->get());
+
+    expect($result)->toHaveCount(3)
+        ->and($result[0]->name)->toBe('Alice')
+        ->and((float) $result[0]->total)->toBe(100.0)
+        ->and($result[1]->name)->toBe('Alice')
+        ->and((float) $result[1]->total)->toBe(200.0)
+        ->and($result[2]->name)->toBe('Bob')
+        ->and($result[2]->total)->toBeNull()
+    ;
+});
+
+test('advanced join parameter bindings align correctly with main query where bindings', function () {
+    TestSchema::insertUsers(client(), [
+        ['name' => 'Alice', 'email' => 'a@test.com', 'age' => 25],
+        ['name' => 'Bob', 'email' => 'b@test.com', 'age' => 15],
+    ]);
+    $alice = await(qb('users')->where('name', 'Alice')->first());
+    TestSchema::insertOrders(client(), [
+        ['user_id' => $alice->id, 'total' => 300, 'status' => 'completed'],
+    ]);
+
+    $result = await(qb('users')
+        ->select('users.name', 'orders.total')
+        ->innerJoin('orders', function ($join) {
+            return $join->on('users.id', 'orders.user_id')
+                ->where('orders.status', 'completed')
+            ;
+        })
+        ->where('users.age', '>', 18)
+        ->get());
+
+    expect($result)->toHaveCount(1)
+        ->and($result[0]->name)->toBe('Alice')
+        ->and((float) $result[0]->total)->toBe(300.0)
+    ;
+});
+
+test('advanced join with whereIn and whereNotIn on live database', function () {
+    TestSchema::insertUsers(client(), [['name' => 'Alice', 'email' => 'a@test.com']]);
+    $alice = await(qb('users')->first());
+    TestSchema::insertOrders(client(), [
+        ['user_id' => $alice->id, 'total' => 100, 'status' => 'completed'],
+        ['user_id' => $alice->id, 'total' => 200, 'status' => 'pending'],
+        ['user_id' => $alice->id, 'total' => 300, 'status' => 'failed'],
+    ]);
+
+    $result = await(qb('users')
+        ->select('users.name', 'orders.total')
+        ->innerJoin('orders', function ($join) {
+            return $join->on('users.id', '=', 'orders.user_id')
+                ->whereIn('orders.status', ['completed', 'pending'])
+                ->whereNotIn('orders.status', ['failed', 'cancelled'])
+            ;
+        })
+        ->orderBy('orders.total', 'ASC')
+        ->get());
+
+    expect($result)->toHaveCount(2)
+        ->and((float) $result[0]->total)->toBe(100.0)
+        ->and((float) $result[1]->total)->toBe(200.0)
+    ;
+});
+
+test('advanced join containing subquery whereExists inside closure', function () {
+    TestSchema::insertUsers(client(), [
+        ['name' => 'Alice', 'email' => 'a@test.com', 'status' => 'active'],
+        ['name' => 'Bob', 'email' => 'b@test.com', 'status' => 'inactive'],
+    ]);
+    $alice = await(qb('users')->where('name', 'Alice')->first());
+    $bob = await(qb('users')->where('name', 'Bob')->first());
+
+    TestSchema::insertOrders(client(), [
+        ['user_id' => $alice->id, 'total' => 100],
+        ['user_id' => $bob->id, 'total' => 200],
+    ]);
+
+    $result = await(qb('orders')
+        ->select('users.name', 'orders.total')
+        ->innerJoin('users', function ($join) {
+            return $join->on('orders.user_id', '=', 'users.id')
+                ->whereExists(function ($sub) {
+                    return $sub->from('users as u')
+                        ->whereColumn('u.id', 'users.id')
+                        ->where('u.status', 'active')
+                    ;
+                })
+            ;
+        })
+        ->get());
+
+    expect($result)->toHaveCount(1)
+        ->and($result[0]->name)->toBe('Alice')
+        ->and((float) $result[0]->total)->toBe(100.0)
+    ;
+});
+
+test('advanced join with whereNull and whereNotNull conditions', function () {
+    TestSchema::insertUsers(client(), [['name' => 'Alice', 'email' => 'a@test.com']]);
+    $alice = await(qb('users')->first());
+    TestSchema::insertOrders(client(), [
+        ['user_id' => $alice->id, 'total' => 100],
+    ]);
+
+    await(qb('users')->where('id', $alice->id)->update(['status' => 'active', 'deleted_at' => null]));
+
+    $result = await(qb('orders')
+        ->select('users.name', 'orders.total')
+        ->innerJoin('users', function ($join) {
+            return $join->on('orders.user_id', '=', 'users.id')
+                ->whereNotNull('users.status')
+                ->whereNull('users.deleted_at')
+            ;
+        })
+        ->get());
+
+    expect($result)->toHaveCount(1)
+        ->and($result[0]->name)->toBe('Alice')
+    ;
+});

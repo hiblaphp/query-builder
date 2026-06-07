@@ -86,4 +86,13 @@ final class ConfigResolver
 
         return self::resolve('hibla-migrations', 'HIBLA_MIGRATIONS_CONFIG');
     }
+
+    public static function getSeedersConfig(): ?array
+    {
+        if (self::$mocks !== null && \array_key_exists('seeders', self::$mocks)) {
+            return self::$mocks['seeders'];
+        }
+
+        return self::resolve('hibla-seeders', 'HIBLA_SEEDERS_CONFIG');
+    }
 }

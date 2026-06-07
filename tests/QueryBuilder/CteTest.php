@@ -21,13 +21,15 @@ test('executes a basic CTE select query successfully on the database', function 
         ->with('active_users', function ($q) {
             return $q->from('users')
                 ->select('id', 'name')
-                ->where('status', 'active');
+                ->where('status', 'active')
+            ;
         })
         ->orderBy('name')
         ->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->name)->toBe('Alice');
+        ->and($result[0]->name)->toBe('Alice')
+    ;
 });
 
 test('executes a CTE query joined to a standard table with parameter alignment', function () {
@@ -48,14 +50,16 @@ test('executes a CTE query joined to a standard table with parameter alignment',
         ->with('active_users', function ($q) {
             return $q->from('users')
                 ->select('id', 'name')
-                ->where('status', 'active');
+                ->where('status', 'active')
+            ;
         })
         ->innerJoin('orders', 'active_users.id = orders.user_id')
         ->get());
 
     expect($result)->toHaveCount(1)
         ->and($result[0]->name)->toBe('Alice')
-        ->and((float) $result[0]->total)->toBe(100.0);
+        ->and((float) $result[0]->total)->toBe(100.0)
+    ;
 });
 
 test('executes a recursive CTE to generate sequences natively in the database', function () {
@@ -66,8 +70,10 @@ test('executes a recursive CTE to generate sequences natively in the database', 
                 ->unionAll(function ($union) {
                     return $union->from('seq')
                         ->selectRaw('n + 1')
-                        ->where('n', '<', 5);
-                });
+                        ->where('n', '<', 5)
+                    ;
+                })
+            ;
         }, true)
         ->from('seq')
         ->orderBy('n', 'ASC')
@@ -78,7 +84,8 @@ test('executes a recursive CTE to generate sequences natively in the database', 
         ->and((int) $result[1]->n)->toBe(2)
         ->and((int) $result[2]->n)->toBe(3)
         ->and((int) $result[3]->n)->toBe(4)
-        ->and((int) $result[4]->n)->toBe(5);
+        ->and((int) $result[4]->n)->toBe(5)
+    ;
 });
 
 test('executes multiple dependent CTEs where the second queries from the first', function () {
@@ -94,18 +101,21 @@ test('executes multiple dependent CTEs where the second queries from the first',
         ->with('active_users', function ($q) {
             return $q->from('users')
                      ->select('id', 'name')
-                     ->where('status', 'active');
+                     ->where('status', 'active')
+            ;
         })
         // CTE 2 (References 'active_users' CTE above)
         ->with('alice_only', function ($q) {
             return $q->from('active_users')
                      ->select('id', 'name')
-                     ->where('name', 'Alice');
+                     ->where('name', 'Alice')
+            ;
         })
         ->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->name)->toBe('Alice');
+        ->and($result[0]->name)->toBe('Alice')
+    ;
 });
 
 test('executes CTE with complex whereIn, ordering, and pagination limits', function () {
@@ -119,7 +129,8 @@ test('executes CTE with complex whereIn, ordering, and pagination limits', funct
         ->select('name')
         ->with('paged_users', function ($q) {
             return $q->from('users')
-                     ->whereIn('name', ['Alice', 'Bob', 'Carol']);
+                     ->whereIn('name', ['Alice', 'Bob', 'Carol'])
+            ;
         })
         ->orderBy('name', 'ASC')
         ->limit(2, 1)
@@ -127,7 +138,8 @@ test('executes CTE with complex whereIn, ordering, and pagination limits', funct
 
     expect($result)->toHaveCount(2)
         ->and($result[0]->name)->toBe('Bob')
-        ->and($result[1]->name)->toBe('Carol');
+        ->and($result[1]->name)->toBe('Carol')
+    ;
 });
 
 test('executes counts and aggregations on top of CTE structures successfully', function () {
@@ -142,7 +154,8 @@ test('executes counts and aggregations on top of CTE structures successfully', f
     $query = qb('alice_orders')
         ->with('alice_orders', function ($q) use ($alice) {
             return $q->from('orders')->where('user_id', $alice->id);
-        });
+        })
+    ;
 
     $sum = await($query->sum('total'));
     $avg = await($query->avg('total'));
@@ -150,7 +163,8 @@ test('executes counts and aggregations on top of CTE structures successfully', f
 
     expect((float) $sum)->toBe(400.0)
         ->and((float) $avg)->toBe(200.0)
-        ->and($count)->toBe(2);
+        ->and($count)->toBe(2)
+    ;
 });
 
 test('executes a self-join on the same CTE table concurrently', function () {
@@ -162,7 +176,6 @@ test('executes a self-join on the same CTE table concurrently', function () {
         ['user_id' => $alice->id, 'total' => 300],
     ]);
 
-    // We define one CTE, and join it twice to find users who placed both a $100 and $300 order
     $result = await(qb('users as u')
         ->selectDistinct('u.name')
         ->with('user_orders', function ($q) {
@@ -173,7 +186,8 @@ test('executes a self-join on the same CTE table concurrently', function () {
         ->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->name)->toBe('Alice');
+        ->and($result[0]->name)->toBe('Alice')
+    ;
 });
 
 test('executes pessimistic locking lockForUpdate on top of CTE queries within transactions', function () {
@@ -186,11 +200,13 @@ test('executes pessimistic locking lockForUpdate on top of CTE queries within tr
                 return $q->from('users')->select('id', 'name')->where('status', 'active');
             })
             ->lockForUpdate()
-            ->first();
+            ->first()
+        ;
     }));
 
     expect($result)->not->toBeNull()
-        ->and($result->name)->toBe('Alice');
+        ->and($result->name)->toBe('Alice')
+    ;
 });
 
 test('executes UNION ALL combining a CTE table with a standard database table', function () {
@@ -212,7 +228,8 @@ test('executes UNION ALL combining a CTE table with a standard database table', 
 
     expect($result)->toHaveCount(2)
         ->and($result[0]->name)->toBe('Alice')
-        ->and($result[1]->name)->toBe('Bob');
+        ->and($result[1]->name)->toBe('Bob')
+    ;
 });
 
 test('executes whereExists subquery referencing an outer-scoped CTE table', function () {
@@ -235,7 +252,8 @@ test('executes whereExists subquery referencing an outer-scoped CTE table', func
         })
         ->whereExists(function ($sub) {
             return $sub->from('active_users')
-                       ->whereColumn('active_users.id', 'orders.user_id');
+                       ->whereColumn('active_users.id', 'orders.user_id')
+            ;
         })
         ->get());
 

@@ -45,6 +45,7 @@ final class TestSchema
                     status     VARCHAR(50)  NOT NULL DEFAULT 'active',
                     age        INTEGER      DEFAULT NULL,
                     score      NUMERIC(8,2) NOT NULL DEFAULT 0,
+                    meta       JSONB        DEFAULT NULL, -- Added native Postgres JSONB column
                     deleted_at TIMESTAMP    DEFAULT NULL,
                     created_at TIMESTAMP    NOT NULL DEFAULT NOW()
                 )
@@ -57,6 +58,7 @@ final class TestSchema
                     status     VARCHAR(50)  NOT NULL DEFAULT 'active',
                     age        INT          DEFAULT NULL,
                     score      DECIMAL(8,2) NOT NULL DEFAULT 0,
+                    meta       JSON         DEFAULT NULL, -- Added native MySQL JSON column
                     deleted_at TIMESTAMP    DEFAULT NULL,
                     created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )

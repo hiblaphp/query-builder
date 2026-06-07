@@ -39,6 +39,11 @@ class TemplateEngine
         self::$pathCache = [];
     }
 
+    /**
+     * Render a template with optional data
+     * 
+     * @param array<string, mixed> $data
+     */
     public function render(string $template, array $data = []): string
     {
         if (str_contains($template, '::')) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Internals;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
+use Hibla\Promise\Promise;
 use Hibla\QueryBuilder\Exceptions\DatabaseConfigNotFoundException;
 use Hibla\QueryBuilder\Exceptions\InvalidConnectionConfigException;
 use Hibla\QueryBuilder\Interfaces\ConnectionResolverInterface;
@@ -336,7 +337,7 @@ class DatabaseManager implements ConnectionResolverInterface
             }
             $this->defaultConnectionName = null;
 
-            return \Hibla\Promise\Promise::all($promises)->then(fn () => null);
+            return Promise::allSettled($promises)->then(function () {});
         }
 
         if (isset($this->connections[$name])) {
@@ -350,6 +351,6 @@ class DatabaseManager implements ConnectionResolverInterface
             return $promise;
         }
 
-        return \Hibla\Promise\Promise::resolved();
+        return Promise::resolved();
     }
 }

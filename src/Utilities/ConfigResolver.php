@@ -5,25 +5,33 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Utilities;
 
 use Rcalicdan\ConfigLoader\Config;
+
 use function Rcalicdan\ConfigLoader\env;
 
 /**
- * @internal Resolves configuration files across the Hibla database ecosystem using a fallback cascade.
+ * @internal Resolves configuration files across the Hibla ecosystem using a fallback cascade.
  */
 final class ConfigResolver
 {
+    /**
+     * Array to hold mock configurations for testing isolation.
+     *
+     * @var array<string, array<string, mixed>|null>|null
+     */
+    public static ?array $mocks = null;
+
     /**
      * Resolves configuration using the cascade: ENV -> config/ dir -> root fallback.
      *
      * @param string $defaultName The default configuration name (e.g., 'hibla-database')
      * @param string $envKey The environment variable key for overrides
+     *
      * @return array<string, mixed>|null
      */
     public static function resolve(string $defaultName, string $envKey): ?array
     {
-        // Check Environment Variable override (e.g., HIBLA_DB_CONFIG="database/db-config")
+        // Check Environment Variable override
         $envPath = env($envKey);
-
         if (\is_string($envPath) && trim($envPath) !== '') {
             $config = Config::loadFromRoot($envPath);
             if (\is_array($config)) {
@@ -31,8 +39,7 @@ final class ConfigResolver
             }
         }
 
-        // Check auto-loaded config/ directory (native to ConfigLoader)
-        // If the user placed it in /config/hibla-database.php, ConfigLoader already knows about it.
+        // Check auto-loaded config/ directory
         if (Config::has($defaultName)) {
             $config = Config::get($defaultName);
             if (\is_array($config)) {
@@ -42,7 +49,6 @@ final class ConfigResolver
 
         // Fallback to legacy root location
         $config = Config::loadFromRoot($defaultName);
-
         if (\is_array($config)) {
             return $config;
         }
@@ -57,6 +63,10 @@ final class ConfigResolver
      */
     public static function getDatabaseConfig(): ?array
     {
+        if (self::$mocks !== null && \array_key_exists('database', self::$mocks)) {
+            return self::$mocks['database'];
+        }
+
         return self::resolve('hibla-database', 'HIBLA_DB_CONFIG');
     }
 
@@ -67,6 +77,10 @@ final class ConfigResolver
      */
     public static function getMigrationsConfig(): ?array
     {
+        if (self::$mocks !== null && \array_key_exists('migrations', self::$mocks)) {
+            return self::$mocks['migrations'];
+        }
+
         return self::resolve('hibla-migrations', 'HIBLA_MIGRATIONS_CONFIG');
     }
 }

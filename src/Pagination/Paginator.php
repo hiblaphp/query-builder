@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Pagination;
 
 use Hibla\QueryBuilder\Interfaces\Pagination\PaginatorInterface;
-use Rcalicdan\ConfigLoader\Config;
+use Hibla\QueryBuilder\Utilities\ConfigResolver;
 
 /**
  * Standard Offset-based Paginator.
@@ -166,8 +166,8 @@ class Paginator extends AbstractPaginator implements PaginatorInterface
     public function render(?string $template = null, ?string $basePath = null): string
     {
         if ($template === null) {
-            /** @var string $template */
-            $template = Config::loadFromRoot('pdo-schema.pagination.default_template') ?? 'tailwind';
+            $config = ConfigResolver::getDatabaseConfig();
+            $template = $config['pagination']['default_template'] ?? 'tailwind';
         }
 
         if (! $this->hasPages) {

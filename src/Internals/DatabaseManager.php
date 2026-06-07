@@ -15,11 +15,11 @@ use Hibla\QueryBuilder\Interfaces\TransactionalQueryBuilderInterface;
 use Hibla\QueryBuilder\Pagination\CursorPaginator;
 use Hibla\QueryBuilder\Pagination\Paginator;
 use Hibla\QueryBuilder\QueryBuilder;
+use Hibla\QueryBuilder\Utilities\ConfigResolver;
 use Hibla\QueryBuilder\Utilities\ConnectionFactory;
 use Hibla\Sql\IsolationLevelInterface;
 use Hibla\Sql\SqlClientInterface;
 use Hibla\Sql\TransactionOptions;
-use Rcalicdan\ConfigLoader\Config;
 
 /**
  * Manages the connection pool registry, lazy-loading clients,
@@ -59,7 +59,7 @@ class DatabaseManager implements ConnectionResolverInterface
     private function configurePaginationTemplates(): void
     {
         try {
-            $dbConfig = Config::loadFromRoot('hibla-database');
+            $dbConfig = ConfigResolver::getDatabaseConfig();
 
             if (! \is_array($dbConfig)) {
                 return;
@@ -158,7 +158,7 @@ class DatabaseManager implements ConnectionResolverInterface
             return $this->defaultConnectionName;
         }
 
-        $dbConfigAll = Config::loadFromRoot('hibla-database');
+        $dbConfigAll = ConfigResolver::getDatabaseConfig();
 
         if (! \is_array($dbConfigAll)) {
             throw new DatabaseConfigNotFoundException();
@@ -182,7 +182,7 @@ class DatabaseManager implements ConnectionResolverInterface
      */
     private function initializeFromConfig(string $name): DatabaseConnectionInterface
     {
-        $dbConfigAll = Config::loadFromRoot('hibla-database');
+        $dbConfigAll = ConfigResolver::getDatabaseConfig();
 
         if (! \is_array($dbConfigAll)) {
             throw new DatabaseConfigNotFoundException();
@@ -337,7 +337,8 @@ class DatabaseManager implements ConnectionResolverInterface
             }
             $this->defaultConnectionName = null;
 
-            return Promise::allSettled($promises)->then(function () {});
+            return Promise::allSettled($promises)->then(function () {
+            });
         }
 
         if (isset($this->connections[$name])) {

@@ -196,7 +196,8 @@ test('executes whereJsonDoesntContain negative array searches successfully on re
         ->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->name)->toBe('Bob');
+        ->and($result[0]->name)->toBe('Bob')
+    ;
 });
 
 test('executes orWhereJsonDoesntContain logical OR searches on real database', function () {
@@ -217,7 +218,7 @@ test('executes orWhereJsonDoesntContain logical OR searches on real database', f
         'email' => 'carol@test.com',
         'meta' => json_encode(['languages' => ['en', 'es']]),
     ]));
-    
+
     $result = await(qb('users')
         ->whereJsonDoesntContain('meta->languages', 'en')
         ->orWhereJsonDoesntContain('meta->languages', 'es')
@@ -226,7 +227,8 @@ test('executes orWhereJsonDoesntContain logical OR searches on real database', f
 
     expect($result)->toHaveCount(2)
         ->and($result[0]->name)->toBe('Alice')
-        ->and($result[1]->name)->toBe('Bob');
+        ->and($result[1]->name)->toBe('Bob')
+    ;
 });
 
 test('executes negative path comparison != on real database', function () {
@@ -247,7 +249,8 @@ test('executes negative path comparison != on real database', function () {
         ->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->name)->toBe('Bob');
+        ->and($result[0]->name)->toBe('Bob')
+    ;
 });
 
 test('executes negative array length calculations != on real database', function () {

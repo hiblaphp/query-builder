@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder\Pagination;
 
 use Hibla\QueryBuilder\Interfaces\Pagination\CursorPaginatorInterface;
+use Hibla\QueryBuilder\Utilities\ConfigResolver;
 use Hibla\QueryBuilder\Utilities\CursorPaginationHelper;
-use Rcalicdan\ConfigLoader\Config;
 
 /**
  * Cursor-based Paginator.
@@ -70,8 +70,8 @@ class CursorPaginator extends AbstractPaginator implements CursorPaginatorInterf
     public function render(?string $template = null, ?string $basePath = null): string
     {
         if ($template === null) {
-            /** @var string $template */
-            $template = Config::loadFromRoot('pdo-schema.pagination.default_cursor_template') ?? 'cursor-simple';
+            $config = ConfigResolver::getDatabaseConfig();
+            $template = $config['pagination']['default_cursor_template'] ?? 'cursor-simple';
         }
 
         if (! $this->hasMore) {

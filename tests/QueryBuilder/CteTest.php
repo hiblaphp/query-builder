@@ -42,7 +42,7 @@ test('executes a CTE query joined to a standard table with parameter alignment',
 
     TestSchema::insertOrders(client(), [
         ['user_id' => $alice->id, 'total' => 100],
-        ['user_id' => $bob->id, 'total' => 200],
+        ['user_id' => $bob->id, 'total' => 20],
     ]);
 
     $result = await(qb('active_users')
@@ -65,7 +65,7 @@ test('executes a CTE query joined to a standard table with parameter alignment',
 test('executes a recursive CTE to generate sequences natively in the database', function () {
     $result = await(newQb()
         ->select('n')
-        ->with('seq', function ($q) {
+        ->withRecursive('seq', function ($q) {
             return $q->selectRaw('1 AS n')
                 ->unionAll(function ($union) {
                     return $union->from('seq')
@@ -74,7 +74,7 @@ test('executes a recursive CTE to generate sequences natively in the database', 
                     ;
                 })
             ;
-        }, true)
+        })
         ->from('seq')
         ->orderBy('n', 'ASC')
         ->get());
@@ -94,21 +94,18 @@ test('executes multiple dependent CTEs where the second queries from the first',
         ['name' => 'Bob',   'email' => 'bob@test.com',   'status' => 'inactive'],
     ]);
 
-    // CTE 1 filters active users, CTE 2 selects Alice from CTE 1, main query selects from CTE 2
     $result = await(qb('alice_only')
         ->select('id', 'name')
-        // CTE 1
         ->with('active_users', function ($q) {
             return $q->from('users')
-                     ->select('id', 'name')
-                     ->where('status', 'active')
+                ->select('id', 'name')
+                ->where('status', 'active')
             ;
         })
-        // CTE 2 (References 'active_users' CTE above)
         ->with('alice_only', function ($q) {
             return $q->from('active_users')
-                     ->select('id', 'name')
-                     ->where('name', 'Alice')
+                ->select('id', 'name')
+                ->where('name', 'Alice')
             ;
         })
         ->get());
@@ -129,7 +126,7 @@ test('executes CTE with complex whereIn, ordering, and pagination limits', funct
         ->select('name')
         ->with('paged_users', function ($q) {
             return $q->from('users')
-                     ->whereIn('name', ['Alice', 'Bob', 'Carol'])
+                ->whereIn('name', ['Alice', 'Bob', 'Carol'])
             ;
         })
         ->orderBy('name', 'ASC')
@@ -193,7 +190,7 @@ test('executes a self-join on the same CTE table concurrently', function () {
 test('executes pessimistic locking lockForUpdate on top of CTE queries within transactions', function () {
     TestSchema::insertUsers(client(), [['name' => 'Alice', 'email' => 'alice@test.com', 'status' => 'active']]);
 
-    /** @var stdClass $result */
+    /** @var stdClass */
     $result = await(newQb()->transaction(function ($tx) {
         return $tx->from('active_users')
             ->with('active_users', function ($q) {
@@ -252,12 +249,11 @@ test('executes whereExists subquery referencing an outer-scoped CTE table', func
         })
         ->whereExists(function ($sub) {
             return $sub->from('active_users')
-                       ->whereColumn('active_users.id', 'orders.user_id')
+                ->whereColumn('active_users.id', 'orders.user_id')
             ;
         })
         ->get());
 
     expect($result)->toHaveCount(1)
-        ->and((float) $result[0]->total)->toBe(500.0)
-    ;
+        ->and((float) $result[0]->total)->toBe(500.0);
 });

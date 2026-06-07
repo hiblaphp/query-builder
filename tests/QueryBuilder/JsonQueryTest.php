@@ -271,5 +271,6 @@ test('executes negative array length calculations != on real database', function
         ->get());
 
     expect($result)->toHaveCount(1)
-        ->and($result[0]->name)->toBe('Bob');
+        ->and($result[0]->name)->toBe('Bob')
+    ;
 });

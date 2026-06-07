@@ -87,6 +87,11 @@ final class ConfigResolver
         return self::resolve('hibla-migrations', 'HIBLA_MIGRATIONS_CONFIG');
     }
 
+    /**
+     * Safely retrieve the migrations configuration.
+     *
+     * @return array<string, mixed>|null
+     */
     public static function getSeedersConfig(): ?array
     {
         if (self::$mocks !== null && \array_key_exists('seeders', self::$mocks)) {

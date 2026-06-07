@@ -255,5 +255,6 @@ test('executes whereExists subquery referencing an outer-scoped CTE table', func
         ->get());
 
     expect($result)->toHaveCount(1)
-        ->and((float) $result[0]->total)->toBe(500.0);
+        ->and((float) $result[0]->total)->toBe(500.0)
+    ;
 });

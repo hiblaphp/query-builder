@@ -71,7 +71,10 @@ class CursorPaginator extends AbstractPaginator implements CursorPaginatorInterf
     {
         if ($template === null) {
             $config = ConfigResolver::getDatabaseConfig();
-            $template = $config['pagination']['default_cursor_template'] ?? 'cursor-simple';
+            $pagination = (\is_array($config) && isset($config['pagination'])) ? $config['pagination'] : null;
+            
+            $templateVal = \is_array($pagination) ? ($pagination['default_cursor_template'] ?? null) : null;
+            $template = \is_string($templateVal) ? $templateVal : 'cursor-simple';
         }
 
         if (! $this->hasMore) {

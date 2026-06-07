@@ -167,7 +167,10 @@ class Paginator extends AbstractPaginator implements PaginatorInterface
     {
         if ($template === null) {
             $config = ConfigResolver::getDatabaseConfig();
-            $template = $config['pagination']['default_template'] ?? 'tailwind';
+            $pagination = (\is_array($config) && isset($config['pagination'])) ? $config['pagination'] : null;
+            
+            $templateVal = \is_array($pagination) ? ($pagination['default_template'] ?? null) : null;
+            $template = \is_string($templateVal) ? $templateVal : 'tailwind';
         }
 
         if (! $this->hasPages) {

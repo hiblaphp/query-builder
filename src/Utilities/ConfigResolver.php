@@ -35,6 +35,7 @@ final class ConfigResolver
         if (\is_string($envPath) && trim($envPath) !== '') {
             $config = Config::loadFromRoot($envPath);
             if (\is_array($config)) {
+                /** @var array<string, mixed> $config */
                 return $config;
             }
         }
@@ -43,6 +44,7 @@ final class ConfigResolver
         if (Config::has($defaultName)) {
             $config = Config::get($defaultName);
             if (\is_array($config)) {
+                /** @var array<string, mixed> $config */
                 return $config;
             }
         }
@@ -50,6 +52,7 @@ final class ConfigResolver
         // Fallback to legacy root location
         $config = Config::loadFromRoot($defaultName);
         if (\is_array($config)) {
+            /** @var array<string, mixed> $config */
             return $config;
         }
 

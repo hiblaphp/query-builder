@@ -50,6 +50,14 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
     public function first(): PromiseInterface;
 
     /**
+     * Get the first result or throw an exception if no record matches.
+     *
+     * @return PromiseInterface<array<string, mixed>|object> Rejects with RecordNotFoundException
+     *                                                       when no record matches the query conditions.
+     */
+    public function firstOrFail(): PromiseInterface;
+
+    /**
      * Find a record by ID.
      *
      * @return PromiseInterface<array<string, mixed>|object|null>
@@ -59,9 +67,8 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
     /**
      * Find a record by ID or throw an exception if not found.
      *
-     * @return PromiseInterface<array<string, mixed>|object>
-     *
-     * @throws \RuntimeException When no record is found.
+     * @return PromiseInterface<array<string, mixed>|object> Rejects with RecordNotFoundException
+     *                                                       when no record is found for the given ID.
      */
     public function findOrFail(mixed $id, string $column = 'id'): PromiseInterface;
 

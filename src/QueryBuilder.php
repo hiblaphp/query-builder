@@ -319,6 +319,24 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     /**
      * {@inheritdoc}
      */
+    public function firstOrFail(): PromiseInterface
+    {
+        $promise = $this->first()->then(function (array|object|null $result) {
+            if ($result === null) {
+                throw new RecordNotFoundException(
+                    'No record found matching the given query conditions.'
+                );
+            }
+
+            return $result;
+        });
+
+        return Promise::propagateCancellation($promise);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function find(mixed $id, string $column = 'id'): PromiseInterface
     {
         $promise = $this->where($column, $id)->first();

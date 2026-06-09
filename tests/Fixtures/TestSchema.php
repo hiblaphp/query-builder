@@ -6,6 +6,7 @@ namespace Tests\Fixtures;
 
 use Hibla\Sql\SqlClientInterface;
 
+use Tests\Helpers\ClientFactory;
 use function Hibla\await;
 
 final class TestSchema
@@ -24,6 +25,10 @@ final class TestSchema
 
     public static function truncateAll(SqlClientInterface $client): void
     {
+        if (ClientFactory::driver() === 'pgsql' || ClientFactory::driver() === 'postgres') {
+            await($client->execute("SET lock_timeout = '5s'"));
+        }
+
         await($client->execute('DELETE FROM orders'));
         await($client->execute('DELETE FROM users'));
     }

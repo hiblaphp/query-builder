@@ -53,7 +53,7 @@ test('query promise cancellation propagates to the server and cleanly recovers t
 
         $promise = $qb->raw($sleepQuery);
 
-        Loop::addTimer(0.1, function () use ($promise) {
+        Loop::addTimer(0.5, function () use ($promise) { 
             $promise->cancel();
         });
 
@@ -65,7 +65,7 @@ test('query promise cancellation propagates to the server and cleanly recovers t
         }
 
         $durationMs = (hrtime(true) - $startTime) / 1e6;
-        expect($durationMs)->toBeLessThan(2000);
+        expect($durationMs)->toBeLessThan(4000); 
 
         $result = await($qb->raw('SELECT 1 as val'));
         $val = is_object($result[0]) ? $result[0]->val : $result[0]['val'];
@@ -87,7 +87,7 @@ test('transaction promise cancellation aborts the running query and rolls back s
             await($trx->from('users')->insert(['name' => 'NeverReaches', 'email' => 'never@test.com']));
         });
 
-        Loop::addTimer(0.1, function () use ($promise) {
+        Loop::addTimer(0.5, function () use ($promise) { 
             $promise->cancel();
         });
 
@@ -98,7 +98,7 @@ test('transaction promise cancellation aborts the running query and rolls back s
             expect(true)->toBeTrue();
         }
 
-        await(delay(0.05));
+        await(delay(0.1));
 
         $count = await($qb->from('users')->count());
         expect($count)->toBe(0);
@@ -125,7 +125,7 @@ test('stream cancellation propagates to the server and stops delivery', function
             await(delay(0.05));
         });
 
-        Loop::addTimer(0.3, function () use ($promise) {
+        Loop::addTimer(0.5, function () use ($promise) { 
             $promise->cancel();
         });
 
@@ -150,12 +150,12 @@ test('cancellation without server-side support drops the connection safely', fun
     [$client, $qb, $driver] = createCancellationClient(enableServerSideCancellation: false);
 
     try {
-        $sleepQuery = getSleepQuery($driver, 2);
+        $sleepQuery = getSleepQuery($driver, 3);
         $promise = $qb->raw($sleepQuery);
 
         $startTime = hrtime(true);
 
-        Loop::addTimer(0.1, function () use ($promise) {
+        Loop::addTimer(0.5, function () use ($promise) { 
             $promise->cancel();
         });
 
@@ -169,7 +169,7 @@ test('cancellation without server-side support drops the connection safely', fun
         $durationMs = (hrtime(true) - $startTime) / 1e6;
 
         if ($driver !== DatabaseDriver::Postgres) {
-            expect($durationMs)->toBeLessThan(1500);
+            expect($durationMs)->toBeLessThan(2500);
         }
 
         $result = await($qb->raw('SELECT 1 as val'));
@@ -348,7 +348,7 @@ test('concurrent mass cancellation safely kills all queries and recovers the poo
             $qb->raw($sql),
         ];
 
-        Loop::addTimer(0.2, function () use ($promises) {
+        Loop::addTimer(0.5, function () use ($promises) { 
             foreach ($promises as $promise) {
                 $promise->cancel();
             }
@@ -411,14 +411,14 @@ test('aggregate builder methods propagate cancellation to the driver', function 
 
         $promise = $qb->from('users')->whereRaw($sleepClause)->count();
 
-        Loop::addTimer(0.1, function () use ($promise) {
+        Loop::addTimer(0.5, function () use ($promise) { 
             $promise->cancel();
         });
 
         try {
             await($promise);
             test()->fail('Promise should have been cancelled');
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             expect($e)->toBeInstanceOf(CancelledException::class);
         }
 

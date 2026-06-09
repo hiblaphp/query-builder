@@ -254,3 +254,34 @@ test('increment and decrement handles zero affected rows if no match', function 
         ->and($affectedDec)->toBe(0)
     ;
 });
+
+test('insertIgnore adds a row and returns 0 affected rows on duplicate key', function () {
+    TestSchema::insertUsers(client(), [
+        ['name' => 'Alice', 'email' => 'alice@test.com'],
+    ]);
+
+    $affected = await(qb('users')->insertIgnore([
+        'name' => 'Duplicate Alice',
+        'email' => 'alice@test.com',
+    ]));
+
+    expect($affected)->toBe(0)
+        ->and(await(qb('users')->count()))->toBe(1)
+    ;
+});
+
+test('insertIgnoreBatch inserts multiple rows and gracefully skips duplicates', function () {
+    TestSchema::insertUsers(client(), [
+        ['name' => 'Alice', 'email' => 'alice@test.com'],
+    ]);
+
+    $affected = await(qb('users')->insertIgnoreBatch([
+        ['name' => 'Duplicate Alice', 'email' => 'alice@test.com'],
+        ['name' => 'Bob', 'email' => 'bob@test.com'],
+        ['name' => 'Charlie', 'email' => 'charlie@test.com'],
+    ]));
+
+    expect($affected)->toBe(2)
+        ->and(await(qb('users')->count()))->toBe(3)
+    ;
+});

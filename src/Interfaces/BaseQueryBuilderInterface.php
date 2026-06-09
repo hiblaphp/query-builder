@@ -197,6 +197,24 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
     public function insertBatch(array $data): PromiseInterface;
 
     /**
+     * Insert a single record and ignore duplicate key constraints.
+     *
+     * @param array<string, mixed> $data
+     *
+     * @return PromiseInterface<int> The number of affected rows.
+     */
+    public function insertIgnore(array $data): PromiseInterface;
+
+    /**
+     * Insert multiple records in a batch and ignore duplicate key constraints.
+     *
+     * @param array<array<string, mixed>> $data
+     *
+     * @return PromiseInterface<int> The number of affected rows.
+     */
+    public function insertIgnoreBatch(array $data): PromiseInterface;
+
+    /**
      * Update records matching the query conditions.
      *
      * @param array<string, mixed> $data

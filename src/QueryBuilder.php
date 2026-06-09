@@ -599,6 +599,39 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     /**
      * {@inheritdoc}
      */
+    public function insertIgnore(array $data): PromiseInterface
+    {
+        if ($data === []) {
+            return Promise::resolved(0);
+        }
+
+        $sql = $this->buildInsertIgnoreQuery($data);
+
+        return $this->client->execute($sql, array_values($data));
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function insertIgnoreBatch(array $data): PromiseInterface
+    {
+        if ($data === []) {
+            return Promise::resolved(0);
+        }
+
+        $sql = $this->buildInsertIgnoreQuery($data);
+
+        $bindings = [];
+        foreach ($data as $row) {
+            array_push($bindings, ...array_values($row));
+        }
+
+        return $this->client->execute($sql, $bindings);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function update(array $data): PromiseInterface
     {
         if ($data === []) {

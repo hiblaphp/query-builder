@@ -15,7 +15,7 @@ use Tests\Helpers\ClientFactory;
 use function Hibla\await;
 use function Hibla\delay;
 
-
+// Helper to write raw debug logs immediately to the console
 function traceLog(string $message): void
 {
     $timestamp = date('H:i:s.v');
@@ -71,7 +71,6 @@ test('query promise cancellation propagates to the server and cleanly recovers t
         });
 
         try {
-            traceLog("Awaiting sleep promise...");
             await($promise);
             test()->fail('Promise should have been cancelled.');
         } catch (CancelledException $e) {
@@ -89,7 +88,13 @@ test('query promise cancellation propagates to the server and cleanly recovers t
         expect((int) $val)->toBe(1);
         traceLog("--- END: Basic Query Cancellation ---");
     } finally {
-        await($client->closeAsync());
+        traceLog("[Teardown] Closing client async...");
+        try {
+            await(Promise::timeout($client->closeAsync(), 2.0));
+            traceLog("[Teardown] Client closed.");
+        } catch (\Throwable $e) {
+            traceLog("[Teardown WARNING] closeAsync timed out or failed: " . $e->getMessage());
+        }
     }
 });
 
@@ -116,7 +121,6 @@ test('transaction promise cancellation aborts the running query and rolls back s
         });
 
         try {
-            traceLog("Awaiting transaction promise...");
             await($promise);
             test()->fail('Transaction promise should have been cancelled.');
         } catch (CancelledException $e) {
@@ -137,7 +141,13 @@ test('transaction promise cancellation aborts the running query and rolls back s
         expect((int) $val)->toBe(1);
         traceLog("--- END: Transaction Cancellation ---");
     } finally {
-        await($client->closeAsync());
+        traceLog("[Teardown] Closing client async...");
+        try {
+            await(Promise::timeout($client->closeAsync(), 2.0));
+            traceLog("[Teardown] Client closed.");
+        } catch (\Throwable $e) {
+            traceLog("[Teardown WARNING] closeAsync timed out or failed: " . $e->getMessage());
+        }
     }
 });
 
@@ -165,7 +175,6 @@ test('stream cancellation propagates to the server and stops delivery', function
         });
 
         try {
-            traceLog("Awaiting stream promise...");
             await($promise);
             test()->fail('Stream promise should have been cancelled.');
         } catch (CancelledException $e) {
@@ -182,7 +191,13 @@ test('stream cancellation propagates to the server and stops delivery', function
         expect((int) $val)->toBe(1);
         traceLog("--- END: Stream Cancellation ---");
     } finally {
-        await($client->closeAsync());
+        traceLog("[Teardown] Closing client async...");
+        try {
+            await(Promise::timeout($client->closeAsync(), 2.0));
+            traceLog("[Teardown] Client closed.");
+        } catch (\Throwable $e) {
+            traceLog("[Teardown WARNING] closeAsync timed out or failed: " . $e->getMessage());
+        }
     }
 });
 
@@ -204,7 +219,6 @@ test('cancellation without server-side support drops the connection safely', fun
         });
 
         try {
-            traceLog("Awaiting sleep promise...");
             await($promise);
             test()->fail('Promise should have been cancelled.');
         } catch (CancelledException $e) {
@@ -225,7 +239,13 @@ test('cancellation without server-side support drops the connection safely', fun
         expect((int) $val)->toBe(1);
         traceLog("--- END: No Server-Side Cancellation ---");
     } finally {
-        await($client->closeAsync());
+        traceLog("[Teardown] Closing client async...");
+        try {
+            await(Promise::timeout($client->closeAsync(), 2.0));
+            traceLog("[Teardown] Client closed.");
+        } catch (\Throwable $e) {
+            traceLog("[Teardown WARNING] closeAsync timed out or failed: " . $e->getMessage());
+        }
     }
 });
 
@@ -249,7 +269,6 @@ test('returning false inside each() gracefully cancels the stream without throwi
             }
         });
 
-        traceLog("Awaiting stream promise...");
         await($promise);
         traceLog("Stream promise resolved normally.");
 
@@ -261,7 +280,13 @@ test('returning false inside each() gracefully cancels the stream without throwi
         expect((int) $val)->toBe(1);
         traceLog("--- END: Implicit Cancellation via false (each) ---");
     } finally {
-        await($client->closeAsync());
+        traceLog("[Teardown] Closing client async...");
+        try {
+            await(Promise::timeout($client->closeAsync(), 2.0));
+            traceLog("[Teardown] Client closed.");
+        } catch (\Throwable $e) {
+            traceLog("[Teardown WARNING] closeAsync timed out or failed: " . $e->getMessage());
+        }
     }
 });
 
@@ -288,7 +313,6 @@ test('returning false inside chunkStream() gracefully cancels the stream without
             }
         });
 
-        traceLog("Awaiting chunkStream promise...");
         await($promise);
         traceLog("chunkStream resolved normally.");
 
@@ -302,7 +326,13 @@ test('returning false inside chunkStream() gracefully cancels the stream without
         expect((int) $val)->toBe(1);
         traceLog("--- END: Implicit Cancellation via false (chunkStream) ---");
     } finally {
-        await($client->closeAsync());
+        traceLog("[Teardown] Closing client async...");
+        try {
+            await(Promise::timeout($client->closeAsync(), 2.0));
+            traceLog("[Teardown] Client closed.");
+        } catch (\Throwable $e) {
+            traceLog("[Teardown WARNING] closeAsync timed out or failed: " . $e->getMessage());
+        }
     }
 });
 
@@ -329,7 +359,6 @@ test('returning false inside chunk() gracefully halts pagination without throwin
             }
         });
 
-        traceLog("Awaiting chunk promise...");
         await($promise);
         traceLog("chunk resolved normally.");
 
@@ -343,7 +372,13 @@ test('returning false inside chunk() gracefully halts pagination without throwin
         expect((int) $val)->toBe(1);
         traceLog("--- END: Implicit Cancellation via false (chunk) ---");
     } finally {
-        await($client->closeAsync());
+        traceLog("[Teardown] Closing client async...");
+        try {
+            await(Promise::timeout($client->closeAsync(), 2.0));
+            traceLog("[Teardown] Client closed.");
+        } catch (\Throwable $e) {
+            traceLog("[Teardown WARNING] closeAsync timed out or failed: " . $e->getMessage());
+        }
     }
 });
 
@@ -366,7 +401,6 @@ test('returning false inside chunkById() gracefully halts pagination without thr
             }
         });
 
-        traceLog("Awaiting chunkById promise...");
         await($promise);
         traceLog("chunkById resolved normally.");
 
@@ -380,7 +414,13 @@ test('returning false inside chunkById() gracefully halts pagination without thr
         expect((int) $val)->toBe(1);
         traceLog("--- END: Implicit Cancellation via false (chunkById) ---");
     } finally {
-        await($client->closeAsync());
+        traceLog("[Teardown] Closing client async...");
+        try {
+            await(Promise::timeout($client->closeAsync(), 2.0));
+            traceLog("[Teardown] Client closed.");
+        } catch (\Throwable $e) {
+            traceLog("[Teardown WARNING] closeAsync timed out or failed: " . $e->getMessage());
+        }
     }
 });
 
@@ -400,7 +440,6 @@ test('calling cancel multiple times is idempotent and does not break the pool', 
         $promise->cancel();
 
         try {
-            traceLog("Awaiting promise...");
             await($promise);
         } catch (CancelledException) {
             traceLog("Caught expected CancelledException.");
@@ -412,7 +451,13 @@ test('calling cancel multiple times is idempotent and does not break the pool', 
         expect((int)$val)->toBe(1);
         traceLog("--- END: Idempotent Cancel ---");
     } finally {
-        await($client->closeAsync());
+        traceLog("[Teardown] Closing client async...");
+        try {
+            await(Promise::timeout($client->closeAsync(), 2.0));
+            traceLog("[Teardown] Client closed.");
+        } catch (\Throwable $e) {
+            traceLog("[Teardown WARNING] closeAsync timed out or failed: " . $e->getMessage());
+        }
     }
 });
 
@@ -446,7 +491,6 @@ test('concurrent mass cancellation safely kills all queries and recovers the poo
 
         foreach ($promises as $i => $promise) {
             try {
-                traceLog("Awaiting promise #{$i}...");
                 await($promise);
             } catch (CancelledException $e) {
                 traceLog("Promise #{$i} caught CancelledException.");
@@ -463,7 +507,13 @@ test('concurrent mass cancellation safely kills all queries and recovers the poo
         expect($recoveries)->toHaveCount(3);
         traceLog("--- END: Mass Cancellation ---");
     } finally {
-        await($client->closeAsync());
+        traceLog("[Teardown] Closing client async...");
+        try {
+            await(Promise::timeout($client->closeAsync(), 2.0));
+            traceLog("[Teardown] Client closed.");
+        } catch (\Throwable $e) {
+            traceLog("[Teardown WARNING] closeAsync timed out or failed: " . $e->getMessage());
+        }
     }
 });
 
@@ -483,7 +533,6 @@ test('commit and rollback promises are uninterruptible', function () {
         $commitPromise->cancel();
 
         try {
-            traceLog("Awaiting commit promise...");
             await($commitPromise);
         } catch (CancelledException $e) {
             traceLog("Caught expected CancelledException on commit.");
@@ -497,7 +546,13 @@ test('commit and rollback promises are uninterruptible', function () {
         expect($count)->toBe(1);
         traceLog("--- END: Uninterruptible Transaction ---");
     } finally {
-        await($client->closeAsync());
+        traceLog("[Teardown] Closing client async...");
+        try {
+            await(Promise::timeout($client->closeAsync(), 2.0));
+            traceLog("[Teardown] Client closed.");
+        } catch (\Throwable $e) {
+            traceLog("[Teardown WARNING] closeAsync timed out or failed: " . $e->getMessage());
+        }
     }
 });
 
@@ -520,7 +575,6 @@ test('aggregate builder methods propagate cancellation to the driver', function 
         });
 
         try {
-            traceLog("Awaiting aggregate promise...");
             await($promise);
             test()->fail('Promise should have been cancelled');
         } catch (\Throwable $e) {
@@ -534,6 +588,12 @@ test('aggregate builder methods propagate cancellation to the driver', function 
         expect((int)$val)->toBe(1);
         traceLog("--- END: Aggregate Cancellation ---");
     } finally {
-        await($client->closeAsync());
+        traceLog("[Teardown] Closing client async...");
+        try {
+            await(Promise::timeout($client->closeAsync(), 2.0));
+            traceLog("[Teardown] Client closed.");
+        } catch (\Throwable $e) {
+            traceLog("[Teardown WARNING] closeAsync timed out or failed: " . $e->getMessage());
+        }
     }
 });

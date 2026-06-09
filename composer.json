@@ -23,8 +23,8 @@
         "hiblaphp/async": "^1.0",
         "hiblaphp/mysql": "^1.0",
         "hiblaphp/postgres": "^1.0",
-        "rcalicdan/config-loader": "^1.0",
-        "rcalicdan/query-builder-primitives": "dev-main"
+        "rcalicdan/query-builder-primitives": "^1.0",
+        "rcalicdan/config-loader": "^1.0"
     },
     "require-dev": {
         "laravel/pint": "^1.10",

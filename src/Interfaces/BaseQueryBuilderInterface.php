@@ -178,12 +178,17 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
     public function insert(array $data): PromiseInterface;
 
     /**
-     * Insert a single record and return the inserted ID.
+     * Insert a single record and return the inserted primary key ID.
      *
-     * @param array<string, mixed> $data
-     * @param string $sequence Optional sequence/primary key name for PostgreSQL (defaults to 'id').
+     * By default, this method retrieves the value of the 'id' column. If your database table 
+     * uses a different primary key column name (particularly important for PostgreSQL sequences 
+     * where the sequence name differs from the default), you can override this behavior by 
+     * passing your custom column name as the second parameter.
      *
-     * @return PromiseInterface<int> The last insert ID.
+     * @param array<string, mixed> $data The column-value pairs to insert.
+     * @param string $sequence The primary key or sequence column name (defaults to 'id').
+     *
+     * @return PromiseInterface<int> A promise resolving to the inserted record's primary key ID.
      */
     public function insertGetId(array $data, string $sequence = 'id'): PromiseInterface;
 

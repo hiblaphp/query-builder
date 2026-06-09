@@ -57,7 +57,7 @@ jobs:
         run: composer analyze
 
       - name: Run Tests (PostgreSQL)
-        run: DATABASE=pgsql ./vendor/bin/pest --compact
+        run: DATABASE=pgsql ./vendor/bin/pest 
 
       - name: Shutdown Services
         if: always()

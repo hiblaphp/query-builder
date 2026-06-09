@@ -13,6 +13,9 @@ Features include native connection pooling, unbuffered streaming (`chunkStream`)
 
 ## Installation
 
+>This package is currently in **beta**. Before installing, ensure your `composer.json`
+allows beta releases:
+
 Install the package via Composer:
 
 ```bash

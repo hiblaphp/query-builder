@@ -57,7 +57,7 @@ jobs:
         run: composer analyze
 
       - name: Run Tests (MySQL)
-        run: DATABASE=mysql ./vendor/bin/pest
+        run: DATABASE=mysql ./vendor/bin/pest --compact
 
       - name: Shutdown Services
         if: always()

@@ -122,7 +122,7 @@ composer test:all
 
 ## Documentation
 
-For full documentation on available query methods (Joins, Aggregates, JSON columns, CTEs, Cursor Pagination, and Pessimistic Locking), please read the **[Comprehensive Hibla Documentation](https://github.com/hiblaphp/database)**.
+For full documentation on available query methods (Joins, Aggregates, JSON columns, CTEs, Cursor Pagination, and Pessimistic Locking), please read the **[Comprehensive Hibla Documentation](https://github.com/hiblaphp/database#query-builder)**.
 
 ## License
 

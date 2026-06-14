@@ -266,15 +266,22 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     }
 
     /**
-     * Convert array results to objects if requested.
+     * Convert array results to objects in-place.
      *
      * @param array<int, array<string, mixed>> $results
      *
-     * @return array<int, object>
+     * @return array<int, \stdClass>
      */
     private function convertToObjects(array $results): array
     {
-        return array_map(static fn (array $row): object => (object) $row, $results);
+        foreach ($results as &$row) {
+            $row = (object) $row;
+        }
+
+        unset($row);
+
+        /** @var array<int, \stdClass> $results */
+        return $results;
     }
 
     /**

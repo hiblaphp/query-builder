@@ -73,7 +73,7 @@ test('query promise cancellation propagates to the server and cleanly recovers t
     } finally {
         try {
             await(Promise::timeout($client->closeAsync(), 2.0));
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $client->close();
         }
     }
@@ -113,7 +113,7 @@ test('transaction promise cancellation aborts the running query and rolls back s
     } finally {
         try {
             await(Promise::timeout($client->closeAsync(), 2.0));
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $client->close();
         }
     }
@@ -152,7 +152,7 @@ test('stream cancellation propagates to the server and stops delivery', function
     } finally {
         try {
             await(Promise::timeout($client->closeAsync(), 2.0));
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $client->close();
         }
     }
@@ -190,7 +190,7 @@ test('cancellation without server-side support drops the connection safely', fun
     } finally {
         try {
             await(Promise::timeout($client->closeAsync(), 2.0));
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $client->close();
         }
     }
@@ -222,7 +222,7 @@ test('returning false inside each() gracefully cancels the stream without throwi
     } finally {
         try {
             await(Promise::timeout($client->closeAsync(), 2.0));
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $client->close();
         }
     }
@@ -259,7 +259,7 @@ test('returning false inside chunkStream() gracefully cancels the stream without
     } finally {
         try {
             await(Promise::timeout($client->closeAsync(), 2.0));
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $client->close();
         }
     }
@@ -296,7 +296,7 @@ test('returning false inside chunk() gracefully halts pagination without throwin
     } finally {
         try {
             await(Promise::timeout($client->closeAsync(), 2.0));
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $client->close();
         }
     }
@@ -329,7 +329,7 @@ test('returning false inside chunkById() gracefully halts pagination without thr
     } finally {
         try {
             await(Promise::timeout($client->closeAsync(), 2.0));
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $client->close();
         }
     }
@@ -359,7 +359,7 @@ test('calling cancel multiple times is idempotent and does not break the pool', 
     } finally {
         try {
             await(Promise::timeout($client->closeAsync(), 2.0));
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $client->close();
         }
     }
@@ -408,7 +408,7 @@ test('concurrent mass cancellation safely kills all queries and recovers the poo
     } finally {
         try {
             await(Promise::timeout($client->closeAsync(), 2.0));
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $client->close();
         }
     }
@@ -438,7 +438,7 @@ test('commit and rollback promises are uninterruptible', function () {
     } finally {
         try {
             await(Promise::timeout($client->closeAsync(), 2.0));
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $client->close();
         }
     }
@@ -461,7 +461,7 @@ test('aggregate builder methods propagate cancellation to the driver', function 
         try {
             await($promise);
             test()->fail('Promise should have been cancelled');
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             expect($e)->toBeInstanceOf(CancelledException::class);
         }
 
@@ -471,7 +471,7 @@ test('aggregate builder methods propagate cancellation to the driver', function 
     } finally {
         try {
             await(Promise::timeout($client->closeAsync(), 2.0));
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             $client->close();
         }
     }

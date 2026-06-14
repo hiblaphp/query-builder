@@ -130,4 +130,3 @@ For full documentation on available query methods (Joins, Aggregates, JSON colum
 ## License
 
 This package is open-sourced software licensed under the [MIT license](LICENSE.md).
-```

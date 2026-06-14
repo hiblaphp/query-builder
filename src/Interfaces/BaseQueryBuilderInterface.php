@@ -38,37 +38,36 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
     /**
      * Execute the query and return all results.
      *
-     * @return PromiseInterface<array<int, array<string, mixed>>|array<int, object>>
+     * @return PromiseInterface<array<int, array<string, mixed>>|array<int, \stdClass>>
      */
     public function get(): PromiseInterface;
 
     /**
      * Get the first result from the query.
      *
-     * @return PromiseInterface<array<string, mixed>|object|null>
+     * @return PromiseInterface<array<string, mixed>|\stdClass|null>
      */
     public function first(): PromiseInterface;
 
     /**
      * Get the first result or throw an exception if no record matches.
      *
-     * @return PromiseInterface<array<string, mixed>|object> Rejects with RecordNotFoundException
-     *                                                       when no record matches the query conditions.
+     * @return PromiseInterface<array<string, mixed>|\stdClass> Rejects with RecordNotFoundException
+     *                                                          when no record matches the query conditions.
      */
     public function firstOrFail(): PromiseInterface;
 
     /**
      * Find a record by ID.
      *
-     * @return PromiseInterface<array<string, mixed>|object|null>
+     * @return PromiseInterface<array<string, mixed>|\stdClass|null>
      */
     public function find(mixed $id, string $column = 'id'): PromiseInterface;
 
     /**
      * Find a record by ID or throw an exception if not found.
      *
-     * @return PromiseInterface<array<string, mixed>|object> Rejects with RecordNotFoundException
-     *                                                       when no record is found for the given ID.
+     * @return PromiseInterface<array<string, mixed>|\stdClass> Rejects with RecordNotFoundException                                                   when no record is found for the given ID.
      */
     public function findOrFail(mixed $id, string $column = 'id'): PromiseInterface;
 
@@ -180,9 +179,9 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
     /**
      * Insert a single record and return the inserted primary key ID.
      *
-     * By default, this method retrieves the value of the 'id' column. If your database table 
-     * uses a different primary key column name (particularly important for PostgreSQL sequences 
-     * where the sequence name differs from the default), you can override this behavior by 
+     * By default, this method retrieves the value of the 'id' column. If your database table
+     * uses a different primary key column name (particularly important for PostgreSQL sequences
+     * where the sequence name differs from the default), you can override this behavior by
      * passing your custom column name as the second parameter.
      *
      * @param array<string, mixed> $data The column-value pairs to insert.

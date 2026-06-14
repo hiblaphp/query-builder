@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Tests\Fixtures;
 
 use Hibla\Sql\SqlClientInterface;
-
 use Tests\Helpers\ClientFactory;
+
 use function Hibla\await;
 
 final class TestSchema

@@ -7,14 +7,14 @@
 
 ## Overview
 
-`hiblaphp/query-builder` provides high-performance, non-blocking database access for modern async PHP applications (Swoole, RoadRunner, Workerman). It brings the familiar, highly-expressive fluent syntax of Laravel's query builder to asynchronous runtimes.
+`hiblaphp/query-builder` provides high-performance, non-blocking database access for modern async PHP applications. It brings the familiar, highly-expressive fluent syntax of Laravel's query builder to asynchronous runtimes.
 
 Features include native connection pooling, unbuffered streaming (`chunkStream`), JSON query abstractions, programmatic CTEs, and full server-side query cancellation.
 
 ## Installation
 
->This package is currently in **beta**. Before installing, ensure your `composer.json`
-allows beta releases:
+> This package is currently in **beta**. Before installing, ensure your `composer.json`
+> allows beta releases:
 
 Install the package via Composer:
 
@@ -94,6 +94,21 @@ class UserRepository
 }
 ```
 *Because your service depends on an interface rather than a static class, you can easily swap the real connection with a mock or an in-memory SQLite client during unit testing!*
+
+## Immutable Architecture
+
+A major feature of Hibla's Query Builder is that **every builder instance is strictly immutable**. 
+
+Calling a method (like `where()`, `limit()`, or `select()`) *never* modifies the original object. Instead, it clones the AST (Abstract Syntax Tree) and returns a completely new instance. This allows you to safely build base queries and reuse them infinitely without state leaking across your application:
+
+```php
+$activeUsers = DB::table('users')->where('status', 'active');
+
+// These two queries run independently and safely.
+// The original $activeUsers instance is NEVER mutated!
+$admins = await($activeUsers->where('role', 'admin')->get());
+$guests = await($activeUsers->where('role', 'guest')->get());
+```
 
 ## Testing & Development
 

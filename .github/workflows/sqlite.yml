@@ -43,4 +43,4 @@ jobs:
         run: composer analyze
 
       - name: Run Tests (SQLite)
-        run: DATABASE=sqlite ./vendor/bin/pest 
+        run: DATABASE=sqlite ./vendor/bin/pest --compact

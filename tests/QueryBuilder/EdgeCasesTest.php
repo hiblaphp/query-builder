@@ -109,6 +109,6 @@ test('calling commit on a transaction that is already closed throws TransactionE
     await($tx->commit());
 
     expect(fn () => await($tx->commit()))
-        ->toThrow(TransactionException::class, 'Transaction is no longer active')
+        ->toThrow(TransactionException::class, 'Cannot perform operation: transaction is no longer active')
     ;
 });

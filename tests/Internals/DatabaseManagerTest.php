@@ -38,7 +38,7 @@ test('DatabaseManager registers, retrieves, and falls back to default connection
         expect($manager->connection())->toBe($conn2);
 
         $manager->removeConnection('conn_two');
-        expect($manager->getDefaultConnectionName())->toBeIn(['mysql', 'pgsql']);
+        expect($manager->getDefaultConnectionName())->toBeIn(['mysql', 'pgsql', 'sqlite']);
         expect(fn () => $manager->connection('conn_two'))->toThrow(DatabaseConfigurationException::class);
     } finally {
         $client1->close();
@@ -52,7 +52,7 @@ test('DatabaseManager lazily initializes default connections from configuration 
 
     try {
         $defaultName = $manager->getDefaultConnectionName();
-        expect($defaultName)->toBeIn(['mysql', 'pgsql']);
+        expect($defaultName)->toBeIn(['mysql', 'pgsql', 'sqlite']);
         $conn = $manager->connection($defaultName);
         expect($conn)->toBeInstanceOf(DatabaseConnectionInterface::class);
     } finally {

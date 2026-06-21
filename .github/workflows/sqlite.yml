@@ -1,4 +1,4 @@
-name: PostgreSQL Tests
+name: Sqlite Tests
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   pgsql-ci:
-    name: PHP ${{ matrix.php }} - PostgreSQL
+    name: PHP ${{ matrix.php }} - Sqlite
     runs-on: ubuntu-latest
     
     strategy:
@@ -38,9 +38,6 @@ jobs:
 
       - name: Install Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
-
-      - name: Start PostgreSQL Service
-        run: docker compose up -d postgres
 
       - name: Run Static Analysis
         run: composer analyze

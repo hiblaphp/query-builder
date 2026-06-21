@@ -8,6 +8,7 @@ use Hibla\Mysql\MysqlClient;
 use Hibla\Postgres\PostgresClient;
 use Hibla\QueryBuilder\Exceptions\InvalidConnectionConfigException;
 use Hibla\Sql\SqlClientInterface;
+use Hibla\Sqlite\SqliteClient;
 
 /**
  * @internal Factory responsible for parsing database configurations and instantiating SQL clients.
@@ -23,9 +24,9 @@ final class ConnectionFactory
      */
     public static function make(array $config): SqlClientInterface
     {
-        $driver = strtolower(\is_string($config['driver'] ?? null) ? $config['driver'] : 'mysql');
+        $driver = strtolower(\is_string($config['driver'] ?? null) ? $config['driver'] : 'sqlite');
 
-        if ($driver !== 'mysql' && $driver !== 'pgsql' && $driver !== 'postgres') {
+        if ($driver !== 'mysql' && $driver !== 'pgsql' && $driver !== 'postgres' && $driver !== 'sqlite') {
             throw new InvalidConnectionConfigException("Driver '{$driver}' is not supported yet.");
         }
 
@@ -33,6 +34,10 @@ final class ConnectionFactory
 
         if ($driver === 'mysql') {
             return self::resolveMysqlClient($config, $poolSettings);
+        }
+
+        if ($driver === 'sqlite') {
+            return self::resolveSqliteClient($config, $poolSettings);
         }
 
         return self::resolvePostgresClient($config, $poolSettings);
@@ -74,6 +79,47 @@ final class ConnectionFactory
             'max_waiters' => is_numeric($waitersVal) ? (int) $waitersVal : 0,
             'acquire_timeout' => is_numeric($timeoutVal) ? (float) $timeoutVal : 10.0,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     * @param array{
+     *     min_connections: int,
+     *     max_connections: int,
+     *     idle_timeout: int,
+     *     max_lifetime: int,
+     *     statement_cache_size: int,
+     *     enable_statement_cache: bool,
+     *     max_waiters: int,
+     *     acquire_timeout: float
+     * } $pool
+     */
+    private static function resolveSqliteClient(array $config, array $pool): SqlClientInterface
+    {
+        $sqliteConfig = [
+            'database' => $config['database'] ?? ':memory:',
+            'busy_timeout' => $config['busy_timeout'] ?? 5000,
+            'journal_mode' => $config['journal_mode'] ?? 'WAL',
+            'foreign_keys' => $config['foreign_keys'] ?? true,
+            'kill_worker_on_cancel' => $config['kill_worker_on_cancel'] ?? false,
+            'connect_timeout' => $config['connect_timeout'] ?? 10,
+            'force_sync' => $config['force_sync'] ?? false,
+            'reset_connection' => $config['reset_connection'] ?? false,
+            'memory_limit_mb' => $config['memory_limit_mb'] ?? 128,
+        ];
+
+        return new SqliteClient(
+            config: $sqliteConfig,
+            minConnections: $pool['min_connections'],
+            maxConnections: $pool['max_connections'],
+            idleTimeout: $pool['idle_timeout'],
+            maxLifetime: $pool['max_lifetime'],
+            statementCacheSize: $pool['statement_cache_size'],
+            enableStatementCache: $pool['enable_statement_cache'],
+            maxWaiters: $pool['max_waiters'],
+            acquireTimeout: $pool['acquire_timeout'],
+            deleteDatabaseOnShutdown: (bool) ($config['delete_database_on_shutdown'] ?? false),
+        );
     }
 
     /**

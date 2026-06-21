@@ -328,6 +328,12 @@ test('DB::resolveClientFromConfig throws exception on unsupported drivers', func
 });
 
 test('Multiple connections maintain strict transaction state isolation', function () {
+    if (ClientFactory::driverEnum() === Hibla\QueryBuilder\Enums\DatabaseDriver::Sqlite) {
+        $this->markTestSkipped('SQLite uses database-level locks, so concurrent writing transactions will throw LockWaitTimeoutException.');
+
+        return;
+    }
+
     DB::reset();
     $client1 = ConnectionFactory::make(ClientFactory::config());
     $client2 = ConnectionFactory::make(ClientFactory::config());

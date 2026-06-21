@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use Hibla\QueryBuilder\Enums\DatabaseDriver;
 use Hibla\QueryBuilder\Interfaces\TransactionalQueryBuilderInterface;
 use Tests\Fixtures\TestSchema;
+use Tests\Helpers\ClientFactory;
 
 use function Hibla\await;
 
@@ -107,7 +109,9 @@ test('lockOf executes safely (ignored gracefully on MySQL, applies on PgSQL)', f
 test('withoutLock removes lock modes from builder instance', function () {
     $qb = qb('users')->lockForUpdate();
 
-    expect($qb->toSql())->toContain('FOR UPDATE');
+    if (ClientFactory::driverEnum() !== DatabaseDriver::Sqlite) {
+        expect($qb->toSql())->toContain('FOR UPDATE');
+    }
 
     $qbUnlocked = $qb->withoutLock();
     expect($qbUnlocked->toSql())->not->toContain('FOR UPDATE');

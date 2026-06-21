@@ -22,6 +22,7 @@
         "hiblaphp/cancellation": "^1.0",
         "hiblaphp/async": "^1.0",
         "hiblaphp/mysql": "^1.0",
+        "hiblaphp/sqlite": "^1.0",
         "hiblaphp/postgres": "^1.0",
         "rcalicdan/query-builder-primitives": "^1.0",
         "rcalicdan/config-loader": "^1.0"
@@ -32,7 +33,8 @@
         "mockery/mockery": "^1.6",
         "phpstan/phpstan": "^2.1",
         "phpstan/phpstan-strict-rules": "^2.0",
-        "phpstan/extension-installer": "^1.4"
+        "phpstan/extension-installer": "^1.4",
+        "rcalicdan/defer": "^1.0"
     },
     "scripts": {
         "test": "./vendor/bin/pest",

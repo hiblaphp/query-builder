@@ -9,6 +9,7 @@ use Hibla\Promise\Exceptions\CancelledException;
 use Hibla\Promise\Promise;
 use Hibla\QueryBuilder\Enums\DatabaseDriver;
 use Hibla\QueryBuilder\QueryBuilder;
+use Hibla\Sqlite\SqliteClient;
 use Tests\Fixtures\TestSchema;
 use Tests\Helpers\ClientFactory;
 
@@ -19,14 +20,17 @@ function createCancellationClient(bool $enableServerSideCancellation): array
 {
     $config = ClientFactory::config();
     $config['enable_server_side_cancellation'] = $enableServerSideCancellation;
+    $config['kill_worker_on_cancel'] = $enableServerSideCancellation;
     $config['max_connections'] = 1;
     $config['min_connections'] = 1;
 
     $driver = ClientFactory::driverEnum();
 
-    $client = $driver === DatabaseDriver::Postgres
-        ? new PostgresClient($config)
-        : new MysqlClient($config);
+    $client = match ($driver) {
+        DatabaseDriver::Postgres => new PostgresClient($config),
+        DatabaseDriver::Sqlite => new SqliteClient($config),
+        default => new MysqlClient($config),
+    };
 
     $qb = new QueryBuilder($client, $driver);
 
@@ -49,7 +53,7 @@ test('query promise cancellation propagates to the server and cleanly recovers t
 
     try {
         $sleepQuery = getSleepQuery($driver, 5);
-        $startTime = hrtime(true);
+        $startTime = microtime(true);
 
         $promise = $qb->raw($sleepQuery);
 
@@ -64,8 +68,8 @@ test('query promise cancellation propagates to the server and cleanly recovers t
             expect($e->getMessage())->toContain('cancel');
         }
 
-        $durationMs = (hrtime(true) - $startTime) / 1e6;
-        expect($durationMs)->toBeLessThan(4000);
+        $durationMs = (microtime(true) - $startTime) / 1e6;
+        expect($durationMs)->toBeLessThan(3);
 
         $result = await($qb->raw('SELECT 1 as val'));
         $val = is_object($result[0]) ? $result[0]->val : $result[0]['val'];
@@ -372,7 +376,13 @@ test('concurrent mass cancellation safely kills all queries and recovers the poo
     $config['min_connections'] = 3;
 
     $driver = ClientFactory::driverEnum();
-    $client = $driver === DatabaseDriver::Postgres ? new PostgresClient($config) : new MysqlClient($config);
+
+    $client = match ($driver) {
+        DatabaseDriver::Postgres => new PostgresClient($config),
+        DatabaseDriver::Sqlite => new SqliteClient($config),
+        default => new MysqlClient($config),
+    };
+
     $qb = new QueryBuilder($client, $driver);
 
     try {

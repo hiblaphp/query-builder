@@ -24,5 +24,8 @@
         <env name="PGSQL_DATABASE" value="test_db" force="true"/>
         <env name="PGSQL_USERNAME" value="postgres" force="true"/>
         <env name="PGSQL_PASSWORD" value="postgres" force="true"/>
+
+        <!-- SQLite -->
+        <env name="SQLITE_DATABASE" value=":memory:" force="true"/>
     </php>
 </phpunit>

@@ -16,7 +16,7 @@ return [
     | by your application.
     |
     */
-    'default' => env('DB_CONNECTION', 'mysql'),
+    'default' => env('DB_CONNECTION', 'sqlite'),
 
     /*
     |--------------------------------------------------------------------------
@@ -27,6 +27,27 @@ return [
     |
     */
     'connections' => [
+        'sqlite' => [
+            'driver' => 'sqlite',
+            'database' => env('DB_DATABASE', ':memory:'),
+            'foreign_keys' => true,
+            'journal_mode' => 'WAL',
+            'busy_timeout' => 5000,
+            'max_connections' => env('DB_MAX_CONNECTIONS', 5, convertNumeric: true),
+            'min_connections' => env('DB_MIN_CONNECTIONS', 0, convertNumeric: true),
+            'kill_worker_on_cancel' => false,
+            'force_sync' => false,
+            'idle_timeout' => 60,
+            'max_lifetime' => 3600,
+            'max_waiters' => 0,
+            'acquire_timeout' => 10.0,
+            'enable_statement_cache' => true,
+            'statement_cache_size' => 256,
+            'reset_connection' => false,
+            'memory_limit_mb' => 128,
+            'delete_database_on_shutdown' => false,
+        ],
+
         'mysql' => [
             'driver' => 'mysql',
             'host' => env('DB_HOST', '127.0.0.1'),

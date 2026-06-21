@@ -22,7 +22,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
 {
     public function __construct(
         private readonly SqlClientInterface $client,
-        private readonly string $driverName = 'mysql'
+        private readonly string $driverName = 'sqlite'
     ) {
     }
 
@@ -119,7 +119,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
      */
     private function getDriverEnum(): DatabaseDriver
     {
-        return DatabaseDriver::tryFrom($this->driverName) ?? DatabaseDriver::Mysql;
+        return DatabaseDriver::tryFrom($this->driverName) ?? DatabaseDriver::Sqlite;
     }
 
     /**

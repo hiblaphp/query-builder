@@ -14,13 +14,14 @@ final class ClientFactory
 
     public static function driver(): string
     {
-        return strtolower(getenv('DATABASE') ?: 'mysql');
+        return strtolower(getenv('DATABASE') ?: 'sqlite');
     }
 
     public static function driverEnum(): DatabaseDriver
     {
         return match (self::driver()) {
             'pgsql', 'postgres' => DatabaseDriver::Postgres,
+            'sqlite' => DatabaseDriver::Sqlite,
             default => DatabaseDriver::Mysql,
         };
     }
@@ -40,6 +41,12 @@ final class ClientFactory
                 'database' => getenv('PGSQL_DATABASE') ?: 'test_db',
                 'username' => getenv('PGSQL_USERNAME') ?: 'postgres',
                 'password' => getenv('PGSQL_PASSWORD') ?: 'postgres',
+                'max_connections' => 2,
+                'min_connections' => 1,
+            ],
+            'sqlite' => [
+                'driver' => 'sqlite',
+                'database' => __DIR__ . '/../../database.sqlite',
                 'max_connections' => 2,
                 'min_connections' => 1,
             ],

@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use Hibla\QueryBuilder\Enums\DatabaseDriver;
 use Tests\Fixtures\TestSchema;
+use Tests\Helpers\ClientFactory;
 
 use function Hibla\await;
 
@@ -116,6 +118,12 @@ test('executes boolean literal containment checks on real database', function ()
 });
 
 test('executes root-level JSON containment checks on real database', function () {
+    if (ClientFactory::driverEnum() === DatabaseDriver::Sqlite) {
+        $this->markTestSkipped('SQLite json_each does not natively support root-level object containment checks.');
+
+        return;
+    }
+
     await(qb('users')->insert([
         'name' => 'Alice',
         'email' => 'alice@test.com',

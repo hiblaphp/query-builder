@@ -9,7 +9,21 @@
 
 `hiblaphp/query-builder` provides high-performance, non-blocking database access for modern async PHP applications. It brings the familiar, highly-expressive fluent syntax of Laravel's query builder to asynchronous runtimes.
 
-Features include native connection pooling, unbuffered streaming (`chunkStream`), JSON query abstractions, programmatic CTEs, and full server-side query cancellation.
+### Supported Drivers & Async Strategy
+Rather than relying on blocking PDO drivers, Hibla utilizes tailored non-blocking drivers optimized for each database engine:
+
+*   **SQLite** (Default): Achieved via a process-isolated async worker daemon pool (`hiblaphp/sqlite`), allowing asynchronous, non-blocking file access.
+*   **MySQL & MariaDB**: Achieved via a pure PHP async socket implementation of the MySQL binary protocol (`hiblaphp/mysql`).
+*   **PostgreSQL**: Achieved via native non-blocking socket-polling libpq drivers (`hiblaphp/postgres`).
+
+## Features
+
+*   **Native Connection Pooling**: Fully-managed connection pooling for all drivers (including subprocess pooling for SQLite).
+*   **Zero-Config Default**: Defaulting to SQLite means your application can run immediately out-of-the-box with no external database server needed.
+*   **Unbuffered Streaming**: Stream massive datasets row-by-row with automatic backpressure handling.
+*   **Common Table Expressions**: Programmatic CTE support, including recursive sequences.
+*   **Database-Specific Polyfills**: Dialect-specific support for JSON extraction, Pessimistic Locking (`lockForUpdate`), and Upserts across all supported engines.
+*   **Immutable Query Building**: Abstract Syntax Trees (ASTs) are safely cloned on every modification, preventing query state from leaking across operations.
 
 ## Installation
 
@@ -28,14 +42,11 @@ Initialize your database configuration file:
 cp vendor/hiblaphp/query-builder/hibla-database.php hibla-database.php
 ```
 
-*(Edit `hibla-database.php` or your `.env` file to set your database credentials).*
+*(Edit `hibla-database.php` or your `.env` file to select your default connection).*
 
-## Quick Start
+## Quick Start (Zero-Config SQLite)
 
-Every execution method returns a `PromiseInterface` and must be awaited to release the fiber and prevent event loop blocking.
-
-### Using the Static Facade
-For rapid development, you can use the static `DB` facade to execute queries anywhere in your application:
+Because the library defaults to an in-memory SQLite database, you can run queries immediately without configuring any external database servers:
 
 ```php
 <?php
@@ -45,23 +56,28 @@ require 'vendor/autoload.php';
 use Hibla\QueryBuilder\DB;
 use function Hibla\await;
 
-// 1. Insert data asynchronously
+// 1. Setup your schema asynchronously
+await(DB::rawExecute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT)"));
+
+// 2. Insert data
 await(DB::table('users')->insert([
-    'name' => 'Alice',
-    'email' => 'alice@example.com'
+    'name' => 'Alice'
 ]));
 
-// 2. Fetch the data fluently
-$user = await(DB::table('users')->where('email', 'alice@example.com')->first());
+// 3. Fetch data fluently
+$user = await(DB::table('users')->where('name', 'Alice')->first());
 
-echo "Hello, " . $user->name;
+echo "Hello, " . $user->name; // Outputs: Hello, Alice
 
-// 3. Gracefully close connection pools when your application shuts down
+// 4. Gracefully close connection pools when your application shuts down
 DB::close();
 ```
 
-### Dependency Injection (Testable Architecture)
-For enterprise applications and DI purists, Hibla exposes clean interfaces. You do not have to rely on the static facade. You can bind `DatabaseConnectionInterface` in your DI container and inject it directly into your services or repositories:
+> Note: You do not need to call DB::close() manually. the Query Builder will handle it for you after the query builder instance is destroyed or garbage collected. But you can still call it if you want to close the connection pool earlier or you want to be more explicit on resource management.
+
+## Dependency Injection (Testable Architecture)
+
+For enterprise applications and dependency injection purists, Hibla exposes clean interfaces. You do not have to rely on the static facade. You can bind `DatabaseConnectionInterface` in your DI container and inject it directly into your repositories:
 
 ```php
 <?php
@@ -93,7 +109,7 @@ class UserRepository
     }
 }
 ```
-*Because your service depends on an interface rather than a static class, you can easily swap the real connection with a mock or an in-memory SQLite client during unit testing!*
+*Because your service depends on an interface rather than a static class, you can easily swap the real connection with an in-memory SQLite client during unit testing!*
 
 ## Immutable Architecture
 
@@ -112,28 +128,31 @@ $guests = await($activeUsers->where('role', 'guest')->get());
 
 ## Testing & Development
 
-Because Hibla tests live driver compilation and async socket execution, the test suite requires real databases to run against. A `docker-compose.yml` file is provided to quickly spin up the necessary environments.
+Because Hibla tests live driver compilation and async socket execution, running the full test suite requires real databases to run against. A `docker-compose.yml` file is provided to spin up the necessary environments.
 
-### 1. Start the Database Containers
-Start the MySQL 8 and PostgreSQL 15 containers (with `pgvector` pre-installed):
+### 1. SQLite Testing (Zero Setup)
+To run the SQLite test suite, no external database engines or Docker setups are required. Simply execute:
+```bash
+composer test:sqlite
+```
+
+### 2. MySQL & PostgreSQL Testing
+Start the MySQL 8 and PostgreSQL 15 containers:
 ```bash
 docker compose up -d
 ```
 
-### 2. Run the Test Suite
-The repository uses [Pest PHP](https://pestphp.com/) for testing. 
-
-To run the tests against MySQL:
+Run the tests against MySQL:
 ```bash
 composer test:mysql
 ```
 
-To run the tests against PostgreSQL:
+Run the tests against PostgreSQL:
 ```bash
 composer test:pgsql
 ```
 
-To run the tests against both databases sequentially:
+To run the entire suite across all three databases sequentially:
 ```bash
 composer test:all
 ```

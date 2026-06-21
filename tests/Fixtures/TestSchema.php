@@ -50,9 +50,22 @@ final class TestSchema
                     status     VARCHAR(50)  NOT NULL DEFAULT 'active',
                     age        INTEGER      DEFAULT NULL,
                     score      NUMERIC(8,2) NOT NULL DEFAULT 0,
-                    meta       JSONB        DEFAULT NULL, -- Added native Postgres JSONB column
+                    meta       JSONB        DEFAULT NULL,
                     deleted_at TIMESTAMP    DEFAULT NULL,
                     created_at TIMESTAMP    NOT NULL DEFAULT NOW()
+                )
+            ",
+            'sqlite' => "
+                CREATE TABLE users (
+                    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name       VARCHAR(255) NOT NULL,
+                    email      VARCHAR(255) UNIQUE NOT NULL,
+                    status     VARCHAR(50)  NOT NULL DEFAULT 'active',
+                    age        INTEGER      DEFAULT NULL,
+                    score      NUMERIC(8,2) NOT NULL DEFAULT 0,
+                    meta       TEXT         DEFAULT NULL, -- SQLite JSON is TEXT
+                    deleted_at DATETIME     DEFAULT NULL,
+                    created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
             ",
             default => "
@@ -63,7 +76,7 @@ final class TestSchema
                     status     VARCHAR(50)  NOT NULL DEFAULT 'active',
                     age        INT          DEFAULT NULL,
                     score      DECIMAL(8,2) NOT NULL DEFAULT 0,
-                    meta       JSON         DEFAULT NULL, -- Added native MySQL JSON column
+                    meta       JSON         DEFAULT NULL,
                     deleted_at TIMESTAMP    DEFAULT NULL,
                     created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
@@ -83,6 +96,15 @@ final class TestSchema
                     total      NUMERIC(8,2) NOT NULL DEFAULT 0,
                     status     VARCHAR(50)  NOT NULL DEFAULT 'pending',
                     created_at TIMESTAMP    NOT NULL DEFAULT NOW()
+                )
+            ",
+            'sqlite' => "
+                CREATE TABLE orders (
+                    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id    INTEGER      NOT NULL,
+                    total      NUMERIC(8,2) NOT NULL DEFAULT 0,
+                    status     VARCHAR(50)  NOT NULL DEFAULT 'pending',
+                    created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP
                 )
             ",
             default => "

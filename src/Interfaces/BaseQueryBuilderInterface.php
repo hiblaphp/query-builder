@@ -269,7 +269,7 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
      * Stream the query results but group them into chunk arrays before passing to the callback.
      *
      * @param positive-int $chunkSize Number of rows per chunk.
-     * @param callable(array<int, array<string, mixed>|object>): (PromiseInterface<mixed>|bool|void) $callback
+     * @param callable(array<int, array<string, mixed>|\stdClass>): (PromiseInterface<mixed>|bool|void) $callback
      *
      * @return PromiseInterface<void> Resolves when the entire stream has finished processing.
      */
@@ -279,7 +279,7 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
      * Chunk the results of the query using LIMIT and OFFSET.
      *
      * @param positive-int $count The number of records per chunk.
-     * @param callable(array<int, array<string, mixed>|object>): (PromiseInterface<mixed>|bool|void) $callback
+     * @param callable(array<int, array<string, mixed>|\stdClass>): (PromiseInterface<mixed>|bool|void) $callback
      *
      * @return PromiseInterface<void>
      */
@@ -289,7 +289,7 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
      * Chunk the results of the query by comparing IDs (avoids OFFSET penalty).
      *
      * @param positive-int $count The number of records per chunk.
-     * @param callable(array<int, array<string, mixed>|object>): (PromiseInterface<mixed>|bool|void) $callback
+     * @param callable(array<int, array<string, mixed>|\stdClass>): (PromiseInterface<mixed>|bool|void) $callback
      * @param string $column The column to chunk by (usually 'id').
      * @param string|null $alias The alias of the column if using JOINs.
      *
@@ -300,7 +300,7 @@ interface BaseQueryBuilderInterface extends QueryBuilderPrimitiveInterface, RawQ
     /**
      * Stream the query results and execute a callback for each record.
      *
-     * @param callable(array<string, mixed>|object $row): (PromiseInterface<mixed>|bool|void) $callback The callback executed for each record.
+     * @param callable(array<string, mixed>|\stdClass $row): (PromiseInterface<mixed>|bool|void) $callback The callback executed for each record.
      * @param positive-int $bufferSize Number of rows to buffer internally per read. Defaults to 100.
      *
      * @return PromiseInterface<void> Resolves when the entire stream has finished processing.

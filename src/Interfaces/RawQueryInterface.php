@@ -18,7 +18,7 @@ interface RawQueryInterface
      * @param string $sql
      * @param array<int, mixed> $bindings
      *
-     * @return PromiseInterface<array<int, array<string, mixed>>|array<int, object>>
+     * @return PromiseInterface<array<int, array<string, mixed>>|array<int, \stdClass>>
      */
     public function raw(string $sql, array $bindings = []): PromiseInterface;
 
@@ -28,7 +28,7 @@ interface RawQueryInterface
      * @param string $sql
      * @param array<int, mixed> $bindings
      *
-     * @return PromiseInterface<array<string, mixed>|object|null>
+     * @return PromiseInterface<array<string, mixed>|\stdClass|null>
      */
     public function rawFirst(string $sql, array $bindings = []): PromiseInterface;
 

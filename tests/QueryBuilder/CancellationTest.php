@@ -32,7 +32,7 @@ function createCancellationClient(bool $enableServerSideCancellation): array
         default => new MysqlClient($config),
     };
 
-    $qb = new QueryBuilder($client, $driver);
+    $qb = new QueryBuilder($client);
 
     return [$client, $qb, $driver];
 }
@@ -383,7 +383,7 @@ test('concurrent mass cancellation safely kills all queries and recovers the poo
         default => new MysqlClient($config),
     };
 
-    $qb = new QueryBuilder($client, $driver);
+    $qb = new QueryBuilder($client);
 
     try {
         $sql = getSleepQuery($driver, 5);

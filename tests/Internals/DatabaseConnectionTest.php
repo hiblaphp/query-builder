@@ -13,24 +13,9 @@ use Tests\Helpers\ClientFactory;
 
 use function Hibla\await;
 
-test('DatabaseConnection returns correct driver metadata and raw client', function () {
-    $client = ConnectionFactory::make(ClientFactory::config());
-    $driver = ClientFactory::driver();
-
-    $conn = new DatabaseConnection($client, $driver);
-
-    try {
-        expect($conn->getClient())->toBe($client)
-            ->and($conn->getDriverName())->toBe($driver)
-        ;
-    } finally {
-        $conn->close();
-    }
-});
-
 test('DatabaseConnection successfully instantiates QueryBuilder with proper bindings', function () {
     $client = ConnectionFactory::make(ClientFactory::config());
-    $conn = new DatabaseConnection($client, ClientFactory::driver());
+    $conn = new DatabaseConnection($client);
 
     try {
         $qb = $conn->table('users');
@@ -44,7 +29,7 @@ test('DatabaseConnection proxies raw database executions directly', function () 
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
 
-    $conn = new DatabaseConnection($client, ClientFactory::driver());
+    $conn = new DatabaseConnection($client);
 
     try {
         await($conn->rawExecute('INSERT INTO users (name, email) VALUES (?, ?)', ['ConnectionUser', 'conn@test.com']));
@@ -68,7 +53,7 @@ test('DatabaseConnection handles auto-managed transactions', function () {
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
 
-    $conn = new DatabaseConnection($client, ClientFactory::driver());
+    $conn = new DatabaseConnection($client);
 
     try {
         await($conn->transaction(function ($tx) {
@@ -86,7 +71,7 @@ test('DatabaseConnection handles manual transaction flows', function () {
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
 
-    $conn = new DatabaseConnection($client, ClientFactory::driver());
+    $conn = new DatabaseConnection($client);
 
     try {
         $tx = await($conn->beginTransaction());
@@ -102,7 +87,7 @@ test('DatabaseConnection handles manual transaction flows', function () {
 
 test('DatabaseConnection supports asynchronous closing', function () {
     $client = ConnectionFactory::make(ClientFactory::config());
-    $conn = new DatabaseConnection($client, ClientFactory::driver());
+    $conn = new DatabaseConnection($client);
 
     await($conn->closeAsync());
 

@@ -8,6 +8,7 @@ use Hibla\QueryBuilder\Exceptions\DatabaseConfigurationException;
 use Hibla\QueryBuilder\Exceptions\InvalidConnectionConfigException;
 use Hibla\QueryBuilder\Internals\DatabaseConnection;
 use Hibla\QueryBuilder\Utilities\ConnectionFactory;
+use Hibla\Sql\DatabaseDriver;
 use Hibla\Sql\Exceptions\DeadlockException;
 use Hibla\Sql\Exceptions\PreparedException;
 use Hibla\Sql\Exceptions\TransactionException;
@@ -21,7 +22,7 @@ test('DB::table successfully routes to default connection', function () {
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
-    DB::setSqlClient($client, ClientFactory::driverEnum());
+    DB::setSqlClient($client);
 
     try {
         await(DB::table('users')->insert(['name' => 'Facade', 'email' => 'facade@test.com']));
@@ -38,7 +39,7 @@ test('DB::rawMethods proxy to connection and execute successfully', function () 
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
-    DB::setSqlClient($client, ClientFactory::driverEnum());
+    DB::setSqlClient($client);
 
     try {
         await(DB::rawExecute('INSERT INTO users (name, email) VALUES (?, ?)', ['Raw', 'raw@test.com']));
@@ -63,7 +64,7 @@ test('DB::transaction runs transaction callback and commits successfully', funct
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
-    DB::setSqlClient($client, ClientFactory::driverEnum());
+    DB::setSqlClient($client);
 
     try {
         await(DB::transaction(function ($trx) {
@@ -82,7 +83,7 @@ test('DB::beginTransaction allows manual commit flow', function () {
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
-    DB::setSqlClient($client, ClientFactory::driverEnum());
+    DB::setSqlClient($client);
 
     try {
         $tx = await(DB::beginTransaction());
@@ -102,7 +103,7 @@ test('DB::beginTransaction allows manual rollback flow', function () {
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
-    DB::setSqlClient($client, ClientFactory::driverEnum());
+    DB::setSqlClient($client);
 
     try {
         $tx = await(DB::beginTransaction());
@@ -124,9 +125,9 @@ test('DB::connection routes queries to independent registered connections', func
     $client2 = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client1);
 
-    DB::setSqlClient($client1, ClientFactory::driverEnum());
+    DB::setSqlClient($client1);
 
-    $reportingConn = new DatabaseConnection($client2, ClientFactory::driverEnum()->value);
+    $reportingConn = new DatabaseConnection($client2);
     DB::addConnection('reporting', $reportingConn);
 
     try {
@@ -154,8 +155,9 @@ test('Overwriting a connection with the same name updates the registry correctly
     $client2 = ConnectionFactory::make(ClientFactory::config());
 
     try {
-        $conn1 = new DatabaseConnection($client1, ClientFactory::driverEnum()->value);
-        $conn2 = new DatabaseConnection($client2, ClientFactory::driverEnum()->value);
+
+        $conn1 = new DatabaseConnection($client1);
+        $conn2 = new DatabaseConnection($client2);
 
         DB::addConnection('custom', $conn1);
         expect(DB::connection('custom'))->toBe($conn1);
@@ -172,7 +174,8 @@ test('Overwriting a connection with the same name updates the registry correctly
 test('Removing a registered connection makes it inaccessible', function () {
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
-    $conn = new DatabaseConnection($client, ClientFactory::driverEnum()->value);
+
+    $conn = new DatabaseConnection($client);
 
     try {
         DB::addConnection('temporary_conn', $conn);
@@ -213,7 +216,7 @@ test('Facade transaction rolls back automatically on callback exception', functi
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
-    DB::setSqlClient($client, ClientFactory::driverEnum());
+    DB::setSqlClient($client);
 
     try {
         try {
@@ -238,7 +241,7 @@ test('Facade transaction auto-retries on DeadlockException and succeeds', functi
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
-    DB::setSqlClient($client, ClientFactory::driverEnum());
+    DB::setSqlClient($client);
 
     try {
         $attempts = 0;
@@ -268,7 +271,7 @@ test('Nested transaction via Facade executes successfully using savepoints', fun
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
-    DB::setSqlClient($client, ClientFactory::driverEnum());
+    DB::setSqlClient($client);
 
     try {
         await(DB::transaction(function ($outer) {
@@ -291,7 +294,7 @@ test('Facade manual transaction throws TransactionException on closed connection
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
-    DB::setSqlClient($client, ClientFactory::driverEnum());
+    DB::setSqlClient($client);
 
     try {
         $tx = await(DB::beginTransaction());
@@ -308,7 +311,7 @@ test('Facade manual transaction throws TransactionException on closed connection
 test('DB::raw with missing named parameter values throws PreparedException', function () {
     DB::reset();
     $client = ConnectionFactory::make(ClientFactory::config());
-    DB::setSqlClient($client, ClientFactory::driverEnum());
+    DB::setSqlClient($client);
 
     try {
         expect(fn () => await(DB::raw('SELECT * FROM users WHERE email = :email', ['not_email' => 'val'])))
@@ -328,20 +331,20 @@ test('DB::resolveClientFromConfig throws exception on unsupported drivers', func
 });
 
 test('Multiple connections maintain strict transaction state isolation', function () {
-    if (ClientFactory::driverEnum() === Hibla\QueryBuilder\Enums\DatabaseDriver::Sqlite) {
+    $client1 = ConnectionFactory::make(ClientFactory::config());
+    if ($client1->driver === DatabaseDriver::Sqlite) {
         $this->markTestSkipped('SQLite uses database-level locks, so concurrent writing transactions will throw LockWaitTimeoutException.');
 
         return;
     }
 
     DB::reset();
-    $client1 = ConnectionFactory::make(ClientFactory::config());
     $client2 = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client1);
 
-    DB::setSqlClient($client1, ClientFactory::driverEnum());
+    DB::setSqlClient($client1);
 
-    $conn2 = new DatabaseConnection($client2, ClientFactory::driverEnum()->value);
+    $conn2 = new DatabaseConnection($client2);
     DB::addConnection('reporting', $conn2);
 
     try {
@@ -372,9 +375,9 @@ test('DB::close() closes specific or all connections synchronously', function ()
     $client1 = ConnectionFactory::make(ClientFactory::config());
     $client2 = ConnectionFactory::make(ClientFactory::config());
 
-    DB::setSqlClient($client1, ClientFactory::driverEnum());
+    DB::setSqlClient($client1);
 
-    $conn2 = new DatabaseConnection($client2, ClientFactory::driverEnum()->value);
+    $conn2 = new DatabaseConnection($client2);
     DB::addConnection('secondary', $conn2);
 
     try {
@@ -399,9 +402,9 @@ test('DB::closeAsync() closes specific or all connections asynchronously', funct
     $client1 = ConnectionFactory::make(ClientFactory::config());
     $client2 = ConnectionFactory::make(ClientFactory::config());
 
-    DB::setSqlClient($client1, ClientFactory::driverEnum());
+    DB::setSqlClient($client1);
 
-    $conn2 = new DatabaseConnection($client2, ClientFactory::driverEnum()->value);
+    $conn2 = new DatabaseConnection($client2);
     DB::addConnection('secondary', $conn2);
 
     try {

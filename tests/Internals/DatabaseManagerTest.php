@@ -21,8 +21,8 @@ test('DatabaseManager registers, retrieves, and falls back to default connection
     $client1 = ConnectionFactory::make(ClientFactory::config());
     $client2 = ConnectionFactory::make(ClientFactory::config());
 
-    $conn1 = new DatabaseConnection($client1, ClientFactory::driver());
-    $conn2 = new DatabaseConnection($client2, ClientFactory::driver());
+    $conn1 = new DatabaseConnection($client1);
+    $conn2 = new DatabaseConnection($client2);
 
     try {
         $manager->addConnection('conn_one', $conn1);
@@ -65,7 +65,7 @@ test('DatabaseManager proxies direct query operations to the default connection'
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
 
-    $conn = new DatabaseConnection($client, ClientFactory::driver());
+    $conn = new DatabaseConnection($client);
     $manager->addConnection('default', $conn);
     $manager->setDefaultConnectionName('default');
 
@@ -89,8 +89,8 @@ test('DatabaseManager asynchronous closing cleans up all internal connections', 
     $client1 = ConnectionFactory::make(ClientFactory::config());
     $client2 = ConnectionFactory::make(ClientFactory::config());
 
-    $conn1 = new DatabaseConnection($client1, ClientFactory::driver());
-    $conn2 = new DatabaseConnection($client2, ClientFactory::driver());
+    $conn1 = new DatabaseConnection($client1);
+    $conn2 = new DatabaseConnection($client2);
 
     $manager->addConnection('one', $conn1);
     $manager->addConnection('two', $conn2);

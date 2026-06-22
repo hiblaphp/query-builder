@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Hibla\QueryBuilder;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
-use Hibla\QueryBuilder\Enums\DatabaseDriver;
 use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
 use Hibla\QueryBuilder\Interfaces\TransactionalQueryBuilderInterface;
@@ -45,12 +44,11 @@ class DB
      * This will automatically register the injected client as the default connection.
      *
      * @param SqlClientInterface $client The custom client instance (e.g., a mock).
-     * @param DatabaseDriver $driver The database driver (default: Mysql).
      */
-    public static function setSqlClient(SqlClientInterface $client, DatabaseDriver $driver = DatabaseDriver::Mysql): void
+    public static function setSqlClient(SqlClientInterface $client): void
     {
         $connectionName = 'default';
-        $connection = new DatabaseConnection($client, $driver->value);
+        $connection = new DatabaseConnection($client);
 
         self::getManager()->addConnection($connectionName, $connection);
         self::getManager()->setDefaultConnectionName($connectionName);

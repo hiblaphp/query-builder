@@ -199,10 +199,9 @@ class DatabaseManager implements ConnectionResolverInterface
 
         /** @var array<string, mixed> $connectionConfig */
         $connectionConfig = $connections[$name];
-        $driver = \is_string($connectionConfig['driver'] ?? null) ? $connectionConfig['driver'] : 'mysql';
 
         $client = $this->resolveClientFromConfig($connectionConfig);
-        $connection = new DatabaseConnection($client, $driver);
+        $connection = new DatabaseConnection($client);
 
         $this->connections[$name] = $connection;
 

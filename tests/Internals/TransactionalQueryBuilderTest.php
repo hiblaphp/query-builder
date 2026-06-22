@@ -16,7 +16,7 @@ test('TransactionalQueryBuilder supports manual savepoints and rollbackTo', func
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
 
-    $conn = new DatabaseConnection($client, ClientFactory::driver());
+    $conn = new DatabaseConnection($client);
 
     try {
         $tx = await($conn->beginTransaction());
@@ -45,7 +45,7 @@ test('TransactionalQueryBuilder triggers onCommit and onRollback callbacks', fun
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
 
-    $conn = new DatabaseConnection($client, ClientFactory::driver());
+    $conn = new DatabaseConnection($client);
 
     try {
         $commitFired = false;
@@ -73,7 +73,7 @@ test('TransactionalQueryBuilder nested auto-transaction handles isolated failure
     $client = ConnectionFactory::make(ClientFactory::config());
     TestSchema::truncateAll($client);
 
-    $conn = new DatabaseConnection($client, ClientFactory::driver());
+    $conn = new DatabaseConnection($client);
 
     try {
         $tx = await($conn->beginTransaction());
@@ -104,7 +104,7 @@ test('TransactionalQueryBuilder nested auto-transaction handles isolated failure
 
 test('TransactionalQueryBuilder beginTransaction is blocked and throws QueryBuilderException', function () {
     $client = ConnectionFactory::make(ClientFactory::config());
-    $conn = new DatabaseConnection($client, ClientFactory::driver());
+    $conn = new DatabaseConnection($client);
 
     try {
         $tx = await($conn->beginTransaction());

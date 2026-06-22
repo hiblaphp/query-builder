@@ -6,7 +6,6 @@ namespace Hibla\QueryBuilder\Internals;
 
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\Promise\Promise;
-use Hibla\QueryBuilder\Enums\DatabaseDriver;
 use Hibla\QueryBuilder\Interfaces\DatabaseConnectionInterface;
 use Hibla\QueryBuilder\Interfaces\QueryBuilderInterface;
 use Hibla\QueryBuilder\QueryBuilder;
@@ -21,8 +20,7 @@ use Hibla\Sql\TransactionOptions;
 class DatabaseConnection implements DatabaseConnectionInterface
 {
     public function __construct(
-        private readonly SqlClientInterface $client,
-        private readonly string $driverName = 'sqlite'
+        private readonly SqlClientInterface $client
     ) {
     }
 
@@ -31,7 +29,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
      */
     public function table(string $table): QueryBuilderInterface
     {
-        return new QueryBuilder($this->client, $this->getDriverEnum())->from($table);
+        return new QueryBuilder($this->client)->from($table);
     }
 
     /**
@@ -39,7 +37,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
      */
     public function raw(string $sql, array $bindings = []): PromiseInterface
     {
-        return new QueryBuilder($this->client, $this->getDriverEnum())->raw($sql, $bindings);
+        return new QueryBuilder($this->client)->raw($sql, $bindings);
     }
 
     /**
@@ -47,7 +45,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
      */
     public function rawStream(string $sql, array $bindings = [], int $bufferSize = 100): PromiseInterface
     {
-        return new QueryBuilder($this->client, $this->getDriverEnum())->rawStream($sql, $bindings, $bufferSize);
+        return new QueryBuilder($this->client)->rawStream($sql, $bindings, $bufferSize);
     }
 
     /**
@@ -55,7 +53,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
      */
     public function rawFirst(string $sql, array $bindings = []): PromiseInterface
     {
-        return new QueryBuilder($this->client, $this->getDriverEnum())->rawFirst($sql, $bindings);
+        return new QueryBuilder($this->client)->rawFirst($sql, $bindings);
     }
 
     /**
@@ -63,7 +61,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
      */
     public function rawValue(string $sql, array $bindings = []): PromiseInterface
     {
-        return new QueryBuilder($this->client, $this->getDriverEnum())->rawValue($sql, $bindings);
+        return new QueryBuilder($this->client)->rawValue($sql, $bindings);
     }
 
     /**
@@ -71,7 +69,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
      */
     public function rawExecute(string $sql, array $bindings = []): PromiseInterface
     {
-        return new QueryBuilder($this->client, $this->getDriverEnum())->rawExecute($sql, $bindings);
+        return new QueryBuilder($this->client)->rawExecute($sql, $bindings);
     }
 
     /**
@@ -80,7 +78,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
     public function transaction(callable $callback, ?TransactionOptions $options = null): PromiseInterface
     {
         return $this->client->transaction(function (Transaction $rawTx) use ($callback) {
-            $txBuilder = new TransactionalQueryBuilder($rawTx, $this->getDriverEnum());
+            $txBuilder = new TransactionalQueryBuilder($rawTx);
 
             return $callback($txBuilder);
         }, $options);
@@ -92,7 +90,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
     public function beginTransaction(?IsolationLevelInterface $isolationLevel = null): PromiseInterface
     {
         $promise = $this->client->beginTransaction($isolationLevel)->then(
-            fn (Transaction $rawTx) => new TransactionalQueryBuilder($rawTx, $this->getDriverEnum())
+            fn (Transaction $rawTx) => new TransactionalQueryBuilder($rawTx)
         );
 
         return Promise::propagateCancellation($promise);
@@ -111,15 +109,7 @@ class DatabaseConnection implements DatabaseConnectionInterface
      */
     public function getDriverName(): string
     {
-        return $this->driverName;
-    }
-
-    /**
-     * Get the current driver as an Enum for strict constructor passing.
-     */
-    private function getDriverEnum(): DatabaseDriver
-    {
-        return DatabaseDriver::tryFrom($this->driverName) ?? DatabaseDriver::Sqlite;
+        return $this->client->driver->value;
     }
 
     /**

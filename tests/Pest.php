@@ -49,10 +49,10 @@ function client(): SqlClientInterface
 
 function qb(string $table): QueryBuilder
 {
-    return (new QueryBuilder(client(), ClientFactory::driverEnum()))->from($table);
+    return new QueryBuilder(client())->from($table);
 }
 
 function newQb(): QueryBuilder
 {
-    return new QueryBuilder(client(), ClientFactory::driverEnum());
+    return new QueryBuilder(client());
 }

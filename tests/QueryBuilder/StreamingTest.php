@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Hibla\QueryBuilder\QueryBuilder;
 use Hibla\Sql\RowStream;
 use Tests\Fixtures\TestSchema;
-use Tests\Helpers\ClientFactory;
 
 use function Hibla\async;
 use function Hibla\await;
@@ -82,7 +81,7 @@ test('rawStream yields rows for a raw sql query', function () {
     ]);
 
     $stream = await(
-        (new QueryBuilder(client(), ClientFactory::driverEnum()))
+        new QueryBuilder(client())
             ->rawStream('SELECT id, name FROM users')
     );
 

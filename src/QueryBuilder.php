@@ -7,7 +7,6 @@ namespace Hibla\QueryBuilder;
 use Hibla\Promise\Exceptions\CancelledException;
 use Hibla\Promise\Interfaces\PromiseInterface;
 use Hibla\Promise\Promise;
-use Hibla\QueryBuilder\Enums\DatabaseDriver;
 use Hibla\QueryBuilder\Exceptions\QueryBuilderException;
 use Hibla\QueryBuilder\Exceptions\RecordNotFoundException;
 use Hibla\QueryBuilder\Interfaces\ConnectionResolverInterface;
@@ -19,6 +18,7 @@ use Hibla\QueryBuilder\Pagination\Paginator;
 use Hibla\QueryBuilder\Streams\MappedRowStream;
 use Hibla\QueryBuilder\Utilities\CursorPaginationHelper;
 use Hibla\QueryBuilder\Utilities\RequestHelper;
+use Hibla\Sql\DatabaseDriver;
 use Hibla\Sql\IsolationLevelInterface;
 use Hibla\Sql\QueryInterface;
 use Hibla\Sql\Result;
@@ -51,35 +51,34 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
      * @param QueryInterface|array<string, mixed>|string|null $connection
      */
     public function __construct(
-        QueryInterface|array|string|null $connection = null,
-        ?DatabaseDriver $driver = null
+        QueryInterface|array|string|null $connection = null
     ) {
         if ($connection instanceof QueryInterface) {
             $this->client = $connection;
-            $this->driver = $driver !== null ? $driver->value : DatabaseDriver::Mysql->value;
+            $this->driver = $connection->driver->value;
         } elseif (\is_array($connection)) {
             $this->ensureResolverIsSet();
             \assert(self::$resolver !== null);
             $this->client = self::$resolver->resolveClientFromConfig($connection);
 
-            $configDriver = \is_string($connection['driver'] ?? null) ? $connection['driver'] : DatabaseDriver::Mysql->value;
-            $this->driver = $driver !== null ? $driver->value : $configDriver;
+            $configDriver = \is_string($connection['driver'] ?? null) ? $connection['driver'] : DatabaseDriver::Sqlite->value;
+            $this->driver = $configDriver;
         } else {
             $this->ensureResolverIsSet();
             \assert(self::$resolver !== null);
             $conn = self::$resolver->connection($connection);
             $this->client = $conn->getClient();
-            $this->driver = $driver !== null ? $driver->value : $conn->getDriverName();
+            $this->driver = $conn->getDriverName();
         }
     }
 
     /**
      * Override the primitive base class method to ensure subqueries
-     * (like whereExists) inherit the exact same client and driver.
+     * (like whereExists) inherit the exact same client.
      */
     protected function newQuery(): static
     {
-        return new static($this->client, $this->getDriverEnum());
+        return new static($this->client);
     }
 
     /**
@@ -125,7 +124,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
             $sqlClient = $this->client;
 
             return $sqlClient->transaction(function (Transaction $tx) use ($callback) {
-                $txBuilder = new TransactionalQueryBuilder($tx, $this->getDriverEnum());
+                $txBuilder = new TransactionalQueryBuilder($tx);
 
                 return $callback($txBuilder);
             }, $options);
@@ -140,7 +139,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
             $innerWorkPromise = null;
 
             $promise = $transaction->savepoint($savepointId)->then(function () use ($callback, $savepointId, &$innerWorkPromise, $transaction) {
-                $txBuilder = new TransactionalQueryBuilder($transaction, $this->getDriverEnum());
+                $txBuilder = new TransactionalQueryBuilder($transaction);
 
                 $innerWorkPromise = async(fn () => $callback($txBuilder));
 
@@ -168,7 +167,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
     {
         if ($this->client instanceof SqlClientInterface) {
             $promise = $this->client->beginTransaction($isolationLevel)->then(function (Transaction $tx) {
-                return new TransactionalQueryBuilder($tx, $this->getDriverEnum());
+                return new TransactionalQueryBuilder($tx);
             });
 
             return Promise::propagateCancellation($promise);
@@ -578,7 +577,7 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
         $sql = $this->buildInsertQuery($data);
 
         // PostgreSQL requires an explicit RETURNING clause to yield the auto-increment ID
-        if ($this->getDriverEnum() === DatabaseDriver::Postgres) {
+        if ($this->driver === DatabaseDriver::Postgres->value) {
             $sql .= ' RETURNING ' . $sequence;
         }
 
@@ -954,13 +953,5 @@ class QueryBuilder extends QueryBuilderBase implements QueryBuilderInterface
                     'or pass a valid QueryInterface directly into the QueryBuilder constructor.'
             );
         }
-    }
-
-    /**
-     * Get the current driver as an Enum for strict constructor passing.
-     */
-    private function getDriverEnum(): DatabaseDriver
-    {
-        return DatabaseDriver::tryFrom((string) $this->driver) ?? DatabaseDriver::Mysql;
     }
 }

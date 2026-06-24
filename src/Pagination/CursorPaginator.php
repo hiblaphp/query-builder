@@ -59,9 +59,13 @@ class CursorPaginator extends AbstractPaginator implements CursorPaginatorInterf
             return null;
         }
 
+        $parameters = $this->queryParameters;
+        $parameters['cursor'] = $this->nextCursor;
+
+        $queryString = http_build_query($parameters, '', '&');
         $separator = str_contains($basePath, '?') ? '&' : '?';
 
-        return $basePath . $separator . 'cursor=' . $this->nextCursor;
+        return $basePath . $separator . $queryString . $this->buildFragment();
     }
 
     /**

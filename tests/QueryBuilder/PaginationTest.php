@@ -10,11 +10,11 @@ use function Hibla\await;
 
 beforeEach(function () {
     TestSchema::truncateAll(client());
-    unset($_GET['page'], $_GET['cursor']);
+    $_GET = []; // Reset the entire superglobal to prevent state bleeding between tests
 });
 
 afterEach(function () {
-    unset($_GET['page'], $_GET['cursor']);
+    $_GET = [];
 });
 
 test('paginate returns a PaginatorInterface instance', function () {
@@ -74,6 +74,62 @@ test('paginate returns empty items on empty table', function () {
     expect($paginator->total)->toBe(0)
         ->and($paginator->items)->toBeEmpty()
         ->and($paginator->hasPages)->toBeFalse()
+    ;
+});
+
+test('paginator modifiers return cloned instances to preserve immutability', function () {
+    TestSchema::insertUsers(client(), [['name' => 'Alice', 'email' => 'alice@test.com']]);
+
+    $original = await(qb('users')->paginate(10, 'http://localhost/users'));
+
+    $appended = $original->appends('sort', 'desc');
+    $withQuery = $original->withQueryString();
+    $fragmented = $original->fragment('results');
+
+    expect($original)->not->toBe($appended)
+        ->and($original)->not->toBe($withQuery)
+        ->and($original)->not->toBe($fragmented)
+    ;
+});
+
+test('paginate urls include appended query strings and fragments', function () {
+    TestSchema::insertUsers(client(), [
+        ['name' => 'Alice', 'email' => 'alice@test.com'],
+        ['name' => 'Bob', 'email' => 'bob@test.com'],
+    ]);
+
+    $paginator = await(qb('users')->paginate(1, 'http://localhost/users'))
+        ->appends('sort', 'desc')
+        ->appends(['filter' => 'active'])
+        ->fragment('#users-table')
+    ;
+
+    $url = $paginator->nextPageUrl();
+
+    expect($url)->toContain('sort=desc')
+        ->and($url)->toContain('filter=active')
+        ->and($url)->toContain('page=2')
+        ->and($url)->toEndWith('#users-table')
+    ;
+});
+
+test('paginate withQueryString merges current GET parameters excluding page and cursor', function () {
+    TestSchema::insertUsers(client(), [
+        ['name' => 'Alice', 'email' => 'alice@test.com'],
+        ['name' => 'Bob', 'email' => 'bob@test.com'],
+    ]);
+
+    $_GET['search'] = 'developer';
+    $_GET['page'] = 1;
+    $_GET['cursor'] = 'stale_cursor_data';
+
+    $paginator = await(qb('users')->paginate(1, 'http://localhost/users'))->withQueryString();
+
+    $url = $paginator->nextPageUrl();
+
+    expect($url)->toContain('search=developer')
+        ->and($url)->not->toContain('cursor=stale_cursor_data') // Should be excluded
+        ->and($url)->toContain('page=2')
     ;
 });
 
@@ -162,6 +218,41 @@ test('cursorPaginate supports multi-column tie-breakers to prevent skipped rows'
         ->and($page2->items[1]->name)->toBe('Dave')
         ->and($page2->hasMore)->toBeTrue()
     ;
+});
 
-    unset($_GET['cursor']);
+test('cursorPaginate urls include appended query strings and fragments', function () {
+    TestSchema::insertUsers(client(), [
+        ['name' => 'Alice', 'email' => 'alice@test.com'],
+        ['name' => 'Bob', 'email' => 'bob@test.com'],
+    ]);
+
+    $paginator = await(qb('users')->cursorPaginate(1, 'id', 'http://localhost/users'))
+        ->appends(['type' => 'admin'])
+        ->fragment('list')
+    ;
+
+    $url = $paginator->nextPageUrl();
+
+    expect($url)->toContain('type=admin')
+        ->and($url)->toContain('cursor=')
+        ->and($url)->toEndWith('#list')
+    ;
+});
+
+test('cursorPaginate withQueryString merges current GET parameters excluding page and cursor', function () {
+    TestSchema::insertUsers(client(), [
+        ['name' => 'Alice', 'email' => 'alice@test.com'],
+        ['name' => 'Bob', 'email' => 'bob@test.com'],
+    ]);
+
+    $_GET['q'] = 'query';
+    $_GET['page'] = 5;
+
+    $paginator = await(qb('users')->cursorPaginate(1, 'id', 'http://localhost/users'))->withQueryString();
+
+    $url = $paginator->nextPageUrl();
+
+    expect($url)->toContain('q=query')
+        ->and($url)->not->toContain('page=5')
+        ->and($url)->toContain('cursor=');
 });

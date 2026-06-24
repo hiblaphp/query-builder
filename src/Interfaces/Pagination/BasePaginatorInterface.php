@@ -40,6 +40,32 @@ interface BasePaginatorInterface extends \IteratorAggregate
     public bool $hasMore { get; }
 
     /**
+     * Add a set of query string values to the paginator.
+     *
+     * @param array<string, mixed>|string $key
+     * @param mixed $value
+     *
+     * @return static
+     */
+    public function appends(array|string $key, mixed $value = null): static;
+
+    /**
+     * Append all current query string values to the paginator.
+     *
+     * @return static
+     */
+    public function withQueryString(): static;
+
+    /**
+     * Set the URL fragment (hash) to be appended to all pagination links.
+     *
+     * @param string $fragment
+     *
+     * @return static
+     */
+    public function fragment(string $fragment): static;
+
+    /**
      * Get the URL for the next page/window.
      *
      * @param string|null $basePath Optional base path override.

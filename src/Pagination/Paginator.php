@@ -141,10 +141,14 @@ class Paginator extends AbstractPaginator implements PaginatorInterface
             return '';
         }
 
+        $parameters = $this->queryParameters;
+        $parameters['page'] = $page;
+
+        $queryString = http_build_query($parameters, '', '&');
         $separator = str_contains($this->path, '?') ? '&' : '?';
         $query = $this->query !== null ? $this->query . '&' : '';
 
-        return $this->path . $separator . $query . 'page=' . $page;
+        return $this->path . $separator . $query . $queryString . $this->buildFragment();
     }
 
     /**
